@@ -91,9 +91,6 @@ export const PublicNews: React.FC<PublicNewsProps> = ({ posts, feedbacks }) => {
                 <div className="sm:w-3/5 p-6 flex flex-col justify-between">
                   <div>
                     <div className="flex items-center gap-3 text-[11px] text-stone-400 mb-2">
-                      <span className="bg-emerald-50 text-emerald-800 font-bold px-2 py-0.5 rounded">
-                        {post.category}
-                      </span>
                       <span className="flex items-center gap-1">
                         <Calendar className="w-3 h-3" />
                         {new Date(post.publishedAt).toLocaleDateString('vi-VN')}

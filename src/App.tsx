@@ -140,14 +140,14 @@ export default function App() {
     const newBooking = await apiClient.createPublicBooking({
       tourId: payload.tourId,
       customerName: payload.customerName,
-      customerPhone: payload.customerPhone || 'N/A',
+      customerPhone: payload.customerPhone || '',
       customerEmail: payload.customerEmail || 'guest@botanicagarden.vn',
       departureDate: payload.departureDate,
       numAdults: payload.numAdults,
       numChildren: payload.numChildren,
       numInfants: 0,
       notes: payload.notes,
-      paymentMethod: 'CASH',
+      paymentMethod: 'BANK_TRANSFER',
     });
     await loadAllData(); // Refresh data immediately
     return newBooking;
@@ -198,12 +198,32 @@ export default function App() {
     await loadAllData();
   };
 
+  const handleUpdateBooking = async (id: string, updates: Partial<Booking>) => {
+    await apiClient.updateAdminBooking(id, updates);
+    await loadAllData();
+  };
+
   const handleSendBookingEmail = async (id: string) => {
     return await apiClient.sendAdminBookingEmail(id);
   };
 
   const handleToggleBanner = async (id: string, active: boolean) => {
     await apiClient.toggleAdminBanner(id, active);
+    await loadAllData();
+  };
+
+  const handleCreateBanner = async (banner: Omit<Banner, 'id'>) => {
+    await apiClient.createAdminBanner(banner);
+    await loadAllData();
+  };
+
+  const handleUpdateBanner = async (id: string, updates: Partial<Banner>) => {
+    await apiClient.updateAdminBanner(id, updates);
+    await loadAllData();
+  };
+
+  const handleDeleteBanner = async (id: string) => {
+    await apiClient.deleteAdminBanner(id);
     await loadAllData();
   };
 
@@ -395,6 +415,7 @@ export default function App() {
               bookings={bookings}
               onUpdateStatus={handleUpdateBookingStatus}
               onSendEmail={handleSendBookingEmail}
+              onUpdateBooking={handleUpdateBooking}
             />
           )}
 
@@ -413,6 +434,9 @@ export default function App() {
               onUpdatePost={handleUpdatePost}
               onDeletePost={handleDeletePost}
               onUpdateSiteConfig={handleUpdateSiteConfig}
+              onCreateBanner={handleCreateBanner}
+              onUpdateBanner={handleUpdateBanner}
+              onDeleteBanner={handleDeleteBanner}
             />
           )}
 

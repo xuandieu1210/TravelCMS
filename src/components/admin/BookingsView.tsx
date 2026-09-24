@@ -19,12 +19,14 @@ interface BookingsViewProps {
   bookings: Booking[];
   onUpdateStatus: (id: string, status: BookingStatus) => void;
   onSendEmail: (id: string) => Promise<{ success: boolean; message: string }>;
+  onUpdateBooking?: (id: string, updates: Partial<Booking>) => void;
 }
 
 export const BookingsView: React.FC<BookingsViewProps> = ({
   bookings,
   onUpdateStatus,
   onSendEmail,
+  onUpdateBooking,
 }) => {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
@@ -36,7 +38,7 @@ export const BookingsView: React.FC<BookingsViewProps> = ({
     const matchSearch =
       b.bookingCode.toLowerCase().includes(term) ||
       b.customerName.toLowerCase().includes(term) ||
-      b.customerPhone.toLowerCase().includes(term) ||
+      (b.customerPhone && b.customerPhone.toLowerCase().includes(term)) ||
       b.customerEmail.toLowerCase().includes(term) ||
       (b.notes && b.notes.toLowerCase().includes(term)) ||
       (b.specialRequests && b.specialRequests.toLowerCase().includes(term));
@@ -288,6 +290,12 @@ export const BookingsView: React.FC<BookingsViewProps> = ({
             setSelectedBooking({ ...selectedBooking, status });
           }}
           onSendEmail={onSendEmail}
+          onUpdateBooking={(id, updates) => {
+            if (onUpdateBooking) {
+              onUpdateBooking(id, updates);
+            }
+            setSelectedBooking({ ...selectedBooking, ...updates });
+          }}
         />
       )}
     </div>

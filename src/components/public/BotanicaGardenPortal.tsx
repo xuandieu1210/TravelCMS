@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Tour, CustomerFeedback, Banner, SiteConfig, Booking, Category, Post } from '../../types';
 import { translationsData } from '../../data/translations';
+import { apiClient } from '../../services/apiClient';
+import { dataStore } from '../../services/dataStore';
 
 interface BotanicaGardenPortalProps {
   tours: Tour[];
@@ -67,6 +69,32 @@ export const BotanicaGardenPortal: React.FC<BotanicaGardenPortalProps> = ({
   const [formNote, setFormNote] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
+  // Latest media file from Media Management
+  const [latestMediaUrl, setLatestMediaUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchLatestMedia = async () => {
+      try {
+        const media = await apiClient.getAdminMedia();
+        if (media && media.length > 0) {
+          setLatestMediaUrl(media[0].url);
+        } else {
+          setLatestMediaUrl(null);
+        }
+      } catch (err) {
+        console.error('Error fetching media:', err);
+      }
+    };
+
+    fetchLatestMedia();
+    const unsubscribe = dataStore.subscribe(() => {
+      fetchLatestMedia();
+    });
+    return () => {
+      unsubscribe();
+    };
+  }, []);
+
   const T = translationsData as Record<LangType, Record<string, string>>;
   const t = T[lang] || T.en;
 
@@ -93,6 +121,32 @@ export const BotanicaGardenPortal: React.FC<BotanicaGardenPortalProps> = ({
   const publishedPosts = useMemo(() => {
     return (posts || []).filter((post) => post.status === 'PUBLISHED');
   }, [posts]);
+
+  // Find the escape section post (ID: 'post-botanica-04') from posts
+  const escapePost = useMemo(() => {
+    const found = (posts || []).find((p) => p.id === 'post-botanica-04');
+    if (found) return found;
+    return (posts || []).find((p) => p.slug === 'the-other-hoi-an' || p.title.toLowerCase().includes('the other hoi an')) || null;
+  }, [posts]);
+
+  // Parse description / summary into paragraphs
+  const escapeParagraphs = useMemo(() => {
+    if (!escapePost || !escapePost.summary) return [];
+    return escapePost.summary.split(/\n+/).map(p => p.trim()).filter(Boolean);
+  }, [escapePost]);
+
+  // Parse review quote & author/citation from guestReview
+  const escapeReviewParsed = useMemo(() => {
+    if (!escapePost || !escapePost.guestReview) return null;
+    const review = escapePost.guestReview;
+    const parts = review.split(/—|-/);
+    if (parts.length > 1) {
+      const cite = parts[parts.length - 1].trim();
+      const quote = parts.slice(0, parts.length - 1).join('—').trim();
+      return { quote, cite: `— ${cite}` };
+    }
+    return { quote: review, cite: '— Guest review' };
+  }, [escapePost]);
 
   // Filtered by active tab from DB
   const filteredTours = useMemo(() => {
@@ -298,9 +352,6 @@ export const BotanicaGardenPortal: React.FC<BotanicaGardenPortalProps> = ({
             <a href="#workshops">{t.nav_workshops}</a>
             <a href="#how">{t.nav_how}</a>
             <a href="#reviews">{t.nav_reviews}</a>
-            {publishedPosts.length > 0 && (
-              <a href="#stories">{t.nav_stories || (lang === 'vn' ? 'Bài viết' : 'Stories')}</a>
-            )}
             <a href="#visit">{t.nav_visit}</a>
           </div>
 
@@ -385,22 +436,37 @@ export const BotanicaGardenPortal: React.FC<BotanicaGardenPortalProps> = ({
       <section className="escape">
         <div className="wrap escape-grid">
           <div className="reveal">
-            <span className="eyebrow">{t.escape_eyebrow}</span>
-            <h2>{t.escape_title}</h2>
-            <p>{t.escape_p1}</p>
-            <p>{t.escape_p2}</p>
-            <div className="pull">
-              <q>{t.escape_quote}</q>
-              <cite>{t.escape_cite}</cite>
-            </div>
+            <span className="eyebrow">{escapePost?.eyebrow || t.escape_eyebrow}</span>
+            <h2>{escapePost?.title || t.escape_title}</h2>
+            {escapeParagraphs.length > 0 ? (
+              escapeParagraphs.map((para, idx) => (
+                <p key={idx}>{para}</p>
+              ))
+            ) : (
+              <>
+                <p>{t.escape_p1}</p>
+                <p>{t.escape_p2}</p>
+              </>
+            )}
+            {escapeReviewParsed ? (
+              <div className="pull">
+                <q>{escapeReviewParsed.quote}</q>
+                <cite>{escapeReviewParsed.cite}</cite>
+              </div>
+            ) : (
+              <div className="pull">
+                <q>{t.escape_quote}</q>
+                <cite>{t.escape_cite}</cite>
+              </div>
+            )}
           </div>
           <div className="escape-img reveal">
             <img
-              src="/images/img_1.jpeg"
-              alt="Herbs hand-picked from the Botanica garden"
+              src={escapePost?.thumbnail || "/images/img_1.jpeg"}
+              alt={escapePost?.imageLabel || "Herbs hand-picked from the Botanica garden"}
               loading="lazy"
             />
-            <div className="tag">{t.escape_tag}</div>
+            <div className="tag">{escapePost?.imageLabel || t.escape_tag}</div>
           </div>
         </div>
       </section>
@@ -608,72 +674,6 @@ export const BotanicaGardenPortal: React.FC<BotanicaGardenPortalProps> = ({
         </div>
       </section>
 
-      {/* STORIES & BLOG SECTION (Cẩm Nang & Bài Viết) */}
-      {publishedPosts.length > 0 && (
-        <section className="stories py-20 bg-stone-50/70 border-t border-stone-200" id="stories">
-          <div className="wrap">
-            <div className="section-head reveal max-w-2xl mb-12">
-              <span className="eyebrow text-emerald-800 font-bold uppercase tracking-wider text-xs">
-                {t.stories_eyebrow || 'Chuyện kể từ khu vườn'}
-              </span>
-              <h2 className="text-3xl sm:text-4xl font-serif font-black text-stone-900 mt-2 tracking-tight">
-                {t.stories_title || 'Cẩm nang trải nghiệm & Sống chậm Hội An'}
-              </h2>
-              <p className="text-stone-600 mt-3 text-sm leading-relaxed">
-                {t.stories_sub || 'Khám phá những câu chuyện thú vị đằng sau các món đồ thủ công, nghệ thuật pha chế và lối sống xanh mộc mạc tại Botanica Garden.'}
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {publishedPosts.map((post) => (
-                <article
-                  key={post.id}
-                  className="bg-white rounded-2xl overflow-hidden border border-stone-200 shadow-2xs hover:shadow-xl transition-all duration-300 flex flex-col cursor-pointer group hover:-translate-y-1"
-                  onClick={() => handleOpenPostReader(post)}
-                >
-                  <div className="relative h-52 overflow-hidden bg-stone-100">
-                    <img
-                      src={post.thumbnail}
-                      alt={post.title}
-                      loading="lazy"
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                    />
-                    <span className="absolute top-3 left-3 bg-white/95 backdrop-blur-xs text-emerald-900 text-[11px] font-bold px-3 py-1 rounded-full shadow-xs">
-                      {post.category}
-                    </span>
-                  </div>
-
-                  <div className="p-6 flex flex-col justify-between flex-1">
-                    <div>
-                      <div className="flex items-center gap-2 text-[11px] text-stone-400 mb-2.5">
-                        <span>{new Date(post.publishedAt).toLocaleDateString(lang === 'vn' ? 'vi-VN' : 'en-US', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
-                        <span>•</span>
-                        <span>{post.author}</span>
-                      </div>
-                      <h3 className="font-serif font-bold text-stone-900 text-base leading-snug group-hover:text-emerald-800 transition-colors line-clamp-2 mb-2">
-                        {post.title}
-                      </h3>
-                      <p className="text-xs text-stone-600 leading-relaxed line-clamp-3">
-                        {post.summary}
-                      </p>
-                    </div>
-
-                    <div className="mt-5 pt-4 border-t border-stone-100 flex items-center justify-between text-xs">
-                      <span className="font-bold text-emerald-800 flex items-center gap-1 group-hover:translate-x-1 transition-transform">
-                        {t.read_more || 'Đọc bài viết'} →
-                      </span>
-                      <span className="text-[11px] text-stone-400">
-                        {post.viewCount || 1200} lượt xem
-                      </span>
-                    </div>
-                  </div>
-                </article>
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
-
       {/* VISIT */}
       <section className="visit" id="visit">
         <div className="wrap visit-grid">
@@ -743,11 +743,21 @@ export const BotanicaGardenPortal: React.FC<BotanicaGardenPortalProps> = ({
           </div>
 
           <div className="visit-img reveal">
-            <img
-              src="/images/img_2.jpeg"
-              alt="Happy guests with their Botanica Garden gift boxes"
-              loading="lazy"
-            />
+            {latestMediaUrl || siteConfig.visitImage ? (
+              <img
+                src={latestMediaUrl || siteConfig.visitImage}
+                alt="Happy guests with their Botanica Garden gift boxes"
+                loading="lazy"
+              />
+            ) : (
+              <div className="w-full h-80 bg-stone-100 rounded-2xl flex flex-col items-center justify-center text-stone-400 p-6 text-center border border-dashed border-stone-300">
+                <svg className="w-10 h-10 mb-2 text-stone-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 002-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                <span className="text-xs font-bold text-stone-600">Thư viện media chưa có hình ảnh</span>
+                <span className="text-[11px] text-stone-400 mt-0.5">Vui lòng tải lên ảnh mới trong Quản Lý Media để hiển thị ở đây.</span>
+              </div>
+            )}
           </div>
         </div>
       </section>
@@ -1062,9 +1072,6 @@ export const BotanicaGardenPortal: React.FC<BotanicaGardenPortalProps> = ({
               >
                 ✕
               </button>
-              <span className="absolute bottom-4 left-5 bg-white/95 backdrop-blur-xs text-emerald-900 text-xs font-bold px-3.5 py-1.5 rounded-full shadow-md">
-                {selectedPost.category}
-              </span>
             </div>
 
             <div className="p-6 sm:p-8">

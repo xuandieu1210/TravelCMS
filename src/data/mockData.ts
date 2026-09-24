@@ -24,6 +24,7 @@ export const INITIAL_SITE_CONFIG: SiteConfig = {
   phone: '+84 905 982 919',
   maps: 'https://www.google.com/maps/search/?api=1&query=Botanica+Garden+208+Le+Thanh+Tong+Cam+Chau+Hoi+An',
   address: '208 Le Thanh Tong, Cam Chau, Hoi An',
+  visitImage: '/images/img_2.jpeg',
 };
 
 export const INITIAL_TOURS: Tour[] = [
@@ -503,7 +504,7 @@ export const INITIAL_BOOKINGS: Booking[] = [
     totalAmount: 2800000,
     discountAmount: 0,
     finalAmount: 2800000,
-    paymentMethod: 'VNPAY',
+    paymentMethod: 'BANK_TRANSFER',
     paymentStatus: 'UNPAID',
     status: 'NEW',
     notes: 'Cần hỗ trợ đưa đón từ An Bàng Beach Resort',
@@ -613,6 +614,9 @@ Sau 2 giờ thong thả vừa học vừa thưởng trà, ngọn nến hoàn thi
     viewCount: 1850,
     seoTitle: 'Workshop Làm Nến Thơm Sáp Đậu Nành Tại Hội An - Botanica Garden',
     seoDescription: 'Trải nghiệm tự tay làm nến thơm thảo mộc thiên nhiên tại Hội An. Hoạt động lý tưởng cho gia đình, cặp đôi và du khách yêu lối sống xanh.',
+    eyebrow: 'WORKSHOP THỦ CÔNG',
+    imageLabel: 'Ảnh: Ly nến sáp đậu nành thảo mộc hoàn thiện bởi du khách.',
+    guestReview: 'Mình đã có một khoảng thời gian thật sự tuyệt vời tại đây. Ngọn nến thơm tự tay làm mang về nhà vẫn luôn gợi nhớ về mùi hương của Hội An. — Emma, Anh Quốc',
   },
   {
     id: 'post-botanica-02',
@@ -658,23 +662,25 @@ Trong buổi workshop tranh sỏi tại Botanica Garden:
   },
   {
     id: 'post-botanica-04',
-    title: 'Botanica Garden Hội An: Ốc Đảo Sinh Thái Chữa Lành Chỉ Cách Phố Cổ 2km',
-    slug: 'botanica-garden-oc-dao-sinh-thai-chua-lanh-hoi-an',
+    title: 'Hoi An has two sides. This is the quiet one.',
+    slug: 'the-other-hoi-an',
     category: 'Phát Triển Bền Vững',
-    thumbnail: '/images/img_0.jpeg',
-    summary: 'Rời xa nhịp sống hối hả, Botanica Garden tại 208 Lê Thánh Tông mở ra một Hội An rất khác: bình yên, thong thả và chan hòa cùng cỏ cây hoa lá.',
-    content: `Hội An có hai mặt. Một mặt là phố cổ nhộn nhịp với đèn lồng rực rỡ và dòng người tấp nập. Mặt còn lại là sự tĩnh lặng, trong lành của miền quê Cẩm Châu.
+    thumbnail: '/images/img_1.jpeg',
+    summary: `The Old Town is beautiful — and busy. Botanica Garden is the other Hoi An: a lush herb garden in Cam Chau where the day slows down.
 
-Botanica Garden được xây dựng với triết lý du lịch trách nhiệm:
-- Nói không với rác thải nhựa dùng một lần: 100% đồ uống được phục vụ bằng ly thủy tinh, ống hút tre và thìa gỗ.
-- Tự trồng và chăm sóc vườn thảo mộc hữu cơ: sả, hương nhu, bạc hà, hoa cúc, cỏ ngọt cung cấp trực tiếp cho các buổi workshop.
-- Kết nối cộng đồng nghệ nhân bản địa: Tạo việc làm và không gian giao lưu văn hóa chân thành giữa người dân địa phương và du khách khắp nơi trên thế giới.`,
+No tour-bus crowds, no rush. Just greenery, the scent of herbs, and people who genuinely love sharing their craft. Come for a coffee, stay to make something you'll keep.`,
+    content: `The Old Town is beautiful — and busy. Botanica Garden is the other Hoi An: a lush herb garden in Cam Chau where the day slows down.
+
+No tour-bus crowds, no rush. Just greenery, the scent of herbs, and people who genuinely love sharing their craft. Come for a coffee, stay to make something you'll keep.`,
     author: 'Emic Travel Eco Team',
     status: 'PUBLISHED',
     publishedAt: '2026-03-10T11:00:00Z',
     viewCount: 3120,
-    seoTitle: 'Khám Phá Khu Vườn Thảo Mộc Botanica Garden Hội An',
-    seoDescription: 'Giới thiệu Botanica Garden Hội An - điểm đến sinh thái yên bình cho các trải nghiệm thủ công, cà phê vườn và du lịch bền vững.',
+    seoTitle: 'The other Hoi An - Botanica Garden',
+    seoDescription: 'Discover Botanica Garden, the quiet and beautiful side of Hoi An in Cam Chau.',
+    eyebrow: 'The other Hoi An',
+    imageLabel: 'Herbs hand-picked from the Botanica garden',
+    guestReview: 'A beautiful spot to escape the chaos. — Guest review',
   },
   {
     id: 'post-botanica-05',
@@ -843,53 +849,7 @@ export const INITIAL_CAMPAIGNS: MarketingCampaign[] = [
   },
 ];
 
-export const INITIAL_MEDIA_FILES: MediaFile[] = [
-  {
-    id: 'media-01',
-    name: 'jeep-my-son-hero.jpg',
-    url: 'https://images.unsplash.com/photo-1528127269322-539801943592?auto=format&fit=crop&w=1200&q=80',
-    folder: 'TOURS',
-    sizeKb: 480,
-    mimeType: 'image/jpeg',
-    createdAt: '2026-03-01T08:00:00Z',
-  },
-  {
-    id: 'media-02',
-    name: 'thuyen-thung-cam-thanh.jpg',
-    url: 'https://images.unsplash.com/photo-1559592413-7cec4d0cae2b?auto=format&fit=crop&w=1200&q=80',
-    folder: 'TOURS',
-    sizeKb: 610,
-    mimeType: 'image/jpeg',
-    createdAt: '2026-03-01T08:30:00Z',
-  },
-  {
-    id: 'media-03',
-    name: 'eco-soap-workshop.jpg',
-    url: 'https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?auto=format&fit=crop&w=1200&q=80',
-    folder: 'SERVICES',
-    sizeKb: 390,
-    mimeType: 'image/jpeg',
-    createdAt: '2026-03-05T09:15:00Z',
-  },
-  {
-    id: 'media-04',
-    name: 'tra-que-cooking.jpg',
-    url: 'https://images.unsplash.com/photo-1556910103-1c02745aae4d?auto=format&fit=crop&w=1200&q=80',
-    folder: 'TOURS',
-    sizeKb: 540,
-    mimeType: 'image/jpeg',
-    createdAt: '2026-03-10T11:00:00Z',
-  },
-  {
-    id: 'media-05',
-    name: 'banner-home-summer.jpg',
-    url: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1600&q=80',
-    folder: 'BANNERS',
-    sizeKb: 850,
-    mimeType: 'image/jpeg',
-    createdAt: '2026-03-12T14:00:00Z',
-  },
-];
+export const INITIAL_MEDIA_FILES: MediaFile[] = [];
 
 export const INITIAL_AUDIT_LOGS: AuditLog[] = [
   {

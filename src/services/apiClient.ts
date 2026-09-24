@@ -295,6 +295,23 @@ export const apiClient = {
     return dataStore.updateBookingStatus(id, status);
   },
 
+  async updateAdminBooking(id: string, updates: Partial<Booking>) {
+    try {
+      const res = await fetch(`/api/admin/bookings/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updates),
+      });
+      if (res.ok) {
+        const json = await res.json();
+        return json.data as Booking;
+      }
+    } catch {
+      // fallback
+    }
+    return dataStore.updateBooking(id, updates);
+  },
+
   async sendAdminBookingEmail(id: string) {
     try {
       const res = await fetch(`/api/admin/bookings/${id}/send-email`, { method: 'POST' });
@@ -582,6 +599,10 @@ export const apiClient = {
 
   async deleteAdminMedia(id: string) {
     return dataStore.deleteMedia(id);
+  },
+
+  async clearAllAdminMedia() {
+    return dataStore.clearAllMedia();
   },
 
   async getAdminAuditLogs() {

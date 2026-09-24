@@ -1,0 +1,33 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Global default-deny is not strictly necessary for simple preview, but we want to allow reads and writes for all main collections.
+    match /banners/{bannerId} {
+      allow read, write: if true;
+    }
+    match /tours/{tourId} {
+      allow read, write: if true;
+    }
+    match /services/{serviceId} {
+      allow read, write: if true;
+    }
+    match /bookings/{bookingId} {
+      allow read, write: if true;
+    }
+    match /customers/{customerId} {
+      allow read, write: if true;
+    }
+    match /posts/{postId} {
+      allow read, write: if true;
+    }
+    match /feedbacks/{feedbackId} {
+      allow read, write: if true;
+    }
+    match /categories/{categoryId} {
+      allow read, write: if true;
+    }
+    match /siteConfigs/{configId} {
+      allow read, write: if true;
+    }
+  }
+}

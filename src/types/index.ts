@@ -114,6 +114,7 @@ export interface SiteConfig {
   phone: string;
   maps: string;
   address: string;
+  visitImage?: string;
 }
 
 export interface ServiceItem {
@@ -214,6 +215,9 @@ export interface Post {
   viewCount: number;
   seoTitle?: string;
   seoDescription?: string;
+  eyebrow?: string;
+  imageLabel?: string;
+  guestReview?: string;
 }
 
 export interface CustomerFeedback {

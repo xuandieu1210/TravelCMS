@@ -1,0 +1,210 @@
+{
+  "entities": {
+    "Banner": {
+      "title": "Banner",
+      "description": "Hero banner structure",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "subtitle": { "type": "string" },
+        "imageUrl": { "type": "string" },
+        "linkUrl": { "type": "string" },
+        "badgeText": { "type": "string" },
+        "buttonText": { "type": "string" },
+        "position": { "type": "string" },
+        "order": { "type": "number" },
+        "isActive": { "type": "boolean" }
+      },
+      "required": ["id", "title", "subtitle", "imageUrl"]
+    },
+    "Tour": {
+      "title": "Tour",
+      "description": "Sustainable workshop or tour package",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "slug": { "type": "string" },
+        "category": { "type": "string" },
+        "duration": { "type": "string" },
+        "level": { "type": "string" },
+        "description": { "type": "string" },
+        "imageUrl": { "type": "string" },
+        "gallery": { "type": "array" },
+        "ecoHighlights": { "type": "array" },
+        "included": { "type": "array" },
+        "itinerary": { "type": "array" },
+        "pricing": { "type": "object" },
+        "isFeatured": { "type": "boolean" },
+        "status": { "type": "string" },
+        "rating": { "type": "number" },
+        "reviewCount": { "type": "number" },
+        "viewCount": { "type": "number" },
+        "maxGroupSize": { "type": "number" },
+        "departureLocation": { "type": "string" },
+        "languages": { "type": "array" }
+      },
+      "required": ["id", "name", "slug", "category", "pricing"]
+    },
+    "ServiceItem": {
+      "title": "ServiceItem",
+      "description": "Additional services or amenities",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "icon": { "type": "string" },
+        "isActive": { "type": "boolean" }
+      },
+      "required": ["id", "title", "icon"]
+    },
+    "Booking": {
+      "title": "Booking",
+      "description": "Workshop or tour reservation details",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "bookingCode": { "type": "string" },
+        "tourId": { "type": "string" },
+        "tourName": { "type": "string" },
+        "customerName": { "type": "string" },
+        "customerEmail": { "type": "string" },
+        "customerPhone": { "type": "string" },
+        "bookingDate": { "type": "string" },
+        "timeSlot": { "type": "string" },
+        "adults": { "type": "number" },
+        "children": { "type": "number" },
+        "totalPrice": { "type": "number" },
+        "status": { "type": "string" },
+        "specialRequests": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "paymentMethod": { "type": "string" }
+      },
+      "required": ["id", "bookingCode", "tourId", "customerName", "customerEmail", "bookingDate"]
+    },
+    "Customer": {
+      "title": "Customer",
+      "description": "Customer contact and history details",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "fullName": { "type": "string" },
+        "email": { "type": "string" },
+        "phone": { "type": "string" },
+        "nationality": { "type": "string" },
+        "totalSpent": { "type": "number" },
+        "bookingsCount": { "type": "number" },
+        "notes": { "type": "string" }
+      },
+      "required": ["id", "fullName", "email"]
+    },
+    "Post": {
+      "title": "Post",
+      "description": "Sustainable news or garden blog post",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "slug": { "type": "string" },
+        "category": { "type": "string" },
+        "thumbnail": { "type": "string" },
+        "summary": { "type": "string" },
+        "content": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "author": { "type": "string" },
+        "status": { "type": "string" },
+        "viewCount": { "type": "number" },
+        "tags": { "type": "array" }
+      },
+      "required": ["id", "title", "slug", "content"]
+    },
+    "CustomerFeedback": {
+      "title": "CustomerFeedback",
+      "description": "Workshop participant reviews",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "customerName": { "type": "string" },
+        "rating": { "type": "number" },
+        "comment": { "type": "string" },
+        "tourName": { "type": "string" },
+        "tourId": { "type": "string" },
+        "avatarUrl": { "type": "string" },
+        "isApproved": { "type": "boolean" },
+        "isFeatured": { "type": "boolean" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "customerName", "rating", "comment"]
+    },
+    "Category": {
+      "title": "Category",
+      "description": "Dynamic categories for tours or news",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "type": { "type": "string" },
+        "slug": { "type": "string" },
+        "description": { "type": "string" }
+      },
+      "required": ["id", "name", "type", "slug"]
+    },
+    "SiteConfig": {
+      "title": "SiteConfig",
+      "description": "Contact info, links, and operational metrics",
+      "type": "object",
+      "properties": {
+        "email": { "type": "string" },
+        "phone": { "type": "string" },
+        "address": { "type": "string" },
+        "facebookUrl": { "type": "string" },
+        "instagramUrl": { "type": "string" },
+        "tripadvisorUrl": { "type": "string" },
+        "ecoBottlesSaved": { "type": "number" },
+        "ecoCompostKg": { "type": "number" },
+        "ecoSoapKg": { "type": "number" },
+        "ecoTreesPlanted": { "type": "number" }
+      }
+    }
+  },
+  "firestore": {
+    "/banners/{bannerId}": {
+      "schema": "Banner",
+      "description": "Collection of home hero and feature banners"
+    },
+    "/tours/{tourId}": {
+      "schema": "Tour",
+      "description": "Collection of sustainable tours and workshops"
+    },
+    "/services/{serviceId}": {
+      "schema": "ServiceItem",
+      "description": "Collection of supplementary green services"
+    },
+    "/bookings/{bookingId}": {
+      "schema": "Booking",
+      "description": "Collection of visitor class registrations"
+    },
+    "/customers/{customerId}": {
+      "schema": "Customer",
+      "description": "Collection of contact lead histories"
+    },
+    "/posts/{postId}": {
+      "schema": "Post",
+      "description": "Collection of garden journal articles"
+    },
+    "/feedbacks/{feedbackId}": {
+      "schema": "CustomerFeedback",
+      "description": "Collection of tour evaluations and testimonials"
+    },
+    "/categories/{categoryId}": {
+      "schema": "Category",
+      "description": "Collection of tour categories and tags"
+    },
+    "/siteConfigs/{configId}": {
+      "schema": "SiteConfig",
+      "description": "Single configuration document for contact information"
+    }
+  }
+}

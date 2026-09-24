@@ -1,6 +1,9 @@
 import express, { Request, Response } from 'express';
 import { createServer as createViteServer } from 'vite';
 import { INITIAL_TOURS, INITIAL_SERVICES, INITIAL_BOOKINGS, INITIAL_CUSTOMERS, INITIAL_BANNERS, INITIAL_POSTS, INITIAL_FEEDBACKS, INITIAL_CAMPAIGNS, INITIAL_MEDIA_FILES, INITIAL_AUDIT_LOGS, INITIAL_CATEGORIES } from './src/data/mockData';
+import { initializeApp, getApps } from 'firebase-admin/app';
+import { getFirestore } from 'firebase-admin/firestore';
+import firebaseConfig from './firebase-applet-config.json';
 
 import path from 'path';
 import fs from 'fs';
@@ -14,7 +17,50 @@ app.use(express.urlencoded({ limit: '50mb', extended: true }));
 // Serve uploaded static files if any
 app.use('/uploads', express.static(path.join(process.cwd(), 'public', 'uploads')));
 
-// In-memory data store for backend
+// Initialize Firebase Admin SDK
+if (!getApps().length) {
+  initializeApp({
+    projectId: firebaseConfig.projectId,
+  });
+}
+
+const db = getFirestore();
+
+// Clean undefined values for firestore compatibility
+function cleanForFirestore(obj: any): any {
+  if (obj === null || obj === undefined) return null;
+  if (Array.isArray(obj)) return obj.map(cleanForFirestore);
+  if (typeof obj === 'object') {
+    const cleaned: any = {};
+    for (const key in obj) {
+      if (obj[key] !== undefined) {
+        cleaned[key] = cleanForFirestore(obj[key]);
+      }
+    }
+    return cleaned;
+  }
+  return obj;
+}
+
+// Sync utilities
+async function saveToFirestore(collection: string, id: string, data: any) {
+  try {
+    const cleaned = cleanForFirestore(data);
+    await db.collection(collection).doc(id).set(cleaned);
+  } catch (error) {
+    console.error(`[Firestore Sync Error] Failed to save to ${collection}/${id}:`, error);
+  }
+}
+
+async function deleteFromFirestore(collection: string, id: string) {
+  try {
+    await db.collection(collection).doc(id).delete();
+  } catch (error) {
+    console.error(`[Firestore Sync Error] Failed to delete ${collection}/${id}:`, error);
+  }
+}
+
+// In-memory data store for backend acting as a performance cache
 let tours = [...INITIAL_TOURS];
 let services = [...INITIAL_SERVICES];
 let bookings = [...INITIAL_BOOKINGS];
@@ -26,6 +72,127 @@ let campaigns = [...INITIAL_CAMPAIGNS];
 let mediaFiles = [...INITIAL_MEDIA_FILES];
 let auditLogs = [...INITIAL_AUDIT_LOGS];
 let categories = [...INITIAL_CATEGORIES];
+
+async function syncAllFromFirestore() {
+  try {
+    console.log('[Firestore Sync] Restoring database state from cloud...');
+    
+    // Check and load banners
+    const bannersSnap = await db.collection('banners').get();
+    if (!bannersSnap.empty) {
+      banners = [];
+      bannersSnap.forEach(doc => banners.push(doc.data() as any));
+    } else {
+      console.log('[Firestore Sync] "banners" collection empty. Seeding initial banners...');
+      for (const banner of INITIAL_BANNERS) {
+        await saveToFirestore('banners', banner.id, banner);
+      }
+    }
+
+    // Check and load tours
+    const toursSnap = await db.collection('tours').get();
+    if (!toursSnap.empty) {
+      tours = [];
+      toursSnap.forEach(doc => tours.push(doc.data() as any));
+    } else {
+      console.log('[Firestore Sync] "tours" collection empty. Seeding initial tours...');
+      for (const tour of INITIAL_TOURS) {
+        await saveToFirestore('tours', tour.id, tour);
+      }
+    }
+
+    // Check and load services
+    const servicesSnap = await db.collection('services').get();
+    if (!servicesSnap.empty) {
+      services = [];
+      servicesSnap.forEach(doc => services.push(doc.data() as any));
+    } else {
+      console.log('[Firestore Sync] "services" collection empty. Seeding initial services...');
+      for (const s of INITIAL_SERVICES) {
+        await saveToFirestore('services', s.id, s);
+      }
+    }
+
+    // Check and load bookings
+    const bookingsSnap = await db.collection('bookings').get();
+    if (!bookingsSnap.empty) {
+      bookings = [];
+      bookingsSnap.forEach(doc => bookings.push(doc.data() as any));
+    } else {
+      console.log('[Firestore Sync] "bookings" collection empty. Seeding initial bookings...');
+      for (const b of INITIAL_BOOKINGS) {
+        await saveToFirestore('bookings', b.id, b);
+      }
+    }
+
+    // Check and load customers
+    const customersSnap = await db.collection('customers').get();
+    if (!customersSnap.empty) {
+      customers = [];
+      customersSnap.forEach(doc => customers.push(doc.data() as any));
+    } else {
+      console.log('[Firestore Sync] "customers" collection empty. Seeding initial customers...');
+      for (const c of INITIAL_CUSTOMERS) {
+        await saveToFirestore('customers', c.id, c);
+      }
+    }
+
+    // Check and load posts
+    const postsSnap = await db.collection('posts').get();
+    if (!postsSnap.empty) {
+      posts = [];
+      postsSnap.forEach(doc => posts.push(doc.data() as any));
+
+      // Force update or seed post-botanica-04 to ensure the user gets "The other Hoi An" with all the new fields
+      const p04 = INITIAL_POSTS.find(p => p.id === 'post-botanica-04');
+      if (p04) {
+        const existing04 = posts.find(p => p.id === 'post-botanica-04');
+        if (!existing04 || !existing04.eyebrow || existing04.title !== p04.title) {
+          console.log('[Firestore Sync] Overwriting/Seeding updated "post-botanica-04" post...');
+          await saveToFirestore('posts', p04.id, p04);
+          if (existing04) {
+            Object.assign(existing04, p04);
+          } else {
+            posts.push(p04);
+          }
+        }
+      }
+    } else {
+      console.log('[Firestore Sync] "posts" collection empty. Seeding initial posts...');
+      for (const p of INITIAL_POSTS) {
+        await saveToFirestore('posts', p.id, p);
+      }
+    }
+
+    // Check and load feedbacks
+    const feedbacksSnap = await db.collection('feedbacks').get();
+    if (!feedbacksSnap.empty) {
+      feedbacks = [];
+      feedbacksSnap.forEach(doc => feedbacks.push(doc.data() as any));
+    } else {
+      console.log('[Firestore Sync] "feedbacks" collection empty. Seeding initial feedbacks...');
+      for (const f of INITIAL_FEEDBACKS) {
+        await saveToFirestore('feedbacks', f.id, f);
+      }
+    }
+
+    // Check and load categories
+    const categoriesSnap = await db.collection('categories').get();
+    if (!categoriesSnap.empty) {
+      categories = [];
+      categoriesSnap.forEach(doc => categories.push(doc.data() as any));
+    } else {
+      console.log('[Firestore Sync] "categories" collection empty. Seeding initial categories...');
+      for (const cat of INITIAL_CATEGORIES) {
+        await saveToFirestore('categories', cat.id, cat);
+      }
+    }
+
+    console.log('[Firestore Sync] All collections synchronized successfully from Google Cloud!');
+  } catch (error) {
+    console.error('[Firestore Sync Error] Critical error during collection restoration:', error);
+  }
+}
 
 // ================= PUBLIC APIS =================
 
@@ -72,6 +239,7 @@ app.get('/api/public/tours/:slug', (req: Request, res: Response) => {
   const tour = tours.find((t) => t.slug === req.params.slug && t.status === 'PUBLISHED');
   if (!tour) return res.status(404).json({ success: false, message: 'Tour không tồn tại' });
   tour.viewCount += 1;
+  saveToFirestore('tours', tour.id, tour);
   res.json({ success: true, data: tour });
 });
 
@@ -107,7 +275,7 @@ app.post('/api/public/bookings', (req: Request, res: Response) => {
   const totalAmount = payload.numAdults * adultPrice + (payload.numChildren || 0) * childPrice;
   const finalAmount = totalAmount;
 
-  let customer = customers.find((c) => c.phone === payload.customerPhone || c.email === payload.customerEmail);
+  let customer = customers.find((c) => (payload.customerPhone && c.phone === payload.customerPhone) || c.email === payload.customerEmail);
   if (!customer) {
     customer = {
       id: 'cust-' + Date.now(),
@@ -158,6 +326,14 @@ app.post('/api/public/bookings', (req: Request, res: Response) => {
 
   bookings.unshift(newBooking);
 
+  // Sync to Firestore
+  if (payload.tourId) {
+    const tour = tours.find((t) => t.id === payload.tourId);
+    if (tour) saveToFirestore('tours', tour.id, tour);
+  }
+  saveToFirestore('customers', customer.id, customer);
+  saveToFirestore('bookings', newBooking.id, newBooking);
+
   auditLogs.unshift({
     id: 'log-' + Date.now(),
     userName: 'Khách hàng',
@@ -177,15 +353,17 @@ app.post('/api/public/bookings', (req: Request, res: Response) => {
 // GET /api/admin/dashboard/stats
 app.get('/api/admin/dashboard/stats', (_req: Request, res: Response) => {
   const todayStr = new Date().toISOString().slice(0, 10);
-  const todayBookings = bookings.filter((b) => b.createdAt.startsWith(todayStr)).length;
+  const todayBookings = bookings.filter((b) => b.createdAt && b.createdAt.startsWith(todayStr)).length;
   const pendingBookings = bookings.filter((b) => b.status === 'NEW').length;
   const totalRevenue = bookings
     .filter((b) => b.status === 'CONFIRMED' || b.status === 'PAID' || b.status === 'COMPLETED')
-    .reduce((acc, curr) => acc + curr.finalAmount, 0);
+    .reduce((acc, curr) => acc + (curr.finalAmount || 0), 0);
 
   const categoriesMap: Record<string, number> = {};
   tours.forEach((t) => {
-    categoriesMap[t.category] = (categoriesMap[t.category] || 0) + 1;
+    if (t.category) {
+      categoriesMap[t.category] = (categoriesMap[t.category] || 0) + 1;
+    }
   });
   const totalTours = tours.length;
   const tourCategoriesDistribution = Object.entries(categoriesMap).map(([category, count]) => ({
@@ -194,23 +372,49 @@ app.get('/api/admin/dashboard/stats', (_req: Request, res: Response) => {
     percentage: totalTours > 0 ? Math.round((count / totalTours) * 100) : 0,
   }));
 
-  const monthlyRevenue = [
-    { month: 'T10/25', revenue: 185000000, bookings: 42 },
-    { month: 'T11/25', revenue: 215000000, bookings: 56 },
-    { month: 'T12/25', revenue: 340000000, bookings: 78 },
-    { month: 'T01/26', revenue: 380000000, bookings: 92 },
-    { month: 'T02/26', revenue: 410000000, bookings: 104 },
-    { month: 'T03/26', revenue: totalRevenue + 50000000, bookings: bookings.length + 20 },
-  ];
+  // Generate dynamic stats for the last 6 months (based on actual dates in the system)
+  const last6Months: { key: string; label: string; revenue: number; bookings: number }[] = [];
+  const now = new Date();
+  for (let i = 5; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const yy = String(d.getFullYear()).slice(-2);
+    const key = `${d.getFullYear()}-${mm}`; // "YYYY-MM"
+    const label = `T${mm}/${yy}`; // "TMM/YY"
+    last6Months.push({ key, label, revenue: 0, bookings: 0 });
+  }
+
+  bookings.forEach((b) => {
+    if (!b.createdAt) return;
+    const bDate = new Date(b.createdAt);
+    if (isNaN(bDate.getTime())) return;
+    const mm = String(bDate.getMonth() + 1).padStart(2, '0');
+    const yyyy = bDate.getFullYear();
+    const key = `${yyyy}-${mm}`;
+
+    const monthObj = last6Months.find((m) => m.key === key);
+    if (monthObj) {
+      monthObj.bookings += 1;
+      if (b.status === 'CONFIRMED' || b.status === 'PAID' || b.status === 'COMPLETED') {
+        monthObj.revenue += b.finalAmount || 0;
+      }
+    }
+  });
+
+  const monthlyRevenue = last6Months.map((m) => ({
+    month: m.label,
+    revenue: m.revenue,
+    bookings: m.bookings,
+  }));
 
   res.json({
     success: true,
     data: {
       totalTours,
       totalServices: services.length,
-      todayBookings: todayBookings || 3,
+      todayBookings,
       pendingBookings,
-      totalRevenue: totalRevenue || 428500000,
+      totalRevenue,
       totalCustomers: customers.length,
       monthlyRevenue,
       tourCategoriesDistribution,
@@ -236,26 +440,33 @@ app.post('/api/admin/tours', (req: Request, res: Response) => {
     updatedAt: new Date().toISOString(),
   };
   tours.unshift(newTour);
+  saveToFirestore('tours', newTour.id, newTour);
   res.status(201).json({ success: true, data: newTour });
 });
 
 app.put('/api/admin/tours/:id', (req: Request, res: Response) => {
-  const idx = tours.findIndex((t) => t.id === req.params.id);
+  const { id } = req.params;
+  const idx = tours.findIndex((t) => t.id === id);
   if (idx === -1) return res.status(404).json({ success: false, message: 'Not found' });
   tours[idx] = { ...tours[idx], ...req.body, updatedAt: new Date().toISOString() };
+  saveToFirestore('tours', id, tours[idx]);
   res.json({ success: true, data: tours[idx] });
 });
 
 app.patch('/api/admin/tours/:id/status', (req: Request, res: Response) => {
-  const idx = tours.findIndex((t) => t.id === req.params.id);
+  const { id } = req.params;
+  const idx = tours.findIndex((t) => t.id === id);
   if (idx === -1) return res.status(404).json({ success: false, message: 'Not found' });
   tours[idx].status = req.body.status;
   tours[idx].updatedAt = new Date().toISOString();
+  saveToFirestore('tours', id, tours[idx]);
   res.json({ success: true, data: tours[idx] });
 });
 
 app.delete('/api/admin/tours/:id', (req: Request, res: Response) => {
-  tours = tours.filter((t) => t.id !== req.params.id);
+  const { id } = req.params;
+  tours = tours.filter((t) => t.id !== id);
+  deleteFromFirestore('tours', id);
   res.json({ success: true, message: 'Xóa tour thành công' });
 });
 
@@ -270,7 +481,8 @@ app.get('/api/admin/bookings', (_req: Request, res: Response) => {
 });
 
 app.patch('/api/admin/bookings/:id/status', (req: Request, res: Response) => {
-  const idx = bookings.findIndex((b) => b.id === req.params.id);
+  const { id } = req.params;
+  const idx = bookings.findIndex((b) => b.id === id);
   if (idx === -1) return res.status(404).json({ success: false, message: 'Not found' });
   bookings[idx].status = req.body.status;
   bookings[idx].updatedAt = new Date().toISOString();
@@ -278,6 +490,16 @@ app.patch('/api/admin/bookings/:id/status', (req: Request, res: Response) => {
     bookings[idx].confirmedAt = new Date().toISOString();
     bookings[idx].confirmedBy = 'Lê Xuân Diệu (Super Admin)';
   }
+  saveToFirestore('bookings', id, bookings[idx]);
+  res.json({ success: true, data: bookings[idx] });
+});
+
+app.put('/api/admin/bookings/:id', (req: Request, res: Response) => {
+  const { id } = req.params;
+  const idx = bookings.findIndex((b) => b.id === id);
+  if (idx === -1) return res.status(404).json({ success: false, message: 'Not found' });
+  bookings[idx] = { ...bookings[idx], ...req.body, updatedAt: new Date().toISOString() };
+  saveToFirestore('bookings', id, bookings[idx]);
   res.json({ success: true, data: bookings[idx] });
 });
 
@@ -307,6 +529,7 @@ app.post('/api/admin/banners', (req: Request, res: Response) => {
     updatedAt: new Date().toISOString(),
   };
   banners.push(newBanner);
+  saveToFirestore('banners', newBanner.id, newBanner);
   res.status(201).json({ success: true, data: newBanner });
 });
 
@@ -319,17 +542,22 @@ app.put('/api/admin/banners/:id', (req: Request, res: Response) => {
     ...req.body,
     updatedAt: new Date().toISOString(),
   };
+  saveToFirestore('banners', id, banners[idx]);
   res.json({ success: true, data: banners[idx] });
 });
 
 app.delete('/api/admin/banners/:id', (req: Request, res: Response) => {
   const { id } = req.params;
   banners = banners.filter((b) => b.id !== id);
+  deleteFromFirestore('banners', id);
   res.json({ success: true, message: 'Banner deleted' });
 });
 
-app.put('/api/admin/banners', (req: Request, res: Response) => {
+app.put('/api/admin/banners', async (req: Request, res: Response) => {
   banners = req.body;
+  for (const b of banners) {
+    await saveToFirestore('banners', b.id, b);
+  }
   res.json({ success: true, data: banners });
 });
 
@@ -346,6 +574,7 @@ app.post('/api/admin/posts', (req: Request, res: Response) => {
     publishedAt: new Date().toISOString(),
   };
   posts.unshift(newPost);
+  saveToFirestore('posts', newPost.id, newPost);
   res.status(201).json({ success: true, data: newPost });
 });
 
@@ -356,12 +585,14 @@ app.put('/api/admin/posts/:id', (req: Request, res: Response) => {
     return res.status(404).json({ success: false, message: 'Post not found' });
   }
   posts[idx] = { ...posts[idx], ...req.body };
+  saveToFirestore('posts', id, posts[idx]);
   res.json({ success: true, data: posts[idx] });
 });
 
 app.delete('/api/admin/posts/:id', (req: Request, res: Response) => {
   const { id } = req.params;
   posts = posts.filter((p) => p.id !== id);
+  deleteFromFirestore('posts', id);
   res.json({ success: true, message: 'Post deleted' });
 });
 
@@ -382,6 +613,7 @@ app.post('/api/admin/campaigns', (req: Request, res: Response) => {
     createdAt: new Date().toISOString(),
   };
   campaigns.unshift(newCamp);
+  saveToFirestore('campaigns', newCamp.id, newCamp);
   res.status(201).json({ success: true, data: newCamp });
 });
 
@@ -393,6 +625,7 @@ app.put('/api/admin/campaigns/:id', (req: Request, res: Response) => {
     return;
   }
   campaigns[idx] = { ...campaigns[idx], ...req.body };
+  saveToFirestore('campaigns', id, campaigns[idx]);
   res.json({ success: true, data: campaigns[idx] });
 });
 
@@ -404,6 +637,7 @@ app.delete('/api/admin/campaigns/:id', (req: Request, res: Response) => {
     return;
   }
   campaigns.splice(idx, 1);
+  deleteFromFirestore('campaigns', id);
   res.json({ success: true, message: 'Đã xóa chiến dịch thành công' });
 });
 
@@ -419,26 +653,33 @@ app.post('/api/admin/feedbacks', (req: Request, res: Response) => {
     createdAt: new Date().toISOString(),
   };
   feedbacks.unshift(newFb);
+  saveToFirestore('feedbacks', newFb.id, newFb);
   res.json({ success: true, data: newFb });
 });
 
 app.put('/api/admin/feedbacks/:id', (req: Request, res: Response) => {
-  const idx = feedbacks.findIndex((f) => f.id === req.params.id);
+  const { id } = req.params;
+  const idx = feedbacks.findIndex((f) => f.id === id);
   if (idx === -1) return res.status(404).json({ success: false, message: 'Not found' });
   feedbacks[idx] = { ...feedbacks[idx], ...req.body };
+  saveToFirestore('feedbacks', id, feedbacks[idx]);
   res.json({ success: true, data: feedbacks[idx] });
 });
 
 app.delete('/api/admin/feedbacks/:id', (req: Request, res: Response) => {
-  feedbacks = feedbacks.filter((f) => f.id !== req.params.id);
+  const { id } = req.params;
+  feedbacks = feedbacks.filter((f) => f.id !== id);
+  deleteFromFirestore('feedbacks', id);
   res.json({ success: true, message: 'Đã xóa đánh giá' });
 });
 
 app.patch('/api/admin/feedbacks/:id/approve', (req: Request, res: Response) => {
-  const idx = feedbacks.findIndex((f) => f.id === req.params.id);
+  const { id } = req.params;
+  const idx = feedbacks.findIndex((f) => f.id === id);
   if (idx === -1) return res.status(404).json({ success: false, message: 'Not found' });
   feedbacks[idx].isApproved = req.body.isApproved;
   if (req.body.isFeatured !== undefined) feedbacks[idx].isFeatured = req.body.isFeatured;
+  saveToFirestore('feedbacks', id, feedbacks[idx]);
   res.json({ success: true, data: feedbacks[idx] });
 });
 
@@ -504,10 +745,11 @@ app.post('/api/admin/categories', (req: Request, res: Response) => {
     createdAt: new Date().toISOString(),
   };
   categories.push(newCat);
+  saveToFirestore('categories', newCat.id, newCat);
   res.status(201).json({ success: true, data: newCat });
 });
 
-app.put('/api/admin/categories/:id', (req: Request, res: Response) => {
+app.put('/api/admin/categories/:id', async (req: Request, res: Response) => {
   const { id } = req.params;
   const idx = categories.findIndex((c) => c.id === id);
   if (idx === -1) return res.status(404).json({ success: false, message: 'Category not found' });
@@ -515,29 +757,46 @@ app.put('/api/admin/categories/:id', (req: Request, res: Response) => {
   categories[idx] = { ...categories[idx], ...req.body };
   const newName = categories[idx].name;
 
+  await saveToFirestore('categories', id, categories[idx]);
+
   // Cascade rename to tours
   if (newName && oldName && oldName !== newName) {
     tours = tours.map((t) => (t.category === oldName ? { ...t, category: newName } : t));
+    // Save updated tours
+    for (const t of tours) {
+      if (t.category === newName) {
+        await saveToFirestore('tours', t.id, t);
+      }
+    }
   }
 
   res.json({ success: true, data: categories[idx] });
 });
 
-app.delete('/api/admin/categories/:id', (req: Request, res: Response) => {
+app.delete('/api/admin/categories/:id', async (req: Request, res: Response) => {
   const { id } = req.params;
   const cat = categories.find((c) => c.id === id);
   if (!cat) return res.status(404).json({ success: false, message: 'Category not found' });
   const deletedName = cat.name;
   categories = categories.filter((c) => c.id !== id);
+  await deleteFromFirestore('categories', id);
 
   // Cascade fallback category to tours
   const fallbackCat = categories[0]?.name || 'Thủ công gia đình';
   tours = tours.map((t) => (t.category === deletedName ? { ...t, category: fallbackCat } : t));
+  for (const t of tours) {
+    if (t.category === fallbackCat) {
+      await saveToFirestore('tours', t.id, t);
+    }
+  }
 
   res.json({ success: true, message: 'Category deleted' });
 });
 
 async function startServer() {
+  // Sync state from Google Cloud Firestore on startup
+  await syncAllFromFirestore();
+
   if (process.env.NODE_ENV !== 'production') {
     const vite = await createViteServer({
       server: { middlewareMode: true },

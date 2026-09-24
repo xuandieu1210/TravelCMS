@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Banner, Post, CustomerFeedback, SiteConfig } from '../../types';
 import {
   FileText,
@@ -35,6 +35,9 @@ interface CmsContentViewProps {
   onUpdatePost?: (id: string, post: Partial<Post>) => void;
   onDeletePost: (id: string) => void;
   onUpdateSiteConfig?: (config: Partial<SiteConfig>) => Promise<void>;
+  onCreateBanner?: (banner: Omit<Banner, 'id'>) => void;
+  onUpdateBanner?: (id: string, banner: Partial<Banner>) => void;
+  onDeleteBanner?: (id: string) => void;
 }
 
 export const CmsContentView: React.FC<CmsContentViewProps> = ({
@@ -51,6 +54,9 @@ export const CmsContentView: React.FC<CmsContentViewProps> = ({
   onUpdatePost,
   onDeletePost,
   onUpdateSiteConfig,
+  onCreateBanner,
+  onUpdateBanner,
+  onDeleteBanner,
 }) => {
   const [activeTab, setActiveTab] = useState<'posts' | 'banners' | 'feedbacks' | 'config'>('posts');
   const [postSearchTerm, setPostSearchTerm] = useState('');
@@ -67,9 +73,26 @@ export const CmsContentView: React.FC<CmsContentViewProps> = ({
       phone: '+84 905 982 919',
       maps: 'https://www.google.com/maps/search/?api=1&query=Botanica+Garden+208+Le+Thanh+Tong+Cam+Chau+Hoi+An',
       address: '208 Le Thanh Tong, Cam Chau, Hoi An',
+      visitImage: '',
     }
   );
   const [isSavedConfig, setIsSavedConfig] = useState(false);
+
+  useEffect(() => {
+    if (siteConfig) {
+      setConfigForm({
+        whatsapp: siteConfig.whatsapp || '',
+        messenger: siteConfig.messenger || '',
+        instagram: siteConfig.instagram || '',
+        facebook: siteConfig.facebook || '',
+        email: siteConfig.email || '',
+        phone: siteConfig.phone || '',
+        maps: siteConfig.maps || '',
+        address: siteConfig.address || '',
+        visitImage: siteConfig.visitImage || '',
+      });
+    }
+  }, [siteConfig]);
 
   // Post modal (create & edit)
   const [isPostModalOpen, setIsPostModalOpen] = useState(false);
@@ -83,6 +106,9 @@ export const CmsContentView: React.FC<CmsContentViewProps> = ({
     content: '',
     author: 'Emic Media Team',
     status: 'PUBLISHED' as 'DRAFT' | 'PUBLISHED',
+    eyebrow: '',
+    imageLabel: '',
+    guestReview: '',
   });
 
   // Feedback modal (create & edit)
@@ -99,6 +125,81 @@ export const CmsContentView: React.FC<CmsContentViewProps> = ({
     isFeatured: true,
   });
 
+  // Banner modal (create & edit)
+  const [isBannerModalOpen, setIsBannerModalOpen] = useState(false);
+  const [editingBannerId, setEditingBannerId] = useState<string | null>(null);
+  const [bannerFormData, setBannerFormData] = useState({
+    title: '',
+    subtitle: '',
+    imageUrl: 'https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?auto=format&fit=crop&w=1600&q=80',
+    linkUrl: '#workshops',
+    badgeText: '',
+    buttonText: 'Choose a workshop',
+    position: 'HOME_HERO',
+    order: 1,
+    isActive: true,
+  });
+
+  // Open Create Banner Modal
+  const handleOpenCreateBanner = () => {
+    setEditingBannerId(null);
+    setBannerFormData({
+      title: '',
+      subtitle: '',
+      imageUrl: '/images/img_0.jpeg',
+      linkUrl: '#workshops',
+      badgeText: 'HOI AN · 2 KM FROM THE OLD TOWN',
+      buttonText: 'Choose a workshop',
+      position: 'HOME_HERO',
+      order: banners.length + 1,
+      isActive: true,
+    });
+    setIsBannerModalOpen(true);
+  };
+
+  // Open Edit Banner Modal
+  const handleOpenEditBanner = (banner: Banner) => {
+    setEditingBannerId(banner.id);
+    setBannerFormData({
+      title: banner.title,
+      subtitle: banner.subtitle,
+      imageUrl: banner.imageUrl,
+      linkUrl: banner.linkUrl || '#workshops',
+      badgeText: banner.badgeText || 'HOI AN · 2 KM FROM THE OLD TOWN',
+      buttonText: banner.buttonText || 'Choose a workshop',
+      position: banner.position || 'HOME_HERO',
+      order: banner.order || 1,
+      isActive: banner.isActive !== false,
+    });
+    setIsBannerModalOpen(true);
+  };
+
+  // Submit Banner Form
+  const handleSaveBannerSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!bannerFormData.title.trim() || !bannerFormData.subtitle.trim()) {
+      alert('Vui lòng điền tiêu đề và mô tả của banner');
+      return;
+    }
+
+    const submissionData = {
+      ...bannerFormData,
+      position: bannerFormData.position as "HOME_HERO" | "PROMOTION_BAR" | "SIDEBAR"
+    };
+
+    if (editingBannerId) {
+      if (onUpdateBanner) {
+        onUpdateBanner(editingBannerId, submissionData);
+      }
+    } else {
+      if (onCreateBanner) {
+        onCreateBanner(submissionData);
+      }
+    }
+
+    setIsBannerModalOpen(false);
+  };
+
   // Open Create Post Modal
   const handleOpenCreatePost = () => {
     setEditingPostId(null);
@@ -111,6 +212,9 @@ export const CmsContentView: React.FC<CmsContentViewProps> = ({
       content: '',
       author: 'Emic Media Team',
       status: 'PUBLISHED',
+      eyebrow: '',
+      imageLabel: '',
+      guestReview: '',
     });
     setIsPostModalOpen(true);
   };
@@ -127,6 +231,9 @@ export const CmsContentView: React.FC<CmsContentViewProps> = ({
       content: post.content,
       author: post.author,
       status: post.status,
+      eyebrow: post.eyebrow || '',
+      imageLabel: post.imageLabel || '',
+      guestReview: post.guestReview || '',
     });
     setIsPostModalOpen(true);
   };
@@ -148,6 +255,9 @@ export const CmsContentView: React.FC<CmsContentViewProps> = ({
         status: postFormData.status,
         seoTitle: postFormData.title,
         seoDescription: postFormData.summary,
+        eyebrow: postFormData.eyebrow,
+        imageLabel: postFormData.imageLabel,
+        guestReview: postFormData.guestReview,
       });
     } else {
       onCreatePost({
@@ -162,6 +272,9 @@ export const CmsContentView: React.FC<CmsContentViewProps> = ({
         publishedAt: new Date().toISOString(),
         seoTitle: postFormData.title,
         seoDescription: postFormData.summary,
+        eyebrow: postFormData.eyebrow,
+        imageLabel: postFormData.imageLabel,
+        guestReview: postFormData.guestReview,
       });
     }
 
@@ -336,43 +449,92 @@ export const CmsContentView: React.FC<CmsContentViewProps> = ({
 
       {/* TAB 1: Banners */}
       {activeTab === 'banners' && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in duration-150">
-          {banners.map((b) => (
-            <div
-              key={b.id}
-              className="bg-white rounded-2xl border border-stone-200 overflow-hidden shadow-2xs hover:shadow-md transition-shadow"
-            >
-              <div className="relative h-48 bg-stone-100">
-                <img src={b.imageUrl} alt={b.title} className="w-full h-full object-cover" />
-                <span
-                  className={`absolute top-3 right-3 text-[10px] font-bold px-2.5 py-1 rounded-full ${
-                    b.isActive ? 'bg-emerald-600 text-white' : 'bg-stone-800/80 text-stone-300'
-                  }`}
-                >
-                  {b.isActive ? 'Đang hiển thị' : 'Đã ẩn'}
-                </span>
-                <span className="absolute bottom-3 left-3 bg-stone-900/70 text-white text-[10px] font-bold px-2 py-0.5 rounded">
-                  Vị trí: #{b.order}
-                </span>
-              </div>
-              <div className="p-4 flex items-center justify-between">
-                <div>
-                  <h4 className="text-sm font-bold text-stone-900">{b.title}</h4>
-                  <p className="text-xs text-stone-500">{b.subtitle}</p>
-                </div>
-                <button
-                  onClick={() => onToggleBanner(b.id, !b.isActive)}
-                  className={`text-xs font-bold px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${
-                    b.isActive
-                      ? 'bg-stone-100 hover:bg-stone-200 text-stone-700'
-                      : 'bg-emerald-700 hover:bg-emerald-800 text-white'
-                  }`}
-                >
-                  {b.isActive ? 'Tạm ẩn' : 'Bật hiển thị'}
-                </button>
-              </div>
+        <div className="space-y-4 animate-in fade-in duration-150">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white p-4 rounded-xl border border-stone-200 shadow-2xs gap-3">
+            <div>
+              <h3 className="text-sm font-bold text-stone-900">Quản Lý Banner Giao Diện</h3>
+              <p className="text-xs text-stone-500">Thêm, sửa, xóa, hiển thị các banner lớn ở màn hình trang chủ.</p>
             </div>
-          ))}
+            <button
+              onClick={handleOpenCreateBanner}
+              className="flex items-center gap-1.5 bg-emerald-700 hover:bg-emerald-800 text-white font-bold px-4 py-2 rounded-xl text-xs shadow-sm transition-all active:scale-95 cursor-pointer"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Thêm Banner Mới</span>
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {banners.map((b) => (
+              <div
+                key={b.id}
+                className="bg-white rounded-2xl border border-stone-200 overflow-hidden shadow-2xs hover:shadow-md transition-shadow flex flex-col justify-between"
+              >
+                <div className="relative h-48 bg-stone-100">
+                  <img src={b.imageUrl} alt={b.title} className="w-full h-full object-cover" />
+                  <span
+                    className={`absolute top-3 right-3 text-[10px] font-bold px-2.5 py-1 rounded-full ${
+                      b.isActive ? 'bg-emerald-600 text-white' : 'bg-stone-800/80 text-stone-300'
+                    }`}
+                  >
+                    {b.isActive ? 'Đang hiển thị' : 'Đã ẩn'}
+                  </span>
+                  <span className="absolute bottom-3 left-3 bg-stone-900/70 text-white text-[10px] font-bold px-2 py-0.5 rounded">
+                    Vị trí: #{b.order}
+                  </span>
+                </div>
+                <div className="p-4 space-y-3 flex-1 flex flex-col justify-between">
+                  <div>
+                    <span className="text-[10px] font-bold tracking-widest text-emerald-700 uppercase bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100 block w-max mb-1.5">
+                      {b.badgeText || 'HOI AN · 2 KM FROM THE OLD TOWN'}
+                    </span>
+                    <h4 className="text-sm font-bold text-stone-900 leading-snug">{b.title}</h4>
+                    <p className="text-xs text-stone-500 line-clamp-3 mt-1 leading-relaxed">{b.subtitle}</p>
+                    {b.buttonText && (
+                      <div className="mt-2 text-[11px] text-stone-600 flex items-center gap-1.5 flex-wrap">
+                        <span className="font-semibold">Nút CTA:</span> 
+                        <span className="bg-stone-100 px-1.5 py-0.5 rounded text-stone-800 font-medium">{b.buttonText}</span> 
+                        <span className="text-stone-300">→</span> 
+                        <span className="text-stone-400 font-mono text-[10px]">{b.linkUrl || '#'}</span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex items-center justify-between pt-3 border-t border-stone-100 gap-2">
+                    <div className="flex gap-1">
+                      <button
+                        onClick={() => handleOpenEditBanner(b)}
+                        className="p-1.5 text-stone-500 hover:text-emerald-700 hover:bg-emerald-50 rounded-lg transition-colors cursor-pointer"
+                        title="Chỉnh sửa Banner"
+                      >
+                        <Edit2 className="w-4.5 h-4.5" />
+                      </button>
+                      <button
+                        onClick={() => {
+                          if (confirm(`Bạn có muốn xóa banner "${b.title}"?`)) {
+                            if (onDeleteBanner) onDeleteBanner(b.id);
+                          }
+                        }}
+                        className="p-1.5 text-stone-400 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+                        title="Xóa Banner"
+                      >
+                        <Trash2 className="w-4.5 h-4.5" />
+                      </button>
+                    </div>
+                    <button
+                      onClick={() => onToggleBanner(b.id, !b.isActive)}
+                      className={`text-xs font-bold px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${
+                        b.isActive
+                          ? 'bg-stone-100 hover:bg-stone-200 text-stone-700'
+                          : 'bg-emerald-700 hover:bg-emerald-800 text-white'
+                      }`}
+                    >
+                      {b.isActive ? 'Tạm ẩn' : 'Bật hiển thị'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
@@ -406,7 +568,7 @@ export const CmsContentView: React.FC<CmsContentViewProps> = ({
           </div>
 
           {/* Search & Category Filter */}
-          <div className="bg-white p-4 rounded-xl border border-stone-200 shadow-2xs flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between">
+          <div className="bg-white p-4 rounded-xl border border-stone-200 shadow-2xs flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
             <div className="relative flex-1 max-w-md">
               <Search className="w-4 h-4 text-stone-400 absolute left-3 top-1/2 -translate-y-1/2" />
               <input
@@ -416,38 +578,6 @@ export const CmsContentView: React.FC<CmsContentViewProps> = ({
                 placeholder="Tìm theo tiêu đề, tóm tắt, tác giả..."
                 className="w-full pl-9 pr-3 py-2 text-xs rounded-lg border border-stone-200 focus:outline-none focus:ring-2 focus:ring-emerald-600 bg-stone-50/50"
               />
-            </div>
-
-            <div className="flex flex-wrap gap-1.5 items-center">
-              <span className="text-[11px] text-stone-400 font-medium mr-1">Chuyên mục:</span>
-              <button
-                type="button"
-                onClick={() => setPostCategoryFilter('ALL')}
-                className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-colors cursor-pointer ${
-                  postCategoryFilter === 'ALL'
-                    ? 'bg-emerald-800 text-white'
-                    : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
-                }`}
-              >
-                Tất cả ({posts.length})
-              </button>
-              {uniquePostCategories.map((cat) => {
-                const count = posts.filter((p) => p.category === cat).length;
-                return (
-                  <button
-                    key={cat}
-                    type="button"
-                    onClick={() => setPostCategoryFilter(cat)}
-                    className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-colors cursor-pointer ${
-                      postCategoryFilter === cat
-                        ? 'bg-emerald-800 text-white'
-                        : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
-                    }`}
-                  >
-                    {cat} ({count})
-                  </button>
-                );
-              })}
             </div>
           </div>
 
@@ -475,7 +605,6 @@ export const CmsContentView: React.FC<CmsContentViewProps> = ({
                   <thead>
                     <tr className="bg-stone-50 text-stone-500 font-bold border-b border-stone-200">
                       <th className="py-3 px-4">Bài Viết</th>
-                      <th className="py-3 px-4">Chuyên Mục</th>
                       <th className="py-3 px-4">Tác Giả</th>
                       <th className="py-3 px-4">Ngày Đăng</th>
                       <th className="py-3 px-4">Lượt Đọc</th>
@@ -498,11 +627,6 @@ export const CmsContentView: React.FC<CmsContentViewProps> = ({
                               <p className="text-[11px] text-stone-500 line-clamp-1 mt-0.5">{p.summary}</p>
                             </div>
                           </div>
-                        </td>
-                        <td className="py-3 px-4 whitespace-nowrap">
-                          <span className="bg-emerald-50 text-emerald-800 font-bold px-2 py-0.5 rounded text-[10px] border border-emerald-200">
-                            {p.category}
-                          </span>
                         </td>
                         <td className="py-3 px-4 text-stone-700 whitespace-nowrap">{p.author}</td>
                         <td className="py-3 px-4 text-stone-500 whitespace-nowrap">
@@ -771,6 +895,14 @@ export const CmsContentView: React.FC<CmsContentViewProps> = ({
               />
             </div>
 
+            <ImageUploadField
+              label="Ảnh Ở Mục Đến Thăm (Visit Image)"
+              value={configForm.visitImage || ''}
+              onChange={(url) => setConfigForm({ ...configForm, visitImage: url })}
+              folder="OTHER"
+              recommendedSize="1200x800px (Tỉ lệ 3:2)"
+            />
+
             <div className="pt-3 border-t border-stone-100 flex items-center gap-3">
               <button
                 type="submit"
@@ -807,34 +939,35 @@ export const CmsContentView: React.FC<CmsContentViewProps> = ({
             </div>
 
             <form onSubmit={handleSavePostSubmit} className="space-y-4 text-xs">
-              <div>
-                <label className="block font-bold text-stone-700 mb-1">
-                  Tiêu Đề Bài Viết <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={postFormData.title}
-                  onChange={(e) => setPostFormData({ ...postFormData, title: e.target.value })}
-                  placeholder="Tiêu đề bài viết..."
-                  className="w-full p-2.5 rounded-xl border border-stone-200 text-xs focus:border-emerald-600 outline-none"
-                />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold text-stone-700 mb-1">
+                    Nhãn Phụ / Eyebrow / Label
+                  </label>
+                  <input
+                    type="text"
+                    value={postFormData.eyebrow}
+                    onChange={(e) => setPostFormData({ ...postFormData, eyebrow: e.target.value })}
+                    placeholder="Ví dụ: CÂU CHUYỆN ĐỊA PHƯƠNG, SLOW LIVING..."
+                    className="w-full p-2.5 rounded-xl border border-stone-200 text-xs focus:border-emerald-600 outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block font-bold text-stone-700 mb-1">
+                    Tiêu Đề Bài Viết <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={postFormData.title}
+                    onChange={(e) => setPostFormData({ ...postFormData, title: e.target.value })}
+                    placeholder="Tiêu đề bài viết..."
+                    className="w-full p-2.5 rounded-xl border border-stone-200 text-xs focus:border-emerald-600 outline-none"
+                  />
+                </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-bold text-stone-700 mb-1">Danh Mục</label>
-                  <select
-                    value={postFormData.category}
-                    onChange={(e) => setPostFormData({ ...postFormData, category: e.target.value })}
-                    className="w-full p-2.5 rounded-xl border border-stone-200 text-xs bg-white focus:border-emerald-600 outline-none"
-                  >
-                    <option value="Phát Triển Bền Vững">Phát Triển Bền Vững</option>
-                    <option value="Cộng Đồng & Xã Hội">Cộng Đồng & Xã Hội</option>
-                    <option value="Cẩm Nang Du Lịch">Cẩm Nang Du Lịch</option>
-                    <option value="Văn Hóa Phố Hội">Văn Hóa Phố Hội</option>
-                  </select>
-                </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block font-bold text-stone-700 mb-1">Tác Giả</label>
                   <input
@@ -847,14 +980,27 @@ export const CmsContentView: React.FC<CmsContentViewProps> = ({
               </div>
 
               {/* Upload Ảnh Bìa Bài Viết Trực Tiếp */}
-              <ImageUploadField
-                label="Ảnh Bìa Bài Viết (Tin Tức)"
-                value={postFormData.thumbnail}
-                onChange={(url) => setPostFormData({ ...postFormData, thumbnail: url })}
-                folder="BLOG"
-                recommendedSize="1200x800px (Tỉ lệ 3:2)"
-                required
-              />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-end">
+                <ImageUploadField
+                  label="Ảnh Bìa Bài Viết (Tin Tức)"
+                  value={postFormData.thumbnail}
+                  onChange={(url) => setPostFormData({ ...postFormData, thumbnail: url })}
+                  folder="BLOG"
+                  recommendedSize="1200x800px (Tỉ lệ 3:2)"
+                  required
+                  className="w-full"
+                />
+                <div>
+                  <label className="block font-bold text-stone-700 mb-1">Chú Thích Ảnh / Image Label</label>
+                  <input
+                    type="text"
+                    value={postFormData.imageLabel}
+                    onChange={(e) => setPostFormData({ ...postFormData, imageLabel: e.target.value })}
+                    placeholder="Ví dụ: Ảnh: Khách mời tại khu vườn Botanica..."
+                    className="w-full p-2.5 rounded-xl border border-stone-200 text-xs focus:border-emerald-600 outline-none"
+                  />
+                </div>
+              </div>
 
               <div>
                 <label className="block font-bold text-stone-700 mb-1">Tóm Tắt Ngắn</label>
@@ -874,6 +1020,17 @@ export const CmsContentView: React.FC<CmsContentViewProps> = ({
                   value={postFormData.content}
                   onChange={(e) => setPostFormData({ ...postFormData, content: e.target.value })}
                   placeholder="Nội dung bài viết..."
+                  className="w-full p-2.5 rounded-xl border border-stone-200 text-xs resize-none focus:border-emerald-600 outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block font-bold text-stone-700 mb-1">Đánh giá của khách hàng đi kèm / Guest Review</label>
+                <textarea
+                  rows={3}
+                  value={postFormData.guestReview}
+                  onChange={(e) => setPostFormData({ ...postFormData, guestReview: e.target.value })}
+                  placeholder="Ví dụ: 'Buổi học hôm nay rất thú vị, người hướng dẫn siêu dễ thương...' — Sarah, Úc."
                   className="w-full p-2.5 rounded-xl border border-stone-200 text-xs resize-none focus:border-emerald-600 outline-none"
                 />
               </div>
@@ -1108,9 +1265,6 @@ export const CmsContentView: React.FC<CmsContentViewProps> = ({
                 ✕
               </button>
               <div className="absolute bottom-4 left-5 flex items-center gap-2">
-                <span className="bg-white/95 backdrop-blur-xs text-emerald-900 text-xs font-bold px-3 py-1 rounded-full shadow-md">
-                  {previewingPost.category}
-                </span>
                 <span
                   className={`text-xs font-bold px-3 py-1 rounded-full shadow-md ${
                     previewingPost.status === 'PUBLISHED'
@@ -1123,7 +1277,13 @@ export const CmsContentView: React.FC<CmsContentViewProps> = ({
               </div>
             </div>
 
-            <div className="p-6 sm:p-8 space-y-4">
+            {previewingPost.imageLabel && (
+              <p className="text-[10px] text-stone-400 font-medium italic text-right px-6 mt-1.5">
+                {previewingPost.imageLabel}
+              </p>
+            )}
+
+            <div className="p-6 sm:p-8 space-y-4 pt-4">
               <div className="flex flex-wrap items-center gap-2 text-xs text-stone-500">
                 <span className="font-bold text-stone-800">{previewingPost.author}</span>
                 <span>•</span>
@@ -1132,9 +1292,16 @@ export const CmsContentView: React.FC<CmsContentViewProps> = ({
                 <span>{(previewingPost.viewCount || 0).toLocaleString()} lượt đọc</span>
               </div>
 
-              <h2 className="text-xl sm:text-2xl font-black text-stone-900 font-serif leading-snug">
-                {previewingPost.title}
-              </h2>
+              <div>
+                {previewingPost.eyebrow && (
+                  <span className="text-[10px] font-black tracking-widest text-emerald-700 uppercase block mb-1">
+                    {previewingPost.eyebrow}
+                  </span>
+                )}
+                <h2 className="text-xl sm:text-2xl font-black text-stone-900 font-serif leading-snug">
+                  {previewingPost.title}
+                </h2>
+              </div>
 
               <div className="bg-amber-50/80 border-l-4 border-amber-600 p-3.5 rounded-r-xl text-xs sm:text-sm text-stone-700 italic leading-relaxed">
                 {previewingPost.summary}
@@ -1143,6 +1310,17 @@ export const CmsContentView: React.FC<CmsContentViewProps> = ({
               <div className="text-stone-700 text-xs sm:text-sm leading-relaxed whitespace-pre-line space-y-3 pt-2">
                 {previewingPost.content}
               </div>
+
+              {previewingPost.guestReview && (
+                <div className="bg-emerald-50/50 border border-emerald-100/60 rounded-2xl p-4 mt-5 space-y-2">
+                  <span className="text-[9px] font-black uppercase text-emerald-800 tracking-wider block">
+                    Đánh giá từ du khách / Guest Review
+                  </span>
+                  <p className="text-xs text-stone-600 italic">
+                    "{previewingPost.guestReview}"
+                  </p>
+                </div>
+              )}
 
               <div className="pt-6 border-t border-stone-200 flex items-center justify-between">
                 <span className="text-[11px] text-stone-400 font-mono">
@@ -1169,6 +1347,201 @@ export const CmsContentView: React.FC<CmsContentViewProps> = ({
                     Đóng
                   </button>
                 </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* BANNER MODAL: Thêm / Sửa Banner Giao Diện */}
+      {isBannerModalOpen && (
+        <div className="fixed inset-0 z-50 bg-stone-900/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white w-full max-w-3xl rounded-3xl p-6 shadow-2xl space-y-4 my-8 max-h-[90vh] overflow-y-auto animate-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between pb-3 border-b border-stone-100">
+              <h3 className="font-serif font-black text-stone-900 text-lg">
+                {editingBannerId ? 'Chỉnh Sửa Banner Giao Diện' : 'Thêm Banner Mới'}
+              </h3>
+              <button
+                type="button"
+                onClick={() => setIsBannerModalOpen(false)}
+                className="p-1 rounded-full text-stone-400 hover:text-stone-700 hover:bg-stone-100 cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+              {/* Form Side */}
+              <form onSubmit={handleSaveBannerSubmit} className="space-y-4 text-xs lg:col-span-7">
+                <div>
+                  <label className="block font-bold text-stone-700 mb-1">
+                    Nhãn phụ / Eyebrow / Label (Dòng 1) <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={bannerFormData.badgeText}
+                    onChange={(e) =>
+                      setBannerFormData({ ...bannerFormData, badgeText: e.target.value })
+                    }
+                    placeholder="Ví dụ: HOI AN · 2 KM FROM THE OLD TOWN"
+                    className="w-full p-2.5 rounded-xl border border-stone-200 text-xs focus:border-emerald-600 outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-bold text-stone-700 mb-1">
+                    Tiêu đề chính / Title (Dòng 2) <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={bannerFormData.title}
+                    onChange={(e) =>
+                      setBannerFormData({ ...bannerFormData, title: e.target.value })
+                    }
+                    placeholder="Ví dụ: Slow down in a Hoi An Botanica Garden."
+                    className="w-full p-2.5 rounded-xl border border-stone-200 text-xs focus:border-emerald-600 outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-bold text-stone-700 mb-1">
+                    Mô tả / Description / Subtitle (Dòng 3) <span className="text-red-500">*</span>
+                  </label>
+                  <textarea
+                    required
+                    rows={4}
+                    value={bannerFormData.subtitle}
+                    onChange={(e) =>
+                      setBannerFormData({ ...bannerFormData, subtitle: e.target.value })
+                    }
+                    placeholder="Ví dụ: Spend two unhurried hours making something Vietnamese by hand — with a warm, English-speaking host, in a green garden away from the crowds."
+                    className="w-full p-2.5 rounded-xl border border-stone-200 text-xs focus:border-emerald-600 outline-none resize-none"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block font-bold text-stone-700 mb-1">Chữ trên nút (CTA Button)</label>
+                    <input
+                      type="text"
+                      value={bannerFormData.buttonText}
+                      onChange={(e) =>
+                        setBannerFormData({ ...bannerFormData, buttonText: e.target.value })
+                      }
+                      placeholder="Ví dụ: Choose a workshop"
+                      className="w-full p-2.5 rounded-xl border border-stone-200 text-xs focus:border-emerald-600 outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-bold text-stone-700 mb-1">Đường dẫn nút (CTA Link)</label>
+                    <input
+                      type="text"
+                      value={bannerFormData.linkUrl}
+                      onChange={(e) =>
+                        setBannerFormData({ ...bannerFormData, linkUrl: e.target.value })
+                      }
+                      placeholder="Ví dụ: #workshops"
+                      className="w-full p-2.5 rounded-xl border border-stone-200 text-xs focus:border-emerald-600 outline-none"
+                    />
+                  </div>
+                </div>
+
+                <ImageUploadField
+                  label="Ảnh Nền Banner / Background Image"
+                  value={bannerFormData.imageUrl}
+                  onChange={(url) => setBannerFormData({ ...bannerFormData, imageUrl: url })}
+                  folder="OTHER"
+                />
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block font-bold text-stone-700 mb-1">Thứ tự hiển thị</label>
+                    <input
+                      type="number"
+                      required
+                      min={1}
+                      value={bannerFormData.order}
+                      onChange={(e) =>
+                        setBannerFormData({ ...bannerFormData, order: Number(e.target.value) })
+                      }
+                      className="w-full p-2.5 rounded-xl border border-stone-200 text-xs focus:border-emerald-600 outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-bold text-stone-700 mb-1">Trạng thái</label>
+                    <select
+                      value={bannerFormData.isActive ? 'active' : 'inactive'}
+                      onChange={(e) =>
+                        setBannerFormData({
+                          ...bannerFormData,
+                          isActive: e.target.value === 'active',
+                        })
+                      }
+                      className="w-full p-2.5 rounded-xl border border-stone-200 text-xs focus:border-emerald-600 outline-none bg-white"
+                    >
+                      <option value="active">Hiển thị ngay</option>
+                      <option value="inactive">Tạm ẩn</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="flex justify-end gap-3 pt-4 border-t border-stone-100">
+                  <button
+                    type="button"
+                    onClick={() => setIsBannerModalOpen(false)}
+                    className="px-4 py-2 rounded-xl text-stone-600 hover:bg-stone-100 cursor-pointer text-xs"
+                  >
+                    Hủy
+                  </button>
+                  <button
+                    type="submit"
+                    className="bg-emerald-700 hover:bg-emerald-800 text-white font-bold px-5 py-2.5 rounded-xl shadow-md transition-all active:scale-95 cursor-pointer text-xs"
+                  >
+                    {editingBannerId ? 'Lưu Thay Đổi' : 'Thêm Mới Banner'}
+                  </button>
+                </div>
+              </form>
+
+              {/* Real-time Preview Side */}
+              <div className="lg:col-span-5 space-y-3">
+                <div className="text-[11px] font-bold text-stone-500 uppercase tracking-wider">
+                  Xem Trước Trực Quan (Live Preview)
+                </div>
+                <div
+                  className="relative rounded-2xl overflow-hidden aspect-[4/3] bg-stone-900 text-white p-6 flex flex-col justify-end bg-cover bg-center border border-stone-200 shadow-sm"
+                  style={{
+                    backgroundImage: `linear-gradient(to top, rgba(0, 0, 0, 0.85), rgba(0, 0, 0, 0.2)), url('${
+                      bannerFormData.imageUrl || '/images/img_0.jpeg'
+                    }')`,
+                  }}
+                >
+                  <div className="space-y-2">
+                    <span className="text-[10px] font-black tracking-widest text-emerald-400 uppercase">
+                      {bannerFormData.badgeText || 'LABEL / EYEBROW'}
+                    </span>
+                    <h4 className="text-base font-serif font-bold leading-tight">
+                      {bannerFormData.title || 'Tiêu Đề Banner...'}
+                    </h4>
+                    <p className="text-[11px] text-stone-300 line-clamp-3 leading-relaxed">
+                      {bannerFormData.subtitle || 'Mô tả chi tiết banner...'}
+                    </p>
+                    {(bannerFormData.buttonText || bannerFormData.linkUrl) && (
+                      <div className="pt-1.5">
+                        <button
+                          type="button"
+                          className="bg-emerald-600 text-white font-bold px-3 py-1.5 rounded-lg text-[10px] pointer-events-none"
+                        >
+                          {bannerFormData.buttonText || 'Button'}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <p className="text-[10px] text-stone-400 italic text-center">
+                  Giao diện mô phỏng chính xác khung cảnh Hero Banner ngoài trang chủ.
+                </p>
               </div>
             </div>
           </div>

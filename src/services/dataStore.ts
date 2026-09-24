@@ -264,7 +264,7 @@ class DataStore {
 
     // Check or create customer
     let customer = this.customers.find(
-      (c) => c.phone === payload.customerPhone || c.email === payload.customerEmail
+      (c) => (payload.customerPhone && c.phone === payload.customerPhone) || c.email === payload.customerEmail
     );
 
     if (!customer) {
@@ -503,6 +503,20 @@ class DataStore {
     return this.bookings[idx];
   }
 
+  public updateBooking(id: string, updates: Partial<Booking>): Booking | null {
+    const idx = this.bookings.findIndex((b) => b.id === id);
+    if (idx === -1) return null;
+    this.bookings[idx] = {
+      ...this.bookings[idx],
+      ...updates,
+      updatedAt: new Date().toISOString(),
+    };
+    saveToStorage(STORAGE_KEYS.BOOKINGS, this.bookings);
+    this.logAudit('UPDATE', 'Booking', this.bookings[idx].bookingCode, `Cập nhật thông tin đơn hàng: ${this.bookings[idx].bookingCode}`);
+    this.notify();
+    return this.bookings[idx];
+  }
+
   public sendBookingEmail(id: string): { success: boolean; message: string } {
     const booking = this.bookings.find((b) => b.id === id);
     if (!booking) return { success: false, message: 'Không tìm thấy booking' };
@@ -697,6 +711,13 @@ class DataStore {
     this.logAudit('DELETE', 'Media', file.name, `Xóa tệp media: ${file.name}`);
     this.notify();
     return true;
+  }
+
+  public clearAllMedia(): void {
+    this.mediaFiles = [];
+    saveToStorage(STORAGE_KEYS.MEDIA, []);
+    this.logAudit('DELETE', 'Media', 'All Media', 'Xóa toàn bộ thư viện media');
+    this.notify();
   }
 
   // Marketing

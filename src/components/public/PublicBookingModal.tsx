@@ -47,8 +47,8 @@ export const PublicBookingModal: React.FC<PublicBookingModalProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!customerName || !customerPhone || !customerEmail) {
-      alert('Vui lòng điền đầy đủ họ tên, số điện thoại và email!');
+    if (!customerName || !customerEmail) {
+      alert('Vui lòng điền đầy đủ họ tên và email!');
       return;
     }
 
@@ -58,7 +58,7 @@ export const PublicBookingModal: React.FC<PublicBookingModalProps> = ({
         tourId: item.tour?.id,
         serviceId: item.service?.id,
         customerName,
-        customerPhone,
+        customerPhone: '',
         customerEmail,
         departureDate,
         numAdults,
@@ -120,39 +120,20 @@ export const PublicBookingModal: React.FC<PublicBookingModalProps> = ({
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-xs font-bold text-stone-700 mb-1">
-                      Số điện thoại / Zalo *
-                    </label>
-                    <div className="relative">
-                      <Phone className="w-4 h-4 text-stone-400 absolute left-3 top-3" />
-                      <input
-                        type="tel"
-                        required
-                        value={customerPhone}
-                        onChange={(e) => setCustomerPhone(e.target.value)}
-                        placeholder="0905 123 456"
-                        className="w-full pl-9 pr-3 py-2.5 rounded-xl border border-stone-200 text-sm focus:outline-emerald-600"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold text-stone-700 mb-1">
-                      Email nhận vé *
-                    </label>
-                    <div className="relative">
-                      <Mail className="w-4 h-4 text-stone-400 absolute left-3 top-3" />
-                      <input
-                        type="email"
-                        required
-                        value={customerEmail}
-                        onChange={(e) => setCustomerEmail(e.target.value)}
-                        placeholder="email@example.com"
-                        className="w-full pl-9 pr-3 py-2.5 rounded-xl border border-stone-200 text-sm focus:outline-emerald-600"
-                      />
-                    </div>
+                <div>
+                  <label className="block text-xs font-bold text-stone-700 mb-1">
+                    Email nhận vé *
+                  </label>
+                  <div className="relative">
+                    <Mail className="w-4 h-4 text-stone-400 absolute left-3 top-3" />
+                    <input
+                      type="email"
+                      required
+                      value={customerEmail}
+                      onChange={(e) => setCustomerEmail(e.target.value)}
+                      placeholder="email@example.com"
+                      className="w-full pl-9 pr-3 py-2.5 rounded-xl border border-stone-200 text-sm focus:outline-emerald-600"
+                    />
                   </div>
                 </div>
               </div>

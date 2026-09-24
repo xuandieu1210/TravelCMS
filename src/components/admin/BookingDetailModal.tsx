@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Booking, BookingStatus } from '../../types';
 import {
   X,
@@ -23,6 +23,7 @@ interface BookingDetailModalProps {
   onClose: () => void;
   onUpdateStatus: (id: string, status: BookingStatus) => void;
   onSendEmail: (id: string) => Promise<{ success: boolean; message: string }>;
+  onUpdateBooking?: (id: string, updates: Partial<Booking>) => void;
 }
 
 export const BookingDetailModal: React.FC<BookingDetailModalProps> = ({
@@ -30,9 +31,19 @@ export const BookingDetailModal: React.FC<BookingDetailModalProps> = ({
   onClose,
   onUpdateStatus,
   onSendEmail,
+  onUpdateBooking,
 }) => {
   const [emailStatus, setEmailStatus] = useState<string | null>(null);
   const [isSending, setIsSending] = useState(false);
+  const [editedPhone, setEditedPhone] = useState(booking?.customerPhone || '');
+  const [isEditingPhone, setIsEditingPhone] = useState(false);
+
+  useEffect(() => {
+    if (booking) {
+      setEditedPhone(booking.customerPhone || '');
+      setIsEditingPhone(false);
+    }
+  }, [booking]);
 
   if (!booking) return null;
 
@@ -191,7 +202,49 @@ export const BookingDetailModal: React.FC<BookingDetailModalProps> = ({
               </div>
               <div>
                 <span className="text-stone-400 block">Số điện thoại</span>
-                <span className="font-semibold text-stone-800">{booking.customerPhone}</span>
+                {isEditingPhone ? (
+                  <div className="flex items-center gap-1 mt-1">
+                    <input
+                      type="text"
+                      value={editedPhone}
+                      onChange={(e) => setEditedPhone(e.target.value)}
+                      className="border border-stone-200 rounded px-1.5 py-0.5 text-xs w-full focus:outline-emerald-600 font-semibold"
+                      placeholder="Nhập SĐT..."
+                    />
+                    <button
+                      onClick={async () => {
+                        if (onUpdateBooking) {
+                          await onUpdateBooking(booking.id, { customerPhone: editedPhone });
+                        }
+                        setIsEditingPhone(false);
+                      }}
+                      className="bg-emerald-700 hover:bg-emerald-800 text-white font-bold px-1.5 py-0.5 rounded text-[10px]"
+                    >
+                      Lưu
+                    </button>
+                    <button
+                      onClick={() => {
+                        setEditedPhone(booking.customerPhone || '');
+                        setIsEditingPhone(false);
+                      }}
+                      className="bg-stone-100 hover:bg-stone-200 text-stone-600 px-1.5 py-0.5 rounded text-[10px]"
+                    >
+                      Hủy
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2 mt-0.5">
+                    <span className="font-semibold text-stone-800">
+                      {booking.customerPhone || <span className="text-stone-400 italic font-normal">Chưa có SĐT</span>}
+                    </span>
+                    <button
+                      onClick={() => setIsEditingPhone(true)}
+                      className="text-[10px] text-emerald-700 hover:text-emerald-800 font-bold underline"
+                    >
+                      Cập nhật
+                    </button>
+                  </div>
+                )}
               </div>
               <div>
                 <span className="text-stone-400 block">Email</span>

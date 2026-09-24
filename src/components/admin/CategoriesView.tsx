@@ -131,8 +131,7 @@ export const CategoriesView: React.FC<CategoriesViewProps> = ({
       c.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
       c.slug.toLowerCase().includes(searchTerm.toLowerCase());
 
-    const matchType = selectedType === 'ALL' || c.type === selectedType;
-    return matchSearch && matchType;
+    return matchSearch;
   });
 
   const getTypeBadge = (type: CategoryType) => {
@@ -166,135 +165,26 @@ export const CategoriesView: React.FC<CategoriesViewProps> = ({
 
   return (
     <div className="space-y-6">
-      {/* Top Banner Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white p-5 rounded-2xl border border-stone-200 shadow-2xs flex items-center justify-between">
-          <div>
-            <p className="text-xs font-bold text-stone-500 uppercase tracking-wider">Tổng Danh Mục</p>
-            <p className="text-2xl font-black text-stone-900 mt-1">{categories.length}</p>
-            <p className="text-[11px] text-stone-400 mt-0.5">Toàn bộ hệ thống</p>
-          </div>
-          <div className="w-12 h-12 rounded-xl bg-stone-100 text-stone-700 flex items-center justify-center">
-            <FolderTree className="w-6 h-6" />
-          </div>
+      {/* Search Bar & Actions */}
+      <div className="bg-white p-4 rounded-2xl border border-stone-200 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="relative min-w-[280px]">
+          <Search className="w-4 h-4 text-stone-400 absolute left-3 top-1/2 -translate-y-1/2" />
+          <input
+            type="text"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            placeholder="Tìm tên danh mục..."
+            className="w-full pl-9 pr-4 py-2 bg-stone-50 border border-stone-200 rounded-xl text-xs focus:outline-none focus:border-stone-400"
+          />
         </div>
 
-        <div className="bg-white p-5 rounded-2xl border border-stone-200 shadow-2xs flex items-center justify-between">
-          <div>
-            <p className="text-xs font-bold text-stone-500 uppercase tracking-wider">Workshop & Trải Nghiệm</p>
-            <p className="text-2xl font-black text-amber-600 mt-1">
-              {categories.filter((c) => c.type === 'WORKSHOP').length}
-            </p>
-            <p className="text-[11px] text-amber-600 mt-0.5">Botanica Garden</p>
-          </div>
-          <div className="w-12 h-12 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center">
-            <Sparkles className="w-6 h-6" />
-          </div>
-        </div>
-
-        <div className="bg-white p-5 rounded-2xl border border-stone-200 shadow-2xs flex items-center justify-between">
-          <div>
-            <p className="text-xs font-bold text-stone-500 uppercase tracking-wider">Tour Du Lịch</p>
-            <p className="text-2xl font-black text-blue-600 mt-1">
-              {categories.filter((c) => c.type === 'TOUR').length}
-            </p>
-            <p className="text-[11px] text-blue-600 mt-0.5">Jeep, Eco, Di Sản</p>
-          </div>
-          <div className="w-12 h-12 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center">
-            <Compass className="w-6 h-6" />
-          </div>
-        </div>
-
-        <div className="bg-white p-5 rounded-2xl border border-stone-200 shadow-2xs flex items-center justify-between">
-          <div>
-            <p className="text-xs font-bold text-stone-500 uppercase tracking-wider">Dịch Vụ & Bài Viết</p>
-            <p className="text-2xl font-black text-purple-600 mt-1">
-              {categories.filter((c) => c.type === 'SERVICE' || c.type === 'POST').length}
-            </p>
-            <p className="text-[11px] text-stone-400 mt-0.5">Khách sạn, xe, blog</p>
-          </div>
-          <div className="w-12 h-12 rounded-xl bg-purple-50 text-purple-700 flex items-center justify-center">
-            <Layers className="w-6 h-6" />
-          </div>
-        </div>
-      </div>
-
-      {/* Type Tab Pills & Search Bar */}
-      <div className="bg-white p-4 rounded-2xl border border-stone-200 shadow-2xs flex flex-col md:flex-row md:items-center justify-between gap-4">
-        {/* Type tabs */}
-        <div className="flex flex-wrap items-center gap-1.5 p-1 bg-stone-100 rounded-xl">
-          <button
-            onClick={() => setSelectedType('ALL')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-              selectedType === 'ALL'
-                ? 'bg-white text-stone-900 shadow-2xs'
-                : 'text-stone-500 hover:text-stone-900'
-            }`}
-          >
-            Tất cả ({categories.length})
-          </button>
-          <button
-            onClick={() => setSelectedType('WORKSHOP')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-              selectedType === 'WORKSHOP'
-                ? 'bg-white text-stone-900 shadow-2xs'
-                : 'text-stone-500 hover:text-stone-900'
-            }`}
-          >
-            Workshop Lớp Học ({categories.filter((c) => c.type === 'WORKSHOP').length})
-          </button>
-          <button
-            onClick={() => setSelectedType('TOUR')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-              selectedType === 'TOUR'
-                ? 'bg-white text-stone-900 shadow-2xs'
-                : 'text-stone-500 hover:text-stone-900'
-            }`}
-          >
-            Tour Du Lịch ({categories.filter((c) => c.type === 'TOUR').length})
-          </button>
-          <button
-            onClick={() => setSelectedType('SERVICE')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-              selectedType === 'SERVICE'
-                ? 'bg-white text-stone-900 shadow-2xs'
-                : 'text-stone-500 hover:text-stone-900'
-            }`}
-          >
-            Dịch Vụ ({categories.filter((c) => c.type === 'SERVICE').length})
-          </button>
-          <button
-            onClick={() => setSelectedType('POST')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-              selectedType === 'POST'
-                ? 'bg-white text-stone-900 shadow-2xs'
-                : 'text-stone-500 hover:text-stone-900'
-            }`}
-          >
-            Bài Viết & Blog ({categories.filter((c) => c.type === 'POST').length})
-          </button>
-        </div>
-
-        <div className="flex items-center gap-3">
-          <div className="relative min-w-[220px]">
-            <Search className="w-4 h-4 text-stone-400 absolute left-3 top-1/2 -translate-y-1/2" />
-            <input
-              type="text"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Tìm tên danh mục, slug..."
-              className="w-full pl-9 pr-4 py-2 bg-stone-50 border border-stone-200 rounded-xl text-xs focus:outline-none focus:border-stone-400"
-            />
-          </div>
-
-          <button
-            onClick={openCreateModal}
-            className="bg-stone-900 hover:bg-stone-800 text-white font-bold text-xs px-4 py-2 rounded-xl flex items-center gap-2 shadow-xs transition-all active:scale-95 shrink-0"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Thêm Danh Mục</span>
-          </button>
-        </div>
+        <button
+          onClick={openCreateModal}
+          className="bg-stone-900 hover:bg-stone-800 text-white font-bold text-xs px-4 py-2.5 rounded-xl flex items-center gap-2 shadow-xs transition-all active:scale-95 shrink-0 self-start sm:self-auto"
+        >
+          <Plus className="w-4 h-4" />
+          <span>Thêm Danh Mục</span>
+        </button>
       </div>
 
       {/* Categories Table */}
@@ -305,9 +195,6 @@ export const CategoriesView: React.FC<CategoriesViewProps> = ({
               <tr className="bg-stone-50/80 border-b border-stone-200 text-stone-500 font-bold uppercase tracking-wider text-[11px]">
                 <th className="py-3.5 px-4 w-16 text-center">Thứ tự</th>
                 <th className="py-3.5 px-4">Danh Mục</th>
-                <th className="py-3.5 px-4">Phân Loại</th>
-                <th className="py-3.5 px-4">Đường Dẫn Tĩnh (Slug)</th>
-                <th className="py-3.5 px-4">Sản Phẩm</th>
                 <th className="py-3.5 px-4">Trạng Thái</th>
                 <th className="py-3.5 px-4 text-right">Thao Tác</th>
               </tr>
@@ -315,7 +202,7 @@ export const CategoriesView: React.FC<CategoriesViewProps> = ({
             <tbody className="divide-y divide-stone-100">
               {filteredCategories.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="py-12 text-center text-stone-400">
+                  <td colSpan={5} className="py-12 text-center text-stone-400">
                     Không tìm thấy danh mục nào phù hợp.
                   </td>
                 </tr>
@@ -358,20 +245,7 @@ export const CategoriesView: React.FC<CategoriesViewProps> = ({
                       </div>
                     </td>
 
-                    {/* Type */}
-                    <td className="py-3.5 px-4">{getTypeBadge(cat.type)}</td>
 
-                    {/* Slug */}
-                    <td className="py-3.5 px-4">
-                      <code className="text-[11px] bg-stone-100 text-stone-700 px-2 py-1 rounded font-mono">
-                        /{cat.slug}
-                      </code>
-                    </td>
-
-                    {/* Item count */}
-                    <td className="py-3.5 px-4 font-bold text-stone-700">
-                      {cat.itemCount !== undefined ? `${cat.itemCount} mục` : '—'}
-                    </td>
 
                     {/* Active toggle */}
                     <td className="py-3.5 px-4">
@@ -455,36 +329,18 @@ export const CategoriesView: React.FC<CategoriesViewProps> = ({
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-4 text-xs">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block font-bold text-stone-700 mb-1">
-                    Loại Danh Mục <span className="text-red-500">*</span>
-                  </label>
-                  <select
-                    value={formData.type}
-                    onChange={(e) => setFormData({ ...formData, type: e.target.value as CategoryType })}
-                    className="w-full p-2.5 rounded-xl border border-stone-200 text-xs focus:border-stone-900 outline-none bg-white font-medium"
-                  >
-                    <option value="WORKSHOP">Workshop & Lớp Trải Nghiệm</option>
-                    <option value="TOUR">Tour Du Lịch</option>
-                    <option value="SERVICE">Dịch Vụ Du Lịch (Hotel, Xe, Vé)</option>
-                    <option value="POST">Bài Viết & Tin Tức Cẩm Nang</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block font-bold text-stone-700 mb-1">
-                    Mã Danh Mục (Code) <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.code}
-                    onChange={(e) => setFormData({ ...formData, code: e.target.value })}
-                    placeholder="ví dụ: CAT-FAMILY"
-                    className="w-full p-2.5 rounded-xl border border-stone-200 text-xs focus:border-stone-900 outline-none font-mono"
-                  />
-                </div>
+              <div>
+                <label className="block font-bold text-stone-700 mb-1">
+                  Mã Danh Mục (Code) <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={formData.code}
+                  onChange={(e) => setFormData({ ...formData, code: e.target.value })}
+                  placeholder="ví dụ: CAT-FAMILY"
+                  className="w-full p-2.5 rounded-xl border border-stone-200 text-xs focus:border-stone-900 outline-none font-mono"
+                />
               </div>
 
               <div>
@@ -514,18 +370,7 @@ export const CategoriesView: React.FC<CategoriesViewProps> = ({
                 />
               </div>
 
-              <div>
-                <label className="block font-bold text-stone-700 mb-1">
-                  Đường Dẫn Tĩnh (Slug - Bỏ trống để tạo tự động)
-                </label>
-                <input
-                  type="text"
-                  value={formData.slug}
-                  onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
-                  placeholder="ví dụ: family-crafts"
-                  className="w-full p-2.5 rounded-xl border border-stone-200 text-xs focus:border-stone-900 outline-none font-mono"
-                />
-              </div>
+
 
               <div>
                 <label className="block font-bold text-stone-700 mb-1">Mô Tả Danh Mục</label>
