@@ -1,0 +1,1324 @@
+[
+  {
+    "id": "ws-01",
+    "code": "BG-WS-01",
+    "name": "Làm nến",
+    "nameEn": "Candle Making",
+    "slug": "candle-making",
+    "category": "Thủ công gia đình",
+    "workshopCat": "family",
+    "ageGroup": "all",
+    "priceDisplay": "390",
+    "description": "Tự tay đổ cây nến đậu nành thơm hương thảo mộc trong vườn, mang ánh nến Hội An về nhà.",
+    "descriptionEn": "Pour your own soy candle scented with herbs from the garden, and carry the glow of Hoi An home.",
+    "thumbnail": "/images/img_3.jpeg",
+    "album": [
+      "/images/img_3.jpeg"
+    ],
+    "videoUrl": "",
+    "departureLocation": "208 Lê Thánh Tông, Cẩm Châu, Hội An",
+    "destinationLocation": "Botanica Garden Hội An",
+    "durationDays": 1,
+    "durationNights": 0,
+    "transportation": "Tự túc hoặc hỗ trợ đón trả khách sạn",
+    "minGuests": 1,
+    "maxGuests": 16,
+    "pricing": {
+      "adultPrice": 390000,
+      "childPrice": 390000,
+      "infantPrice": 0
+    },
+    "schedules": [
+      {
+        "id": "sch-ws-1",
+        "dayNumber": 1,
+        "title": "Trải nghiệm Làm nến (2 giờ thong thả)",
+        "description": "Tự tay đổ cây nến đậu nành thơm hương thảo mộc trong vườn, mang ánh nến Hội An về nhà.",
+        "mealsIncluded": [
+          "Đồ uống chào mừng (Welcome Drink) & Trà thảo mộc"
+        ]
+      }
+    ],
+    "policies": {
+      "includes": [
+        "Đồ uống chào mừng (Garden coffee hoặc trà thảo mộc)",
+        "Tham quan và tìm hiểu vườn thảo mộc cùng host",
+        "Toàn bộ nguyên vật liệu và hộp quà mang sản phẩm về",
+        "Người hướng dẫn tiếng Anh/Việt nhiệt tình, kiên nhẫn",
+        "Khoảng 2 giờ trải nghiệm thong thả, không vội vã"
+      ],
+      "excludes": [
+        "Chi phí cá nhân ngoài chương trình",
+        "Đồ uống và thức ăn gọi thêm"
+      ],
+      "cancellation": "Báo trước 2 giờ nếu cần đổi lịch.",
+      "notes": "Phù hợp cho mọi lứa tuổi và gia đình có trẻ nhỏ."
+    },
+    "highlights": [
+      "Không gian vườn thảo mộc xanh mát cách phố cổ 2km",
+      "Tự tay làm sản phẩm mang đậm chất văn hóa Việt Nam",
+      "Đội ngũ hướng dẫn viên tiếng Anh thân thiện, mến khách"
+    ],
+    "status": "PUBLISHED",
+    "isFeatured": true,
+    "viewCount": 280,
+    "bookingCount": 18,
+    "rating": 5.0,
+    "reviewCount": 12,
+    "seo": {
+      "title": "Candle Making Workshop - Botanica Garden Hoi An",
+      "description": "Pour your own soy candle scented with herbs from the garden, and carry the glow of Hoi An home.",
+      "keywords": [
+        "botanica garden",
+        "hoi an workshop",
+        "candle making"
+      ]
+    },
+    "createdAt": "2026-01-10T08:00:00Z",
+    "updatedAt": "2026-03-20T10:00:00Z"
+  },
+  {
+    "id": "ws-02",
+    "code": "BG-WS-02",
+    "name": "Sáp thơm",
+    "nameEn": "Scented Wax",
+    "slug": "scented-wax",
+    "category": "Thủ công gia đình",
+    "workshopCat": "family",
+    "ageGroup": "all",
+    "priceDisplay": "390",
+    "description": "Tạo hình những viên sáp thảo mộc thơm để giữ hương Việt Nam trong từng góc nhà.",
+    "descriptionEn": "Shape fragrant botanical wax tablets and sachets to keep your home smelling of Vietnam.",
+    "thumbnail": "/images/img_4.jpeg",
+    "album": [
+      "/images/img_4.jpeg"
+    ],
+    "videoUrl": "",
+    "departureLocation": "208 Lê Thánh Tông, Cẩm Châu, Hội An",
+    "destinationLocation": "Botanica Garden Hội An",
+    "durationDays": 1,
+    "durationNights": 0,
+    "transportation": "Tự túc hoặc hỗ trợ đón trả khách sạn",
+    "minGuests": 1,
+    "maxGuests": 16,
+    "pricing": {
+      "adultPrice": 390000,
+      "childPrice": 390000,
+      "infantPrice": 0
+    },
+    "schedules": [
+      {
+        "id": "sch-ws-2",
+        "dayNumber": 1,
+        "title": "Trải nghiệm Sáp thơm (2 giờ thong thả)",
+        "description": "Tạo hình những viên sáp thảo mộc thơm để giữ hương Việt Nam trong từng góc nhà.",
+        "mealsIncluded": [
+          "Đồ uống chào mừng (Welcome Drink) & Trà thảo mộc"
+        ]
+      }
+    ],
+    "policies": {
+      "includes": [
+        "Đồ uống chào mừng (Garden coffee hoặc trà thảo mộc)",
+        "Tham quan và tìm hiểu vườn thảo mộc cùng host",
+        "Toàn bộ nguyên vật liệu và hộp quà mang sản phẩm về",
+        "Người hướng dẫn tiếng Anh/Việt nhiệt tình, kiên nhẫn",
+        "Khoảng 2 giờ trải nghiệm thong thả, không vội vã"
+      ],
+      "excludes": [
+        "Chi phí cá nhân ngoài chương trình",
+        "Đồ uống và thức ăn gọi thêm"
+      ],
+      "cancellation": "Báo trước 2 giờ nếu cần đổi lịch.",
+      "notes": "Phù hợp cho mọi lứa tuổi và gia đình có trẻ nhỏ."
+    },
+    "highlights": [
+      "Không gian vườn thảo mộc xanh mát cách phố cổ 2km",
+      "Tự tay làm sản phẩm mang đậm chất văn hóa Việt Nam",
+      "Đội ngũ hướng dẫn viên tiếng Anh thân thiện, mến khách"
+    ],
+    "status": "PUBLISHED",
+    "isFeatured": true,
+    "viewCount": 315,
+    "bookingCount": 22,
+    "rating": 5.0,
+    "reviewCount": 14,
+    "seo": {
+      "title": "Scented Wax Workshop - Botanica Garden Hoi An",
+      "description": "Shape fragrant botanical wax tablets and sachets to keep your home smelling of Vietnam.",
+      "keywords": [
+        "botanica garden",
+        "hoi an workshop",
+        "scented wax"
+      ]
+    },
+    "createdAt": "2026-01-10T08:00:00Z",
+    "updatedAt": "2026-03-20T10:00:00Z"
+  },
+  {
+    "id": "ws-03",
+    "code": "BG-WS-03",
+    "name": "Túi vải",
+    "nameEn": "Tote Bag",
+    "slug": "tote-bag",
+    "category": "Thủ công gia đình",
+    "workshopCat": "family",
+    "ageGroup": "all",
+    "priceDisplay": "390",
+    "description": "In và vẽ một chiếc túi vải bông với họa tiết thiên nhiên — món kỷ niệm bạn sẽ dùng mãi.",
+    "descriptionEn": "Print and paint a cotton tote with natural motifs — a useful keepsake you'll actually use.",
+    "thumbnail": "/images/img_5.jpeg",
+    "album": [
+      "/images/img_5.jpeg"
+    ],
+    "videoUrl": "",
+    "departureLocation": "208 Lê Thánh Tông, Cẩm Châu, Hội An",
+    "destinationLocation": "Botanica Garden Hội An",
+    "durationDays": 1,
+    "durationNights": 0,
+    "transportation": "Tự túc hoặc hỗ trợ đón trả khách sạn",
+    "minGuests": 1,
+    "maxGuests": 16,
+    "pricing": {
+      "adultPrice": 390000,
+      "childPrice": 390000,
+      "infantPrice": 0
+    },
+    "schedules": [
+      {
+        "id": "sch-ws-3",
+        "dayNumber": 1,
+        "title": "Trải nghiệm Túi vải (2 giờ thong thả)",
+        "description": "In và vẽ một chiếc túi vải bông với họa tiết thiên nhiên — món kỷ niệm bạn sẽ dùng mãi.",
+        "mealsIncluded": [
+          "Đồ uống chào mừng (Welcome Drink) & Trà thảo mộc"
+        ]
+      }
+    ],
+    "policies": {
+      "includes": [
+        "Đồ uống chào mừng (Garden coffee hoặc trà thảo mộc)",
+        "Tham quan và tìm hiểu vườn thảo mộc cùng host",
+        "Toàn bộ nguyên vật liệu và hộp quà mang sản phẩm về",
+        "Người hướng dẫn tiếng Anh/Việt nhiệt tình, kiên nhẫn",
+        "Khoảng 2 giờ trải nghiệm thong thả, không vội vã"
+      ],
+      "excludes": [
+        "Chi phí cá nhân ngoài chương trình",
+        "Đồ uống và thức ăn gọi thêm"
+      ],
+      "cancellation": "Báo trước 2 giờ nếu cần đổi lịch.",
+      "notes": "Phù hợp cho mọi lứa tuổi và gia đình có trẻ nhỏ."
+    },
+    "highlights": [
+      "Không gian vườn thảo mộc xanh mát cách phố cổ 2km",
+      "Tự tay làm sản phẩm mang đậm chất văn hóa Việt Nam",
+      "Đội ngũ hướng dẫn viên tiếng Anh thân thiện, mến khách"
+    ],
+    "status": "PUBLISHED",
+    "isFeatured": true,
+    "viewCount": 350,
+    "bookingCount": 26,
+    "rating": 5.0,
+    "reviewCount": 16,
+    "seo": {
+      "title": "Tote Bag Workshop - Botanica Garden Hoi An",
+      "description": "Print and paint a cotton tote with natural motifs — a useful keepsake you'll actually use.",
+      "keywords": [
+        "botanica garden",
+        "hoi an workshop",
+        "tote bag"
+      ]
+    },
+    "createdAt": "2026-01-10T08:00:00Z",
+    "updatedAt": "2026-03-20T10:00:00Z"
+  },
+  {
+    "id": "ws-04",
+    "code": "BG-WS-04",
+    "name": "Son dưỡng môi",
+    "nameEn": "DIY Lip Balm",
+    "slug": "diy-lip-balm",
+    "category": "Thủ công gia đình",
+    "workshopCat": "family",
+    "ageGroup": "all",
+    "priceDisplay": "390",
+    "description": "Pha son dưỡng tự nhiên từ sáp ong và thảo mộc trong vườn — dịu nhẹ cho cả các bé.",
+    "descriptionEn": "Blend a natural lip balm from beeswax and garden botanicals — gentle enough for little hands.",
+    "thumbnail": "",
+    "album": [],
+    "videoUrl": "",
+    "departureLocation": "208 Lê Thánh Tông, Cẩm Châu, Hội An",
+    "destinationLocation": "Botanica Garden Hội An",
+    "durationDays": 1,
+    "durationNights": 0,
+    "transportation": "Tự túc hoặc hỗ trợ đón trả khách sạn",
+    "minGuests": 1,
+    "maxGuests": 16,
+    "pricing": {
+      "adultPrice": 390000,
+      "childPrice": 390000,
+      "infantPrice": 0
+    },
+    "schedules": [
+      {
+        "id": "sch-ws-4",
+        "dayNumber": 1,
+        "title": "Trải nghiệm Son dưỡng môi (2 giờ thong thả)",
+        "description": "Pha son dưỡng tự nhiên từ sáp ong và thảo mộc trong vườn — dịu nhẹ cho cả các bé.",
+        "mealsIncluded": [
+          "Đồ uống chào mừng (Welcome Drink) & Trà thảo mộc"
+        ]
+      }
+    ],
+    "policies": {
+      "includes": [
+        "Đồ uống chào mừng (Garden coffee hoặc trà thảo mộc)",
+        "Tham quan và tìm hiểu vườn thảo mộc cùng host",
+        "Toàn bộ nguyên vật liệu và hộp quà mang sản phẩm về",
+        "Người hướng dẫn tiếng Anh/Việt nhiệt tình, kiên nhẫn",
+        "Khoảng 2 giờ trải nghiệm thong thả, không vội vã"
+      ],
+      "excludes": [
+        "Chi phí cá nhân ngoài chương trình",
+        "Đồ uống và thức ăn gọi thêm"
+      ],
+      "cancellation": "Báo trước 2 giờ nếu cần đổi lịch.",
+      "notes": "Phù hợp cho mọi lứa tuổi và gia đình có trẻ nhỏ."
+    },
+    "highlights": [
+      "Không gian vườn thảo mộc xanh mát cách phố cổ 2km",
+      "Tự tay làm sản phẩm mang đậm chất văn hóa Việt Nam",
+      "Đội ngũ hướng dẫn viên tiếng Anh thân thiện, mến khách"
+    ],
+    "status": "PUBLISHED",
+    "isFeatured": true,
+    "viewCount": 385,
+    "bookingCount": 30,
+    "rating": 5.0,
+    "reviewCount": 18,
+    "seo": {
+      "title": "DIY Lip Balm Workshop - Botanica Garden Hoi An",
+      "description": "Blend a natural lip balm from beeswax and garden botanicals — gentle enough for little hands.",
+      "keywords": [
+        "botanica garden",
+        "hoi an workshop",
+        "diy lip balm"
+      ]
+    },
+    "createdAt": "2026-01-10T08:00:00Z",
+    "updatedAt": "2026-03-20T10:00:00Z"
+  },
+  {
+    "id": "ws-05",
+    "code": "BG-WS-05",
+    "name": "Làm sổ tay",
+    "nameEn": "Notebook",
+    "slug": "notebook",
+    "category": "Thủ công gia đình",
+    "workshopCat": "family",
+    "ageGroup": "all",
+    "priceDisplay": "390",
+    "description": "Đóng và trang trí cuốn sổ tay theo cách truyền thống — thủ công nhẹ nhàng cho mọi lứa tuổi.",
+    "descriptionEn": "Bind and decorate your own notebook the traditional way — a quiet, satisfying craft for all ages.",
+    "thumbnail": "/images/img_6.jpeg",
+    "album": [
+      "/images/img_6.jpeg"
+    ],
+    "videoUrl": "",
+    "departureLocation": "208 Lê Thánh Tông, Cẩm Châu, Hội An",
+    "destinationLocation": "Botanica Garden Hội An",
+    "durationDays": 1,
+    "durationNights": 0,
+    "transportation": "Tự túc hoặc hỗ trợ đón trả khách sạn",
+    "minGuests": 1,
+    "maxGuests": 16,
+    "pricing": {
+      "adultPrice": 390000,
+      "childPrice": 390000,
+      "infantPrice": 0
+    },
+    "schedules": [
+      {
+        "id": "sch-ws-5",
+        "dayNumber": 1,
+        "title": "Trải nghiệm Làm sổ tay (2 giờ thong thả)",
+        "description": "Đóng và trang trí cuốn sổ tay theo cách truyền thống — thủ công nhẹ nhàng cho mọi lứa tuổi.",
+        "mealsIncluded": [
+          "Đồ uống chào mừng (Welcome Drink) & Trà thảo mộc"
+        ]
+      }
+    ],
+    "policies": {
+      "includes": [
+        "Đồ uống chào mừng (Garden coffee hoặc trà thảo mộc)",
+        "Tham quan và tìm hiểu vườn thảo mộc cùng host",
+        "Toàn bộ nguyên vật liệu và hộp quà mang sản phẩm về",
+        "Người hướng dẫn tiếng Anh/Việt nhiệt tình, kiên nhẫn",
+        "Khoảng 2 giờ trải nghiệm thong thả, không vội vã"
+      ],
+      "excludes": [
+        "Chi phí cá nhân ngoài chương trình",
+        "Đồ uống và thức ăn gọi thêm"
+      ],
+      "cancellation": "Báo trước 2 giờ nếu cần đổi lịch.",
+      "notes": "Phù hợp cho mọi lứa tuổi và gia đình có trẻ nhỏ."
+    },
+    "highlights": [
+      "Không gian vườn thảo mộc xanh mát cách phố cổ 2km",
+      "Tự tay làm sản phẩm mang đậm chất văn hóa Việt Nam",
+      "Đội ngũ hướng dẫn viên tiếng Anh thân thiện, mến khách"
+    ],
+    "status": "PUBLISHED",
+    "isFeatured": true,
+    "viewCount": 420,
+    "bookingCount": 34,
+    "rating": 5.0,
+    "reviewCount": 20,
+    "seo": {
+      "title": "Notebook Workshop - Botanica Garden Hoi An",
+      "description": "Bind and decorate your own notebook the traditional way — a quiet, satisfying craft for all ages.",
+      "keywords": [
+        "botanica garden",
+        "hoi an workshop",
+        "notebook"
+      ]
+    },
+    "createdAt": "2026-01-10T08:00:00Z",
+    "updatedAt": "2026-03-20T10:00:00Z"
+  },
+  {
+    "id": "ws-06",
+    "code": "BG-WS-06",
+    "name": "Cốc tre & cá gỗ",
+    "nameEn": "Bamboo Cup & Wooden Fish",
+    "slug": "bamboo-cup-wooden-fish",
+    "category": "Thủ công gia đình",
+    "workshopCat": "family",
+    "ageGroup": "all",
+    "priceDisplay": "390",
+    "description": "Khắc và sơn chiếc cốc tre cùng chú cá gỗ nhỏ — món được các bé yêu thích nhất.",
+    "descriptionEn": "Carve and paint a bamboo cup and a little wooden fish — a firm favourite with children.",
+    "thumbnail": "/images/img_7.jpeg",
+    "album": [
+      "/images/img_7.jpeg"
+    ],
+    "videoUrl": "",
+    "departureLocation": "208 Lê Thánh Tông, Cẩm Châu, Hội An",
+    "destinationLocation": "Botanica Garden Hội An",
+    "durationDays": 1,
+    "durationNights": 0,
+    "transportation": "Tự túc hoặc hỗ trợ đón trả khách sạn",
+    "minGuests": 1,
+    "maxGuests": 16,
+    "pricing": {
+      "adultPrice": 390000,
+      "childPrice": 390000,
+      "infantPrice": 0
+    },
+    "schedules": [
+      {
+        "id": "sch-ws-6",
+        "dayNumber": 1,
+        "title": "Trải nghiệm Cốc tre & cá gỗ (2 giờ thong thả)",
+        "description": "Khắc và sơn chiếc cốc tre cùng chú cá gỗ nhỏ — món được các bé yêu thích nhất.",
+        "mealsIncluded": [
+          "Đồ uống chào mừng (Welcome Drink) & Trà thảo mộc"
+        ]
+      }
+    ],
+    "policies": {
+      "includes": [
+        "Đồ uống chào mừng (Garden coffee hoặc trà thảo mộc)",
+        "Tham quan và tìm hiểu vườn thảo mộc cùng host",
+        "Toàn bộ nguyên vật liệu và hộp quà mang sản phẩm về",
+        "Người hướng dẫn tiếng Anh/Việt nhiệt tình, kiên nhẫn",
+        "Khoảng 2 giờ trải nghiệm thong thả, không vội vã"
+      ],
+      "excludes": [
+        "Chi phí cá nhân ngoài chương trình",
+        "Đồ uống và thức ăn gọi thêm"
+      ],
+      "cancellation": "Báo trước 2 giờ nếu cần đổi lịch.",
+      "notes": "Phù hợp cho mọi lứa tuổi và gia đình có trẻ nhỏ."
+    },
+    "highlights": [
+      "Không gian vườn thảo mộc xanh mát cách phố cổ 2km",
+      "Tự tay làm sản phẩm mang đậm chất văn hóa Việt Nam",
+      "Đội ngũ hướng dẫn viên tiếng Anh thân thiện, mến khách"
+    ],
+    "status": "PUBLISHED",
+    "isFeatured": true,
+    "viewCount": 455,
+    "bookingCount": 38,
+    "rating": 5.0,
+    "reviewCount": 22,
+    "seo": {
+      "title": "Bamboo Cup & Wooden Fish Workshop - Botanica Garden Hoi An",
+      "description": "Carve and paint a bamboo cup and a little wooden fish — a firm favourite with children.",
+      "keywords": [
+        "botanica garden",
+        "hoi an workshop",
+        "bamboo cup & wooden fish"
+      ]
+    },
+    "createdAt": "2026-01-10T08:00:00Z",
+    "updatedAt": "2026-03-20T10:00:00Z"
+  },
+  {
+    "id": "ws-07",
+    "code": "BG-WS-07",
+    "name": "Vẽ mặt nạ",
+    "nameEn": "Mask Painting",
+    "slug": "mask-painting",
+    "category": "Thủ công gia đình",
+    "workshopCat": "family",
+    "ageGroup": "all",
+    "priceDisplay": "390",
+    "description": "Tô màu chiếc mặt nạ Việt Nam theo ý mình — vui nhộn, sáng tạo và rất hợp với trẻ em.",
+    "descriptionEn": "Paint a Vietnamese mask in your own colours — playful, expressive and very kid-friendly.",
+    "thumbnail": "/images/img_8.jpeg",
+    "album": [
+      "/images/img_8.jpeg"
+    ],
+    "videoUrl": "",
+    "departureLocation": "208 Lê Thánh Tông, Cẩm Châu, Hội An",
+    "destinationLocation": "Botanica Garden Hội An",
+    "durationDays": 1,
+    "durationNights": 0,
+    "transportation": "Tự túc hoặc hỗ trợ đón trả khách sạn",
+    "minGuests": 1,
+    "maxGuests": 16,
+    "pricing": {
+      "adultPrice": 390000,
+      "childPrice": 390000,
+      "infantPrice": 0
+    },
+    "schedules": [
+      {
+        "id": "sch-ws-7",
+        "dayNumber": 1,
+        "title": "Trải nghiệm Vẽ mặt nạ (2 giờ thong thả)",
+        "description": "Tô màu chiếc mặt nạ Việt Nam theo ý mình — vui nhộn, sáng tạo và rất hợp với trẻ em.",
+        "mealsIncluded": [
+          "Đồ uống chào mừng (Welcome Drink) & Trà thảo mộc"
+        ]
+      }
+    ],
+    "policies": {
+      "includes": [
+        "Đồ uống chào mừng (Garden coffee hoặc trà thảo mộc)",
+        "Tham quan và tìm hiểu vườn thảo mộc cùng host",
+        "Toàn bộ nguyên vật liệu và hộp quà mang sản phẩm về",
+        "Người hướng dẫn tiếng Anh/Việt nhiệt tình, kiên nhẫn",
+        "Khoảng 2 giờ trải nghiệm thong thả, không vội vã"
+      ],
+      "excludes": [
+        "Chi phí cá nhân ngoài chương trình",
+        "Đồ uống và thức ăn gọi thêm"
+      ],
+      "cancellation": "Báo trước 2 giờ nếu cần đổi lịch.",
+      "notes": "Phù hợp cho mọi lứa tuổi và gia đình có trẻ nhỏ."
+    },
+    "highlights": [
+      "Không gian vườn thảo mộc xanh mát cách phố cổ 2km",
+      "Tự tay làm sản phẩm mang đậm chất văn hóa Việt Nam",
+      "Đội ngũ hướng dẫn viên tiếng Anh thân thiện, mến khách"
+    ],
+    "status": "PUBLISHED",
+    "isFeatured": true,
+    "viewCount": 490,
+    "bookingCount": 42,
+    "rating": 5.0,
+    "reviewCount": 24,
+    "seo": {
+      "title": "Mask Painting Workshop - Botanica Garden Hoi An",
+      "description": "Paint a Vietnamese mask in your own colours — playful, expressive and very kid-friendly.",
+      "keywords": [
+        "botanica garden",
+        "hoi an workshop",
+        "mask painting"
+      ]
+    },
+    "createdAt": "2026-01-10T08:00:00Z",
+    "updatedAt": "2026-03-20T10:00:00Z"
+  },
+  {
+    "id": "ws-08",
+    "code": "BG-WS-08",
+    "name": "Kokedama",
+    "nameEn": "Kokedama",
+    "slug": "kokedama",
+    "category": "Thủ công gia đình",
+    "workshopCat": "family",
+    "ageGroup": "all",
+    "priceDisplay": "390",
+    "description": "Bọc cây xanh trong quả cầu rêu theo phong cách Nhật và học cách chăm sóc. Thư thái và đẹp mắt.",
+    "descriptionEn": "Wrap a living plant in a moss ball, Japanese-style, and learn to care for it. Calming and beautiful.",
+    "thumbnail": "/images/img_9.jpeg",
+    "album": [
+      "/images/img_9.jpeg"
+    ],
+    "videoUrl": "",
+    "departureLocation": "208 Lê Thánh Tông, Cẩm Châu, Hội An",
+    "destinationLocation": "Botanica Garden Hội An",
+    "durationDays": 1,
+    "durationNights": 0,
+    "transportation": "Tự túc hoặc hỗ trợ đón trả khách sạn",
+    "minGuests": 1,
+    "maxGuests": 16,
+    "pricing": {
+      "adultPrice": 390000,
+      "childPrice": 390000,
+      "infantPrice": 0
+    },
+    "schedules": [
+      {
+        "id": "sch-ws-8",
+        "dayNumber": 1,
+        "title": "Trải nghiệm Kokedama (2 giờ thong thả)",
+        "description": "Bọc cây xanh trong quả cầu rêu theo phong cách Nhật và học cách chăm sóc. Thư thái và đẹp mắt.",
+        "mealsIncluded": [
+          "Đồ uống chào mừng (Welcome Drink) & Trà thảo mộc"
+        ]
+      }
+    ],
+    "policies": {
+      "includes": [
+        "Đồ uống chào mừng (Garden coffee hoặc trà thảo mộc)",
+        "Tham quan và tìm hiểu vườn thảo mộc cùng host",
+        "Toàn bộ nguyên vật liệu và hộp quà mang sản phẩm về",
+        "Người hướng dẫn tiếng Anh/Việt nhiệt tình, kiên nhẫn",
+        "Khoảng 2 giờ trải nghiệm thong thả, không vội vã"
+      ],
+      "excludes": [
+        "Chi phí cá nhân ngoài chương trình",
+        "Đồ uống và thức ăn gọi thêm"
+      ],
+      "cancellation": "Báo trước 2 giờ nếu cần đổi lịch.",
+      "notes": "Phù hợp cho mọi lứa tuổi và gia đình có trẻ nhỏ."
+    },
+    "highlights": [
+      "Không gian vườn thảo mộc xanh mát cách phố cổ 2km",
+      "Tự tay làm sản phẩm mang đậm chất văn hóa Việt Nam",
+      "Đội ngũ hướng dẫn viên tiếng Anh thân thiện, mến khách"
+    ],
+    "status": "PUBLISHED",
+    "isFeatured": true,
+    "viewCount": 525,
+    "bookingCount": 46,
+    "rating": 5.0,
+    "reviewCount": 26,
+    "seo": {
+      "title": "Kokedama Workshop - Botanica Garden Hoi An",
+      "description": "Wrap a living plant in a moss ball, Japanese-style, and learn to care for it. Calming and beautiful.",
+      "keywords": [
+        "botanica garden",
+        "hoi an workshop",
+        "kokedama"
+      ]
+    },
+    "createdAt": "2026-01-10T08:00:00Z",
+    "updatedAt": "2026-03-20T10:00:00Z"
+  },
+  {
+    "id": "ws-09",
+    "code": "BG-WS-09",
+    "name": "Phụ kiện thủ công",
+    "nameEn": "Craft Accessories",
+    "slug": "craft-accessories",
+    "category": "Thủ công gia đình",
+    "workshopCat": "family",
+    "ageGroup": "all",
+    "priceDisplay": "390",
+    "description": "Tự làm phụ kiện từ vật liệu tự nhiên — vòng tay, mặt dây và nhiều hơn nữa.",
+    "descriptionEn": "Make your own handmade accessories from natural materials — bracelets, charms and more.",
+    "thumbnail": "/images/img_10.jpeg",
+    "album": [
+      "/images/img_10.jpeg"
+    ],
+    "videoUrl": "",
+    "departureLocation": "208 Lê Thánh Tông, Cẩm Châu, Hội An",
+    "destinationLocation": "Botanica Garden Hội An",
+    "durationDays": 1,
+    "durationNights": 0,
+    "transportation": "Tự túc hoặc hỗ trợ đón trả khách sạn",
+    "minGuests": 1,
+    "maxGuests": 16,
+    "pricing": {
+      "adultPrice": 390000,
+      "childPrice": 390000,
+      "infantPrice": 0
+    },
+    "schedules": [
+      {
+        "id": "sch-ws-9",
+        "dayNumber": 1,
+        "title": "Trải nghiệm Phụ kiện thủ công (2 giờ thong thả)",
+        "description": "Tự làm phụ kiện từ vật liệu tự nhiên — vòng tay, mặt dây và nhiều hơn nữa.",
+        "mealsIncluded": [
+          "Đồ uống chào mừng (Welcome Drink) & Trà thảo mộc"
+        ]
+      }
+    ],
+    "policies": {
+      "includes": [
+        "Đồ uống chào mừng (Garden coffee hoặc trà thảo mộc)",
+        "Tham quan và tìm hiểu vườn thảo mộc cùng host",
+        "Toàn bộ nguyên vật liệu và hộp quà mang sản phẩm về",
+        "Người hướng dẫn tiếng Anh/Việt nhiệt tình, kiên nhẫn",
+        "Khoảng 2 giờ trải nghiệm thong thả, không vội vã"
+      ],
+      "excludes": [
+        "Chi phí cá nhân ngoài chương trình",
+        "Đồ uống và thức ăn gọi thêm"
+      ],
+      "cancellation": "Báo trước 2 giờ nếu cần đổi lịch.",
+      "notes": "Phù hợp cho mọi lứa tuổi và gia đình có trẻ nhỏ."
+    },
+    "highlights": [
+      "Không gian vườn thảo mộc xanh mát cách phố cổ 2km",
+      "Tự tay làm sản phẩm mang đậm chất văn hóa Việt Nam",
+      "Đội ngũ hướng dẫn viên tiếng Anh thân thiện, mến khách"
+    ],
+    "status": "PUBLISHED",
+    "isFeatured": true,
+    "viewCount": 560,
+    "bookingCount": 50,
+    "rating": 5.0,
+    "reviewCount": 28,
+    "seo": {
+      "title": "Craft Accessories Workshop - Botanica Garden Hoi An",
+      "description": "Make your own handmade accessories from natural materials — bracelets, charms and more.",
+      "keywords": [
+        "botanica garden",
+        "hoi an workshop",
+        "craft accessories"
+      ]
+    },
+    "createdAt": "2026-01-10T08:00:00Z",
+    "updatedAt": "2026-03-20T10:00:00Z"
+  },
+  {
+    "id": "ws-10",
+    "code": "BG-WS-10",
+    "name": "Lắp ráp mô hình",
+    "nameEn": "Assemble the Model",
+    "slug": "assemble-the-model",
+    "category": "Thủ công gia đình",
+    "workshopCat": "family",
+    "ageGroup": "all",
+    "priceDisplay": "390",
+    "description": "Lắp và sơn mô hình gỗ — dự án tỉ mỉ, thú vị cho các bé lớn và người lớn.",
+    "descriptionEn": "Build and paint a wooden model — a focused, rewarding project for older kids and adults.",
+    "thumbnail": "",
+    "album": [],
+    "videoUrl": "",
+    "departureLocation": "208 Lê Thánh Tông, Cẩm Châu, Hội An",
+    "destinationLocation": "Botanica Garden Hội An",
+    "durationDays": 1,
+    "durationNights": 0,
+    "transportation": "Tự túc hoặc hỗ trợ đón trả khách sạn",
+    "minGuests": 1,
+    "maxGuests": 16,
+    "pricing": {
+      "adultPrice": 390000,
+      "childPrice": 390000,
+      "infantPrice": 0
+    },
+    "schedules": [
+      {
+        "id": "sch-ws-10",
+        "dayNumber": 1,
+        "title": "Trải nghiệm Lắp ráp mô hình (2 giờ thong thả)",
+        "description": "Lắp và sơn mô hình gỗ — dự án tỉ mỉ, thú vị cho các bé lớn và người lớn.",
+        "mealsIncluded": [
+          "Đồ uống chào mừng (Welcome Drink) & Trà thảo mộc"
+        ]
+      }
+    ],
+    "policies": {
+      "includes": [
+        "Đồ uống chào mừng (Garden coffee hoặc trà thảo mộc)",
+        "Tham quan và tìm hiểu vườn thảo mộc cùng host",
+        "Toàn bộ nguyên vật liệu và hộp quà mang sản phẩm về",
+        "Người hướng dẫn tiếng Anh/Việt nhiệt tình, kiên nhẫn",
+        "Khoảng 2 giờ trải nghiệm thong thả, không vội vã"
+      ],
+      "excludes": [
+        "Chi phí cá nhân ngoài chương trình",
+        "Đồ uống và thức ăn gọi thêm"
+      ],
+      "cancellation": "Báo trước 2 giờ nếu cần đổi lịch.",
+      "notes": "Phù hợp cho mọi lứa tuổi và gia đình có trẻ nhỏ."
+    },
+    "highlights": [
+      "Không gian vườn thảo mộc xanh mát cách phố cổ 2km",
+      "Tự tay làm sản phẩm mang đậm chất văn hóa Việt Nam",
+      "Đội ngũ hướng dẫn viên tiếng Anh thân thiện, mến khách"
+    ],
+    "status": "PUBLISHED",
+    "isFeatured": true,
+    "viewCount": 595,
+    "bookingCount": 54,
+    "rating": 5.0,
+    "reviewCount": 30,
+    "seo": {
+      "title": "Assemble the Model Workshop - Botanica Garden Hoi An",
+      "description": "Build and paint a wooden model — a focused, rewarding project for older kids and adults.",
+      "keywords": [
+        "botanica garden",
+        "hoi an workshop",
+        "assemble the model"
+      ]
+    },
+    "createdAt": "2026-01-10T08:00:00Z",
+    "updatedAt": "2026-03-20T10:00:00Z"
+  },
+  {
+    "id": "ws-11",
+    "code": "BG-WS-11",
+    "name": "Nón lá",
+    "nameEn": "Non La (Conical Hat)",
+    "slug": "non-la-conical-hat",
+    "category": "Văn hóa & ẩm thực",
+    "workshopCat": "culture",
+    "ageGroup": "all",
+    "priceDisplay": "390",
+    "description": "Trang trí chiếc nón lá Việt Nam và đội tác phẩm của mình dạo quanh khu vườn.",
+    "descriptionEn": "Decorate the iconic Vietnamese conical hat, then wear your creation around the garden.",
+    "thumbnail": "/images/img_11.jpeg",
+    "album": [
+      "/images/img_11.jpeg"
+    ],
+    "videoUrl": "",
+    "departureLocation": "208 Lê Thánh Tông, Cẩm Châu, Hội An",
+    "destinationLocation": "Botanica Garden Hội An",
+    "durationDays": 1,
+    "durationNights": 0,
+    "transportation": "Tự túc hoặc hỗ trợ đón trả khách sạn",
+    "minGuests": 1,
+    "maxGuests": 16,
+    "pricing": {
+      "adultPrice": 390000,
+      "childPrice": 390000,
+      "infantPrice": 0
+    },
+    "schedules": [
+      {
+        "id": "sch-ws-11",
+        "dayNumber": 1,
+        "title": "Trải nghiệm Nón lá (2 giờ thong thả)",
+        "description": "Trang trí chiếc nón lá Việt Nam và đội tác phẩm của mình dạo quanh khu vườn.",
+        "mealsIncluded": [
+          "Đồ uống chào mừng (Welcome Drink) & Trà thảo mộc"
+        ]
+      }
+    ],
+    "policies": {
+      "includes": [
+        "Đồ uống chào mừng (Garden coffee hoặc trà thảo mộc)",
+        "Tham quan và tìm hiểu vườn thảo mộc cùng host",
+        "Toàn bộ nguyên vật liệu và hộp quà mang sản phẩm về",
+        "Người hướng dẫn tiếng Anh/Việt nhiệt tình, kiên nhẫn",
+        "Khoảng 2 giờ trải nghiệm thong thả, không vội vã"
+      ],
+      "excludes": [
+        "Chi phí cá nhân ngoài chương trình",
+        "Đồ uống và thức ăn gọi thêm"
+      ],
+      "cancellation": "Báo trước 2 giờ nếu cần đổi lịch.",
+      "notes": "Phù hợp cho mọi lứa tuổi và gia đình có trẻ nhỏ."
+    },
+    "highlights": [
+      "Không gian vườn thảo mộc xanh mát cách phố cổ 2km",
+      "Tự tay làm sản phẩm mang đậm chất văn hóa Việt Nam",
+      "Đội ngũ hướng dẫn viên tiếng Anh thân thiện, mến khách"
+    ],
+    "status": "PUBLISHED",
+    "isFeatured": true,
+    "viewCount": 630,
+    "bookingCount": 58,
+    "rating": 5.0,
+    "reviewCount": 32,
+    "seo": {
+      "title": "Non La (Conical Hat) Workshop - Botanica Garden Hoi An",
+      "description": "Decorate the iconic Vietnamese conical hat, then wear your creation around the garden.",
+      "keywords": [
+        "botanica garden",
+        "hoi an workshop",
+        "non la (conical hat)"
+      ]
+    },
+    "createdAt": "2026-01-10T08:00:00Z",
+    "updatedAt": "2026-03-20T10:00:00Z"
+  },
+  {
+    "id": "ws-12",
+    "code": "BG-WS-12",
+    "name": "Bánh xèo",
+    "nameEn": "Banh Xeo",
+    "slug": "banh-xeo",
+    "category": "Văn hóa & ẩm thực",
+    "workshopCat": "culture",
+    "ageGroup": "all",
+    "priceDisplay": "390",
+    "description": "Tự tay làm món bánh xèo giòn rụm trứ danh, rồi cùng thưởng thức ngay tại bàn trong vườn.",
+    "descriptionEn": "Cook the famous sizzling Vietnamese pancake from scratch, then eat it together at the garden table.",
+    "thumbnail": "/images/img_12.jpeg",
+    "album": [
+      "/images/img_12.jpeg"
+    ],
+    "videoUrl": "",
+    "departureLocation": "208 Lê Thánh Tông, Cẩm Châu, Hội An",
+    "destinationLocation": "Botanica Garden Hội An",
+    "durationDays": 1,
+    "durationNights": 0,
+    "transportation": "Tự túc hoặc hỗ trợ đón trả khách sạn",
+    "minGuests": 1,
+    "maxGuests": 16,
+    "pricing": {
+      "adultPrice": 390000,
+      "childPrice": 390000,
+      "infantPrice": 0
+    },
+    "schedules": [
+      {
+        "id": "sch-ws-12",
+        "dayNumber": 1,
+        "title": "Trải nghiệm Bánh xèo (2 giờ thong thả)",
+        "description": "Tự tay làm món bánh xèo giòn rụm trứ danh, rồi cùng thưởng thức ngay tại bàn trong vườn.",
+        "mealsIncluded": [
+          "Đồ uống chào mừng (Welcome Drink) & Trà thảo mộc"
+        ]
+      }
+    ],
+    "policies": {
+      "includes": [
+        "Đồ uống chào mừng (Garden coffee hoặc trà thảo mộc)",
+        "Tham quan và tìm hiểu vườn thảo mộc cùng host",
+        "Toàn bộ nguyên vật liệu và hộp quà mang sản phẩm về",
+        "Người hướng dẫn tiếng Anh/Việt nhiệt tình, kiên nhẫn",
+        "Khoảng 2 giờ trải nghiệm thong thả, không vội vã"
+      ],
+      "excludes": [
+        "Chi phí cá nhân ngoài chương trình",
+        "Đồ uống và thức ăn gọi thêm"
+      ],
+      "cancellation": "Báo trước 2 giờ nếu cần đổi lịch.",
+      "notes": "Phù hợp cho mọi lứa tuổi và gia đình có trẻ nhỏ."
+    },
+    "highlights": [
+      "Không gian vườn thảo mộc xanh mát cách phố cổ 2km",
+      "Tự tay làm sản phẩm mang đậm chất văn hóa Việt Nam",
+      "Đội ngũ hướng dẫn viên tiếng Anh thân thiện, mến khách"
+    ],
+    "status": "PUBLISHED",
+    "isFeatured": true,
+    "viewCount": 665,
+    "bookingCount": 62,
+    "rating": 5.0,
+    "reviewCount": 34,
+    "seo": {
+      "title": "Banh Xeo Workshop - Botanica Garden Hoi An",
+      "description": "Cook the famous sizzling Vietnamese pancake from scratch, then eat it together at the garden table.",
+      "keywords": [
+        "botanica garden",
+        "hoi an workshop",
+        "banh xeo"
+      ]
+    },
+    "createdAt": "2026-01-10T08:00:00Z",
+    "updatedAt": "2026-03-20T10:00:00Z"
+  },
+  {
+    "id": "ws-13",
+    "code": "BG-WS-13",
+    "name": "Đèn lồng giấy dừa",
+    "nameEn": "Coconut Paper Lantern",
+    "slug": "coconut-paper-lantern",
+    "category": "Văn hóa & ẩm thực",
+    "workshopCat": "culture",
+    "ageGroup": "all",
+    "priceDisplay": "request",
+    "description": "Làm chiếc đèn lồng Hội An từ giấy dừa độc đáo, do nghệ nhân khách mời hướng dẫn.",
+    "descriptionEn": "Craft a Hoi An lantern with a coconut-paper twist, led by a visiting artisan.",
+    "thumbnail": "/images/img_13.jpeg",
+    "album": [
+      "/images/img_13.jpeg"
+    ],
+    "videoUrl": "",
+    "departureLocation": "208 Lê Thánh Tông, Cẩm Châu, Hội An",
+    "destinationLocation": "Botanica Garden Hội An",
+    "durationDays": 1,
+    "durationNights": 0,
+    "transportation": "Tự túc hoặc hỗ trợ đón trả khách sạn",
+    "minGuests": 1,
+    "maxGuests": 16,
+    "pricing": {
+      "adultPrice": 0,
+      "childPrice": 0,
+      "infantPrice": 0
+    },
+    "schedules": [
+      {
+        "id": "sch-ws-13",
+        "dayNumber": 1,
+        "title": "Trải nghiệm Đèn lồng giấy dừa (2 giờ thong thả)",
+        "description": "Làm chiếc đèn lồng Hội An từ giấy dừa độc đáo, do nghệ nhân khách mời hướng dẫn.",
+        "mealsIncluded": [
+          "Đồ uống chào mừng (Welcome Drink) & Trà thảo mộc"
+        ]
+      }
+    ],
+    "policies": {
+      "includes": [
+        "Đồ uống chào mừng (Garden coffee hoặc trà thảo mộc)",
+        "Tham quan và tìm hiểu vườn thảo mộc cùng host",
+        "Toàn bộ nguyên vật liệu và hộp quà mang sản phẩm về",
+        "Người hướng dẫn tiếng Anh/Việt nhiệt tình, kiên nhẫn",
+        "Khoảng 2 giờ trải nghiệm thong thả, không vội vã"
+      ],
+      "excludes": [
+        "Chi phí cá nhân ngoài chương trình",
+        "Đồ uống và thức ăn gọi thêm"
+      ],
+      "cancellation": "Báo trước 2 giờ nếu cần đổi lịch.",
+      "notes": "Phù hợp cho mọi lứa tuổi và gia đình có trẻ nhỏ."
+    },
+    "highlights": [
+      "Không gian vườn thảo mộc xanh mát cách phố cổ 2km",
+      "Tự tay làm sản phẩm mang đậm chất văn hóa Việt Nam",
+      "Đội ngũ hướng dẫn viên tiếng Anh thân thiện, mến khách"
+    ],
+    "status": "PUBLISHED",
+    "isFeatured": true,
+    "viewCount": 700,
+    "bookingCount": 66,
+    "rating": 5.0,
+    "reviewCount": 36,
+    "seo": {
+      "title": "Coconut Paper Lantern Workshop - Botanica Garden Hoi An",
+      "description": "Craft a Hoi An lantern with a coconut-paper twist, led by a visiting artisan.",
+      "keywords": [
+        "botanica garden",
+        "hoi an workshop",
+        "coconut paper lantern"
+      ]
+    },
+    "createdAt": "2026-01-10T08:00:00Z",
+    "updatedAt": "2026-03-20T10:00:00Z"
+  },
+  {
+    "id": "ws-14",
+    "code": "BG-WS-14",
+    "name": "Dệt chiếu",
+    "nameEn": "Mat Weaving",
+    "slug": "mat-weaving",
+    "category": "Văn hóa & ẩm thực",
+    "workshopCat": "culture",
+    "ageGroup": "all",
+    "priceDisplay": "request",
+    "description": "Học dệt chiếu truyền thống Việt Nam từ người thợ địa phương — một nét di sản sống động.",
+    "descriptionEn": "Learn traditional Vietnamese mat weaving from a local maker — a piece of living heritage.",
+    "thumbnail": "/images/img_14.jpeg",
+    "album": [
+      "/images/img_14.jpeg"
+    ],
+    "videoUrl": "",
+    "departureLocation": "208 Lê Thánh Tông, Cẩm Châu, Hội An",
+    "destinationLocation": "Botanica Garden Hội An",
+    "durationDays": 1,
+    "durationNights": 0,
+    "transportation": "Tự túc hoặc hỗ trợ đón trả khách sạn",
+    "minGuests": 1,
+    "maxGuests": 16,
+    "pricing": {
+      "adultPrice": 0,
+      "childPrice": 0,
+      "infantPrice": 0
+    },
+    "schedules": [
+      {
+        "id": "sch-ws-14",
+        "dayNumber": 1,
+        "title": "Trải nghiệm Dệt chiếu (2 giờ thong thả)",
+        "description": "Học dệt chiếu truyền thống Việt Nam từ người thợ địa phương — một nét di sản sống động.",
+        "mealsIncluded": [
+          "Đồ uống chào mừng (Welcome Drink) & Trà thảo mộc"
+        ]
+      }
+    ],
+    "policies": {
+      "includes": [
+        "Đồ uống chào mừng (Garden coffee hoặc trà thảo mộc)",
+        "Tham quan và tìm hiểu vườn thảo mộc cùng host",
+        "Toàn bộ nguyên vật liệu và hộp quà mang sản phẩm về",
+        "Người hướng dẫn tiếng Anh/Việt nhiệt tình, kiên nhẫn",
+        "Khoảng 2 giờ trải nghiệm thong thả, không vội vã"
+      ],
+      "excludes": [
+        "Chi phí cá nhân ngoài chương trình",
+        "Đồ uống và thức ăn gọi thêm"
+      ],
+      "cancellation": "Báo trước 2 giờ nếu cần đổi lịch.",
+      "notes": "Phù hợp cho mọi lứa tuổi và gia đình có trẻ nhỏ."
+    },
+    "highlights": [
+      "Không gian vườn thảo mộc xanh mát cách phố cổ 2km",
+      "Tự tay làm sản phẩm mang đậm chất văn hóa Việt Nam",
+      "Đội ngũ hướng dẫn viên tiếng Anh thân thiện, mến khách"
+    ],
+    "status": "PUBLISHED",
+    "isFeatured": true,
+    "viewCount": 735,
+    "bookingCount": 70,
+    "rating": 5.0,
+    "reviewCount": 38,
+    "seo": {
+      "title": "Mat Weaving Workshop - Botanica Garden Hoi An",
+      "description": "Learn traditional Vietnamese mat weaving from a local maker — a piece of living heritage.",
+      "keywords": [
+        "botanica garden",
+        "hoi an workshop",
+        "mat weaving"
+      ]
+    },
+    "createdAt": "2026-01-10T08:00:00Z",
+    "updatedAt": "2026-03-20T10:00:00Z"
+  },
+  {
+    "id": "ws-15",
+    "code": "BG-WS-15",
+    "name": "Bánh truyền thống Việt",
+    "nameEn": "Traditional Vietnamese Cakes",
+    "slug": "traditional-vietnamese-cakes",
+    "category": "Văn hóa & ẩm thực",
+    "workshopCat": "culture",
+    "ageGroup": "all",
+    "priceDisplay": "request",
+    "description": "Làm và thưởng thức các loại bánh Việt cổ truyền cùng người nấu địa phương — ngọt ngào và thú vị.",
+    "descriptionEn": "Make and taste classic Vietnamese cakes with a local cook — sweet, hands-on and delicious.",
+    "thumbnail": "/images/img_15.jpeg",
+    "album": [
+      "/images/img_15.jpeg"
+    ],
+    "videoUrl": "",
+    "departureLocation": "208 Lê Thánh Tông, Cẩm Châu, Hội An",
+    "destinationLocation": "Botanica Garden Hội An",
+    "durationDays": 1,
+    "durationNights": 0,
+    "transportation": "Tự túc hoặc hỗ trợ đón trả khách sạn",
+    "minGuests": 1,
+    "maxGuests": 16,
+    "pricing": {
+      "adultPrice": 0,
+      "childPrice": 0,
+      "infantPrice": 0
+    },
+    "schedules": [
+      {
+        "id": "sch-ws-15",
+        "dayNumber": 1,
+        "title": "Trải nghiệm Bánh truyền thống Việt (2 giờ thong thả)",
+        "description": "Làm và thưởng thức các loại bánh Việt cổ truyền cùng người nấu địa phương — ngọt ngào và thú vị.",
+        "mealsIncluded": [
+          "Đồ uống chào mừng (Welcome Drink) & Trà thảo mộc"
+        ]
+      }
+    ],
+    "policies": {
+      "includes": [
+        "Đồ uống chào mừng (Garden coffee hoặc trà thảo mộc)",
+        "Tham quan và tìm hiểu vườn thảo mộc cùng host",
+        "Toàn bộ nguyên vật liệu và hộp quà mang sản phẩm về",
+        "Người hướng dẫn tiếng Anh/Việt nhiệt tình, kiên nhẫn",
+        "Khoảng 2 giờ trải nghiệm thong thả, không vội vã"
+      ],
+      "excludes": [
+        "Chi phí cá nhân ngoài chương trình",
+        "Đồ uống và thức ăn gọi thêm"
+      ],
+      "cancellation": "Báo trước 2 giờ nếu cần đổi lịch.",
+      "notes": "Phù hợp cho mọi lứa tuổi và gia đình có trẻ nhỏ."
+    },
+    "highlights": [
+      "Không gian vườn thảo mộc xanh mát cách phố cổ 2km",
+      "Tự tay làm sản phẩm mang đậm chất văn hóa Việt Nam",
+      "Đội ngũ hướng dẫn viên tiếng Anh thân thiện, mến khách"
+    ],
+    "status": "PUBLISHED",
+    "isFeatured": true,
+    "viewCount": 770,
+    "bookingCount": 74,
+    "rating": 5.0,
+    "reviewCount": 40,
+    "seo": {
+      "title": "Traditional Vietnamese Cakes Workshop - Botanica Garden Hoi An",
+      "description": "Make and taste classic Vietnamese cakes with a local cook — sweet, hands-on and delicious.",
+      "keywords": [
+        "botanica garden",
+        "hoi an workshop",
+        "traditional vietnamese cakes"
+      ]
+    },
+    "createdAt": "2026-01-10T08:00:00Z",
+    "updatedAt": "2026-03-20T10:00:00Z"
+  },
+  {
+    "id": "ws-16",
+    "code": "BG-WS-16",
+    "name": "Cà phê thảo mộc",
+    "nameEn": "Herbal Coffee",
+    "slug": "herbal-coffee",
+    "category": "Cà phê & thư giãn",
+    "workshopCat": "wellness",
+    "ageGroup": "adult",
+    "priceDisplay": "550",
+    "description": "Nghi thức cà phê phin thong thả: pha bốn loại cà phê Việt với thảo mộc tươi trong vườn. Thuần chay và khó quên.",
+    "descriptionEn": "A slow phin-coffee ritual: brew four Vietnamese coffees infused with fresh garden herbs. Vegan and unforgettable.",
+    "thumbnail": "/images/img_16.jpeg",
+    "album": [
+      "/images/img_16.jpeg"
+    ],
+    "videoUrl": "",
+    "departureLocation": "208 Lê Thánh Tông, Cẩm Châu, Hội An",
+    "destinationLocation": "Botanica Garden Hội An",
+    "durationDays": 1,
+    "durationNights": 0,
+    "transportation": "Tự túc hoặc hỗ trợ đón trả khách sạn",
+    "minGuests": 1,
+    "maxGuests": 16,
+    "pricing": {
+      "adultPrice": 550000,
+      "childPrice": 550000,
+      "infantPrice": 0
+    },
+    "schedules": [
+      {
+        "id": "sch-ws-16",
+        "dayNumber": 1,
+        "title": "Trải nghiệm Cà phê thảo mộc (2 giờ thong thả)",
+        "description": "Nghi thức cà phê phin thong thả: pha bốn loại cà phê Việt với thảo mộc tươi trong vườn. Thuần chay và khó quên.",
+        "mealsIncluded": [
+          "Đồ uống chào mừng (Welcome Drink) & Trà thảo mộc"
+        ]
+      }
+    ],
+    "policies": {
+      "includes": [
+        "Đồ uống chào mừng (Garden coffee hoặc trà thảo mộc)",
+        "Tham quan và tìm hiểu vườn thảo mộc cùng host",
+        "Toàn bộ nguyên vật liệu và hộp quà mang sản phẩm về",
+        "Người hướng dẫn tiếng Anh/Việt nhiệt tình, kiên nhẫn",
+        "Khoảng 2 giờ trải nghiệm thong thả, không vội vã"
+      ],
+      "excludes": [
+        "Chi phí cá nhân ngoài chương trình",
+        "Đồ uống và thức ăn gọi thêm"
+      ],
+      "cancellation": "Báo trước 2 giờ nếu cần đổi lịch.",
+      "notes": "Phù hợp cho mọi lứa tuổi và gia đình có trẻ nhỏ."
+    },
+    "highlights": [
+      "Không gian vườn thảo mộc xanh mát cách phố cổ 2km",
+      "Tự tay làm sản phẩm mang đậm chất văn hóa Việt Nam",
+      "Đội ngũ hướng dẫn viên tiếng Anh thân thiện, mến khách"
+    ],
+    "status": "PUBLISHED",
+    "isFeatured": true,
+    "viewCount": 805,
+    "bookingCount": 78,
+    "rating": 5.0,
+    "reviewCount": 42,
+    "seo": {
+      "title": "Herbal Coffee Workshop - Botanica Garden Hoi An",
+      "description": "A slow phin-coffee ritual: brew four Vietnamese coffees infused with fresh garden herbs. Vegan and unforgettable.",
+      "keywords": [
+        "botanica garden",
+        "hoi an workshop",
+        "herbal coffee"
+      ]
+    },
+    "createdAt": "2026-01-10T08:00:00Z",
+    "updatedAt": "2026-03-20T10:00:00Z"
+  },
+  {
+    "id": "ws-17",
+    "code": "BG-WS-17",
+    "name": "Massage thảo mộc",
+    "nameEn": "Herbal Massage",
+    "slug": "herbal-massage",
+    "category": "Cà phê & thư giãn",
+    "workshopCat": "wellness",
+    "ageGroup": "all",
+    "priceDisplay": "350",
+    "description": "Thư giãn với buổi massage thảo mộc được hướng dẫn, dùng thảo mộc hái từ vườn — hai giờ nhẹ nhàng, hồi phục.",
+    "descriptionEn": "Unwind with a guided herbal massage using herbs hand-picked from the garden — a gentle, restorative two hours.",
+    "thumbnail": "/images/img_17.jpeg",
+    "album": [
+      "/images/img_17.jpeg"
+    ],
+    "videoUrl": "",
+    "departureLocation": "208 Lê Thánh Tông, Cẩm Châu, Hội An",
+    "destinationLocation": "Botanica Garden Hội An",
+    "durationDays": 1,
+    "durationNights": 0,
+    "transportation": "Tự túc hoặc hỗ trợ đón trả khách sạn",
+    "minGuests": 1,
+    "maxGuests": 16,
+    "pricing": {
+      "adultPrice": 350000,
+      "childPrice": 350000,
+      "infantPrice": 0
+    },
+    "schedules": [
+      {
+        "id": "sch-ws-17",
+        "dayNumber": 1,
+        "title": "Trải nghiệm Massage thảo mộc (2 giờ thong thả)",
+        "description": "Thư giãn với buổi massage thảo mộc được hướng dẫn, dùng thảo mộc hái từ vườn — hai giờ nhẹ nhàng, hồi phục.",
+        "mealsIncluded": [
+          "Đồ uống chào mừng (Welcome Drink) & Trà thảo mộc"
+        ]
+      }
+    ],
+    "policies": {
+      "includes": [
+        "Đồ uống chào mừng (Garden coffee hoặc trà thảo mộc)",
+        "Tham quan và tìm hiểu vườn thảo mộc cùng host",
+        "Toàn bộ nguyên vật liệu và hộp quà mang sản phẩm về",
+        "Người hướng dẫn tiếng Anh/Việt nhiệt tình, kiên nhẫn",
+        "Khoảng 2 giờ trải nghiệm thong thả, không vội vã"
+      ],
+      "excludes": [
+        "Chi phí cá nhân ngoài chương trình",
+        "Đồ uống và thức ăn gọi thêm"
+      ],
+      "cancellation": "Báo trước 2 giờ nếu cần đổi lịch.",
+      "notes": "Phù hợp cho mọi lứa tuổi và gia đình có trẻ nhỏ."
+    },
+    "highlights": [
+      "Không gian vườn thảo mộc xanh mát cách phố cổ 2km",
+      "Tự tay làm sản phẩm mang đậm chất văn hóa Việt Nam",
+      "Đội ngũ hướng dẫn viên tiếng Anh thân thiện, mến khách"
+    ],
+    "status": "PUBLISHED",
+    "isFeatured": true,
+    "viewCount": 840,
+    "bookingCount": 82,
+    "rating": 5.0,
+    "reviewCount": 44,
+    "seo": {
+      "title": "Herbal Massage Workshop - Botanica Garden Hoi An",
+      "description": "Unwind with a guided herbal massage using herbs hand-picked from the garden — a gentle, restorative two hours.",
+      "keywords": [
+        "botanica garden",
+        "hoi an workshop",
+        "herbal massage"
+      ]
+    },
+    "createdAt": "2026-01-10T08:00:00Z",
+    "updatedAt": "2026-03-20T10:00:00Z"
+  }
+]

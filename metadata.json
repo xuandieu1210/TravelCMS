@@ -1,0 +1,6 @@
+{
+  "name": "Emic Travel CMS & Portal",
+  "description": "Hệ thống quản trị nội dung du lịch (Admin CMS) và cổng thông tin đặt tour Emic Travel Hội An.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
