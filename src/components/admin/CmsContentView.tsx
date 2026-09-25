@@ -371,7 +371,7 @@ export const CmsContentView: React.FC<CmsContentViewProps> = ({
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-black text-stone-900 font-serif tracking-tight">
-            Quản Lý Bài Viết & Nội Dung Website (CMS)
+            Quản lý bài viết và nội dung website
           </h1>
           <p className="text-xs text-stone-500 mt-0.5">
             Soạn thảo, quản lý bài viết blog, cập nhật banner trang chủ và duyệt đánh giá từ khách hàng.
@@ -452,7 +452,7 @@ export const CmsContentView: React.FC<CmsContentViewProps> = ({
         <div className="space-y-4 animate-in fade-in duration-150">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white p-4 rounded-xl border border-stone-200 shadow-2xs gap-3">
             <div>
-              <h3 className="text-sm font-bold text-stone-900">Quản Lý Banner Giao Diện</h3>
+              <h3 className="text-sm font-bold text-stone-900">Quản lý banner giao diện</h3>
               <p className="text-xs text-stone-500">Thêm, sửa, xóa, hiển thị các banner lớn ở màn hình trang chủ.</p>
             </div>
             <button

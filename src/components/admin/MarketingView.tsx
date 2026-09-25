@@ -306,7 +306,7 @@ Từ khóa mục tiêu: workshop hoi an, lam nen hoi an, ca phe muoi hoi an, bot
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-2xl font-black text-stone-900 font-serif tracking-tight">
-              Quản Lý Chiến Dịch & Marketing
+              Quản lý chiến dịch và tiếp thị
             </h1>
             <span className="bg-emerald-100 text-emerald-800 text-[11px] font-extrabold px-2.5 py-0.5 rounded-full">
               {campaigns.length} Chiến dịch

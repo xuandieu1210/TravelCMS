@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { AdminUser } from '../../types';
 import {
   LayoutDashboard,
   Compass,
@@ -18,7 +19,6 @@ import {
   ExternalLink,
   ChevronRight,
   LogOut,
-  RotateCcw,
   Sparkles,
 } from 'lucide-react';
 
@@ -27,7 +27,8 @@ interface AdminLayoutProps {
   onSelectTab: (tab: string) => void;
   pendingBookingsCount: number;
   onSwitchToPublic: () => void;
-  onResetFactoryData: () => void;
+  onLogout: () => void;
+  currentUser: AdminUser | null;
   children: React.ReactNode;
 }
 
@@ -36,33 +37,34 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
   onSelectTab,
   pendingBookingsCount,
   onSwitchToPublic,
-  onResetFactoryData,
+  onLogout,
+  currentUser,
   children,
 }) => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
 
   const menuItems = [
-    { id: 'dashboard', label: 'Dashboard Thống Kê', icon: LayoutDashboard },
-    { id: 'tours', label: 'Quản Lý Tour & Workshop', icon: Compass },
-    { id: 'categories', label: 'Quản Lý Danh Mục', icon: FolderTree },
+    { id: 'dashboard', label: 'Bảng điều khiển', icon: LayoutDashboard },
+    { id: 'tours', label: 'Quản lý tour và workshop', icon: Compass },
+    { id: 'categories', label: 'Quản lý danh mục', icon: FolderTree },
     {
       id: 'bookings',
-      label: 'Quản Lý Booking',
+      label: 'Quản lý đơn đặt chỗ',
       icon: CalendarCheck,
       badge: pendingBookingsCount > 0 ? pendingBookingsCount : undefined,
     },
-    { id: 'cms', label: 'Quản Lý Bài Viết & Nội Dung', icon: FileText },
-    { id: 'media', label: 'Quản Lý Media', icon: ImageIcon },
-    { id: 'marketing', label: 'Marketing Center', icon: Megaphone },
-    { id: 'users', label: 'Quản Lý Người Dùng', icon: UserCheck },
-    { id: 'audit-logs', label: 'Nhật Ký Hệ Thống', icon: History },
+    { id: 'cms', label: 'Quản lý bài viết và nội dung', icon: FileText },
+    { id: 'media', label: 'Quản lý thư viện phương tiện', icon: ImageIcon },
+    { id: 'marketing', label: 'Trung tâm tiếp thị', icon: Megaphone },
+    { id: 'users', label: 'Quản lý người dùng', icon: UserCheck },
+    { id: 'audit-logs', label: 'Nhật ký hệ thống', icon: History },
   ];
 
   return (
-    <div className="min-h-screen bg-stone-100 flex flex-col font-sans">
+    <div className="admin-page min-h-screen bg-stone-100 flex flex-col">
       {/* Admin Top Header */}
-      <header className="bg-stone-900 text-stone-200 border-b border-stone-800 sticky top-8 z-30 px-4 py-3 flex items-center justify-between shadow-xs">
+      <header className="bg-stone-900 text-stone-200 border-b border-stone-800 sticky top-0 z-30 px-4 py-3 flex items-center justify-between shadow-xs">
         <div className="flex items-center gap-3">
           <button
             onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
@@ -75,7 +77,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
           <div className="flex items-center gap-2">
             <span className="font-black text-amber-500 font-serif tracking-wide text-lg">EMIC TRAVEL</span>
             <span className="bg-amber-500/20 text-amber-400 text-[10px] font-bold px-2 py-0.5 rounded border border-amber-500/30 uppercase">
-              Admin CMS v2.6
+              Quản trị nội dung v2.6
             </span>
           </div>
         </div>
@@ -86,21 +88,8 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
             onClick={onSwitchToPublic}
             className="hidden sm:flex items-center gap-1.5 text-xs text-stone-300 hover:text-white bg-stone-800 hover:bg-stone-700 px-3 py-1.5 rounded-lg transition-colors border border-stone-700"
           >
-            <span>Xem Website Public</span>
+            <span>Xem website công khai</span>
             <ExternalLink className="w-3.5 h-3.5 text-stone-400" />
-          </button>
-
-          <button
-            onClick={() => {
-              if (confirm('Khôi phục lại dữ liệu mẫu gốc ban đầu của Emic Travel?')) {
-                onResetFactoryData();
-              }
-            }}
-            className="hidden md:flex items-center gap-1 text-[11px] text-stone-400 hover:text-amber-400 px-2 py-1 rounded transition-colors"
-            title="Khôi phục lại database mẫu ban đầu"
-          >
-            <RotateCcw className="w-3 h-3" />
-            <span>Reset Demo DB</span>
           </button>
 
           {/* Notifications button */}
@@ -119,7 +108,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
             {notificationsOpen && (
               <div className="absolute right-0 mt-2 w-80 bg-white text-stone-800 rounded-2xl shadow-xl border border-stone-200 p-4 z-50 text-xs">
                 <div className="flex items-center justify-between pb-2 border-b border-stone-100 font-bold">
-                  <span>Thông Báo Hoạt Động</span>
+                  <span>Thông báo hoạt động</span>
                   <span className="text-[11px] text-emerald-700">{pendingBookingsCount} đơn mới</span>
                 </div>
                 <div className="py-3 space-y-2.5">
@@ -145,12 +134,23 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
           {/* Admin Avatar */}
           <div className="flex items-center gap-2 pl-2 border-l border-stone-800">
             <div className="w-7 h-7 rounded-full bg-amber-600 text-white font-bold flex items-center justify-center text-xs shadow-xs">
-              L
+              {(currentUser?.fullName || currentUser?.username || 'U').charAt(0).toUpperCase()}
             </div>
             <div className="hidden lg:block text-left">
-              <div className="text-xs font-semibold text-stone-200 leading-tight">Lê Xuân Diệu</div>
-              <div className="text-[10px] text-amber-400/80 leading-tight">Super Admin</div>
+              <div className="text-xs font-semibold text-stone-200 leading-tight">
+                {currentUser?.fullName || currentUser?.username || 'Người dùng'}
+              </div>
+              <div className="text-[10px] text-amber-400/80 leading-tight">
+                {currentUser?.role === 'SUPER_ADMIN' ? 'Quản trị viên cấp cao' : currentUser?.role || 'Người dùng'}
+              </div>
             </div>
+            <button
+              onClick={onLogout}
+              className="p-2 rounded-lg text-stone-400 hover:text-white hover:bg-stone-800 transition-colors"
+              title="Đăng xuất"
+            >
+              <LogOut className="w-4 h-4" />
+            </button>
           </div>
         </div>
       </header>

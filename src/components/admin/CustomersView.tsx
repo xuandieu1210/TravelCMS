@@ -37,7 +37,7 @@ export const CustomersView: React.FC<CustomersViewProps> = ({ customers }) => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-black text-stone-900 font-serif tracking-tight">
-            Quản Lý Khách Hàng (CRM)
+            Quản lý khách hàng (CRM)
           </h1>
           <p className="text-xs text-stone-500 mt-0.5">
             Dữ liệu khách hàng, phân hạng thành viên, lịch sử đặt tour và chăm sóc cá nhân hóa.

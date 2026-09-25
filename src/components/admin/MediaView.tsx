@@ -118,7 +118,7 @@ export const MediaView: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-black text-stone-900 font-serif tracking-tight">
-            Quản Lý Thư Viện Media
+            Quản lý thư viện phương tiện
           </h1>
           <p className="text-xs text-stone-500 mt-0.5">
             Lưu trữ hình ảnh, video chất lượng cao. Ảnh mới nhất trong media sẽ được sử dụng tự động trên portal.

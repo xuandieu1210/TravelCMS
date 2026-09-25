@@ -1,16 +1,15 @@
 import React, { useState } from 'react';
-import { Compass, Phone, Menu, X, Leaf, HeartHandshake, ShieldCheck } from 'lucide-react';
+import { Compass, Phone, Menu, X, Leaf, HeartHandshake } from 'lucide-react';
 
 interface PublicHeaderProps {
   onOpenBooking: () => void;
-  onGoToAdmin: () => void;
 }
 
-export const PublicHeader: React.FC<PublicHeaderProps> = ({ onOpenBooking, onGoToAdmin }) => {
+export const PublicHeader: React.FC<PublicHeaderProps> = ({ onOpenBooking }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
-    <header className="bg-white/95 backdrop-blur-md sticky top-8 z-40 border-b border-emerald-100 shadow-xs transition-all">
+    <header className="bg-white/95 backdrop-blur-md sticky top-0 z-40 border-b border-emerald-100 shadow-xs transition-all">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-20">
           {/* Logo */}
@@ -60,14 +59,6 @@ export const PublicHeader: React.FC<PublicHeaderProps> = ({ onOpenBooking, onGoT
               Đặt Tour Ngay
             </button>
 
-            <button
-              onClick={onGoToAdmin}
-              className="border border-stone-300 hover:border-amber-600 hover:text-amber-700 text-stone-600 px-3.5 py-2 rounded-full text-xs font-medium flex items-center gap-1.5 transition-colors"
-              title="Đăng nhập trang quản trị"
-            >
-              <ShieldCheck className="w-3.5 h-3.5 text-amber-600" />
-              CMS Admin
-            </button>
           </div>
 
           {/* Mobile menu button */}
@@ -126,15 +117,6 @@ export const PublicHeader: React.FC<PublicHeaderProps> = ({ onOpenBooking, onGoT
           >
             Tin Tức & Hoạt Động
           </a>
-          <button
-            onClick={() => {
-              setMobileMenuOpen(false);
-              onGoToAdmin();
-            }}
-            className="w-full text-left py-2 font-medium text-amber-700 flex items-center gap-2"
-          >
-            <ShieldCheck className="w-4 h-4" /> Chuyển sang CMS Quản Trị
-          </button>
         </div>
       )}
     </header>

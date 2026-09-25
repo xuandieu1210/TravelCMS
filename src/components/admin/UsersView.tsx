@@ -34,15 +34,15 @@ interface UsersViewProps {
 }
 
 const ALL_AVAILABLE_PERMISSIONS = [
-  { id: 'tours.manage', label: 'Quản lý Tour & Lớp Workshop (Thêm, Sửa, Xóa, Đổi giá)', group: 'Sản phẩm' },
-  { id: 'bookings.manage', label: 'Quản lý Booking (Xác nhận, Huỷ, Đổi trạng thái, Thu tiền)', group: 'Vận hành' },
-  { id: 'services.manage', label: 'Quản lý Dịch vụ du lịch (Khách sạn, xe, vé, nhà hàng)', group: 'Sản phẩm' },
-  { id: 'crm.manage', label: 'Quản lý Khách hàng & CRM (Thông tin khách, phân hạng VIP)', group: 'Khách hàng' },
+  { id: 'tours.manage', label: 'Quản lý tour và lớp workshop (thêm, sửa, xóa, đổi giá)', group: 'Sản phẩm' },
+  { id: 'bookings.manage', label: 'Quản lý đơn đặt chỗ (xác nhận, hủy, đổi trạng thái, thu tiền)', group: 'Vận hành' },
+  { id: 'services.manage', label: 'Quản lý dịch vụ du lịch (khách sạn, xe, vé, nhà hàng)', group: 'Sản phẩm' },
+  { id: 'crm.manage', label: 'Quản lý khách hàng và CRM (thông tin khách, phân hạng VIP)', group: 'Khách hàng' },
   { id: 'cms.manage', label: 'Quản trị CMS Nội dung (Banners, Tin tức, Đánh giá, MXH)', group: 'Nội dung' },
-  { id: 'media.manage', label: 'Quản lý Thư viện Media & Tải ảnh', group: 'Nội dung' },
-  { id: 'marketing.manage', label: 'Quản lý Chiến dịch Marketing Đa kênh (FB, Ads, Zalo)', group: 'Marketing' },
-  { id: 'finance.manage', label: 'Quản lý Báo cáo Doanh thu & Kế toán Thu chi', group: 'Tài chính' },
-  { id: 'users.manage', label: 'Quản lý Người dùng & Phân quyền Nhân sự', group: 'Hệ thống' },
+  { id: 'media.manage', label: 'Quản lý thư viện phương tiện và tải ảnh', group: 'Nội dung' },
+  { id: 'marketing.manage', label: 'Quản lý chiến dịch tiếp thị đa kênh (Facebook, quảng cáo, Zalo)', group: 'Tiếp thị' },
+  { id: 'finance.manage', label: 'Quản lý báo cáo doanh thu và kế toán thu chi', group: 'Tài chính' },
+  { id: 'users.manage', label: 'Quản lý người dùng và phân quyền nhân sự', group: 'Hệ thống' },
   { id: 'audit.view', label: 'Xem Nhật ký Hệ thống (Audit Logs)', group: 'Hệ thống' },
 ];
 
@@ -65,6 +65,7 @@ export const UsersView: React.FC<UsersViewProps> = ({
   // Form State
   const [formData, setFormData] = useState({
     username: '',
+    password: '123456',
     fullName: '',
     email: '',
     phone: '',
@@ -79,6 +80,7 @@ export const UsersView: React.FC<UsersViewProps> = ({
     setEditingUser(null);
     setFormData({
       username: '',
+      password: '123456',
       fullName: '',
       email: '',
       phone: '',
@@ -95,6 +97,7 @@ export const UsersView: React.FC<UsersViewProps> = ({
     setEditingUser(user);
     setFormData({
       username: user.username,
+      password: user.password || '123456',
       fullName: user.fullName,
       email: user.email,
       phone: user.phone,
@@ -120,8 +123,13 @@ export const UsersView: React.FC<UsersViewProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.username || !formData.fullName || !formData.email) {
-      alert('Vui lòng điền đầy đủ Tên đăng nhập, Họ tên và Email');
+    if (!formData.username || !formData.password || !formData.fullName || !formData.email) {
+      alert('Vui lòng điền đầy đủ Tên đăng nhập, Mật khẩu, Họ tên và Email');
+      return;
+    }
+
+    if (formData.password.length < 6) {
+      alert('Mật khẩu phải có ít nhất 6 ký tự');
       return;
     }
 
@@ -497,6 +505,22 @@ export const UsersView: React.FC<UsersViewProps> = ({
                     onChange={(e) => setFormData({ ...formData, username: e.target.value })}
                     placeholder="ví dụ: lexuandieu"
                     className="w-full p-2.5 rounded-xl border border-stone-200 text-xs focus:border-stone-900 outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-bold text-stone-700 mb-1">
+                    Mật khẩu <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="password"
+                    required
+                    minLength={6}
+                    value={formData.password}
+                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                    placeholder="Ít nhất 6 ký tự"
+                    className="w-full p-2.5 rounded-xl border border-stone-200 text-xs focus:border-stone-900 outline-none"
+                    autoComplete="new-password"
                   />
                 </div>
 

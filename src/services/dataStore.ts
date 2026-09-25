@@ -348,22 +348,45 @@ class DataStore {
       percentage: totalTours > 0 ? Math.round((count / totalTours) * 100) : 0,
     }));
 
-    // Monthly mock stats
-    const monthlyRevenue = [
-      { month: 'T10/25', revenue: 185000000, bookings: 42 },
-      { month: 'T11/25', revenue: 215000000, bookings: 56 },
-      { month: 'T12/25', revenue: 340000000, bookings: 78 },
-      { month: 'T01/26', revenue: 380000000, bookings: 92 },
-      { month: 'T02/26', revenue: 410000000, bookings: 104 },
-      { month: 'T03/26', revenue: totalRevenue + 50000000, bookings: this.bookings.length + 20 },
-    ];
+    const monthlyBuckets: { key: string; month: string; revenue: number; bookings: number }[] = [];
+    const now = new Date();
+    for (let index = 5; index >= 0; index -= 1) {
+      const date = new Date(now.getFullYear(), now.getMonth() - index, 1);
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      monthlyBuckets.push({
+        key: `${date.getFullYear()}-${month}`,
+        month: `T${month}/${String(date.getFullYear()).slice(-2)}`,
+        revenue: 0,
+        bookings: 0,
+      });
+    }
+
+    this.bookings.forEach((booking) => {
+      const date = new Date(booking.createdAt);
+      if (Number.isNaN(date.getTime())) return;
+      const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+      const bucket = monthlyBuckets.find((item) => item.key === key);
+      if (!bucket) return;
+      bucket.bookings += 1;
+      if (booking.status === 'CONFIRMED' || booking.status === 'PAID' || booking.status === 'COMPLETED') {
+        bucket.revenue += booking.finalAmount;
+      }
+    });
+
+    const monthlyRevenue = monthlyBuckets.map(({ month, revenue, bookings }) => ({ month, revenue, bookings }));
+    const currentMonthRevenue = monthlyRevenue[monthlyRevenue.length - 1]?.revenue || 0;
+    const previousMonthRevenue = monthlyRevenue[monthlyRevenue.length - 2]?.revenue || 0;
+    const revenueChangePercent = previousMonthRevenue > 0
+      ? Math.round(((currentMonthRevenue - previousMonthRevenue) / previousMonthRevenue) * 1000) / 10
+      : null;
 
     return {
       totalTours,
       totalServices: this.services.length,
-      todayBookings: todayBookings || 3,
+      todayBookings,
       pendingBookings,
-      totalRevenue: totalRevenue || 428500000,
+      totalRevenue,
+      revenueChangePercent,
       totalCustomers: this.customers.length,
       monthlyRevenue,
       tourCategoriesDistribution,

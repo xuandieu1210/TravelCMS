@@ -31,6 +31,7 @@ export interface Category {
 export interface AdminUser {
   id: string;
   username: string;
+  password?: string;
   fullName: string;
   email: string;
   phone: string;
@@ -303,6 +304,7 @@ export interface DashboardStats {
   todayBookings: number;
   pendingBookings: number;
   totalRevenue: number;
+  revenueChangePercent: number | null;
   totalCustomers: number;
   monthlyRevenue: { month: string; revenue: number; bookings: number }[];
   tourCategoriesDistribution: { category: string; count: number; percentage: number }[];

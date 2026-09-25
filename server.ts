@@ -1,9 +1,8 @@
 import express, { Request, Response } from 'express';
 import { createServer as createViteServer } from 'vite';
-import { INITIAL_TOURS, INITIAL_SERVICES, INITIAL_BOOKINGS, INITIAL_CUSTOMERS, INITIAL_BANNERS, INITIAL_POSTS, INITIAL_FEEDBACKS, INITIAL_CAMPAIGNS, INITIAL_MEDIA_FILES, INITIAL_AUDIT_LOGS, INITIAL_CATEGORIES } from './src/data/mockData';
-import { initializeApp, getApps } from 'firebase-admin/app';
-import { getFirestore } from 'firebase-admin/firestore';
-import firebaseConfig from './firebase-applet-config.json';
+import { INITIAL_TOURS, INITIAL_SERVICES, INITIAL_BOOKINGS, INITIAL_CUSTOMERS, INITIAL_BANNERS, INITIAL_POSTS, INITIAL_FEEDBACKS, INITIAL_CAMPAIGNS, INITIAL_MEDIA_FILES, INITIAL_AUDIT_LOGS, INITIAL_CATEGORIES, INITIAL_ADMIN_USERS, INITIAL_SITE_CONFIG } from './src/data/mockData';
+import 'dotenv/config';
+import { Pool } from 'pg';
 
 import path from 'path';
 import fs from 'fs';
@@ -17,24 +16,22 @@ app.use(express.urlencoded({ limit: '50mb', extended: true }));
 // Serve uploaded static files if any
 app.use('/uploads', express.static(path.join(process.cwd(), 'public', 'uploads')));
 
-// Initialize Firebase Admin SDK
-if (!getApps().length) {
-  initializeApp({
-    projectId: firebaseConfig.projectId,
-  });
-}
+const databaseUrl = process.env.DATABASE_URL;
+const db = databaseUrl
+  ? new Pool({
+      connectionString: databaseUrl,
+      ssl: process.env.DATABASE_SSL === 'true' ? { rejectUnauthorized: false } : undefined,
+    })
+  : null;
 
-const db = getFirestore();
-
-// Clean undefined values for firestore compatibility
-function cleanForFirestore(obj: any): any {
+function cleanForDatabase(obj: any): any {
   if (obj === null || obj === undefined) return null;
-  if (Array.isArray(obj)) return obj.map(cleanForFirestore);
+  if (Array.isArray(obj)) return obj.map(cleanForDatabase);
   if (typeof obj === 'object') {
     const cleaned: any = {};
     for (const key in obj) {
       if (obj[key] !== undefined) {
-        cleaned[key] = cleanForFirestore(obj[key]);
+        cleaned[key] = cleanForDatabase(obj[key]);
       }
     }
     return cleaned;
@@ -42,21 +39,30 @@ function cleanForFirestore(obj: any): any {
   return obj;
 }
 
-// Sync utilities
-async function saveToFirestore(collection: string, id: string, data: any) {
+async function saveToFirestore(collection: string, id: string, data: any): Promise<boolean> {
+  if (!db) return false;
   try {
-    const cleaned = cleanForFirestore(data);
-    await db.collection(collection).doc(id).set(cleaned);
+    await db.query(
+      `INSERT INTO app_records (collection, id, data)
+       VALUES ($1, $2, $3::jsonb)
+       ON CONFLICT (collection, id) DO UPDATE SET data = EXCLUDED.data, updated_at = NOW()`,
+      [collection, id, JSON.stringify(cleanForDatabase(data))],
+    );
+    return true;
   } catch (error) {
-    console.error(`[Firestore Sync Error] Failed to save to ${collection}/${id}:`, error);
+    console.error(`[PostgreSQL Sync Error] Failed to save ${collection}/${id}:`, error);
+    return false;
   }
 }
 
-async function deleteFromFirestore(collection: string, id: string) {
+async function deleteFromFirestore(collection: string, id: string): Promise<boolean> {
+  if (!db) return false;
   try {
-    await db.collection(collection).doc(id).delete();
+    await db.query('DELETE FROM app_records WHERE collection = $1 AND id = $2', [collection, id]);
+    return true;
   } catch (error) {
-    console.error(`[Firestore Sync Error] Failed to delete ${collection}/${id}:`, error);
+    console.error(`[PostgreSQL Sync Error] Failed to delete ${collection}/${id}:`, error);
+    return false;
   }
 }
 
@@ -72,129 +78,81 @@ let campaigns = [...INITIAL_CAMPAIGNS];
 let mediaFiles = [...INITIAL_MEDIA_FILES];
 let auditLogs = [...INITIAL_AUDIT_LOGS];
 let categories = [...INITIAL_CATEGORIES];
+let users = [...INITIAL_ADMIN_USERS];
+let siteConfig = { ...INITIAL_SITE_CONFIG };
 
 async function syncAllFromFirestore() {
+  if (!db) {
+    console.warn('[PostgreSQL] DATABASE_URL is missing; using in-memory data only.');
+    return;
+  }
+
   try {
-    console.log('[Firestore Sync] Restoring database state from cloud...');
-    
-    // Check and load banners
-    const bannersSnap = await db.collection('banners').get();
-    if (!bannersSnap.empty) {
-      banners = [];
-      bannersSnap.forEach(doc => banners.push(doc.data() as any));
-    } else {
-      console.log('[Firestore Sync] "banners" collection empty. Seeding initial banners...');
-      for (const banner of INITIAL_BANNERS) {
-        await saveToFirestore('banners', banner.id, banner);
+    await db.query(`CREATE TABLE IF NOT EXISTS app_records (
+      collection TEXT NOT NULL,
+      id TEXT NOT NULL,
+      data JSONB NOT NULL,
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      PRIMARY KEY (collection, id)
+    )`);
+
+    const stores = [
+      ['banners', INITIAL_BANNERS, (value: any[]) => { banners = value; }],
+      ['tours', INITIAL_TOURS, (value: any[]) => { tours = value; }],
+      ['services', INITIAL_SERVICES, (value: any[]) => { services = value; }],
+      ['bookings', INITIAL_BOOKINGS, (value: any[]) => { bookings = value; }],
+      ['customers', INITIAL_CUSTOMERS, (value: any[]) => { customers = value; }],
+      ['posts', INITIAL_POSTS, (value: any[]) => { posts = value; }],
+      ['feedbacks', INITIAL_FEEDBACKS, (value: any[]) => { feedbacks = value; }],
+      ['campaigns', INITIAL_CAMPAIGNS, (value: any[]) => { campaigns = value; }],
+      ['media', INITIAL_MEDIA_FILES, (value: any[]) => { mediaFiles = value; }],
+      ['audit_logs', INITIAL_AUDIT_LOGS, (value: any[]) => { auditLogs = value; }],
+      ['categories', INITIAL_CATEGORIES, (value: any[]) => { categories = value; }],
+      ['users', INITIAL_ADMIN_USERS, (value: any[]) => { users = value; }],
+      ['site_config', [{ id: 'main', ...INITIAL_SITE_CONFIG }], (value: any[]) => {
+        if (value[0]) siteConfig = value[0];
+      }],
+    ] as const;
+
+    for (const [collection, initial, setStore] of stores) {
+      const result = await db.query('SELECT data FROM app_records WHERE collection = $1 ORDER BY id', [collection]);
+      if (result.rows.length > 0) {
+        setStore(result.rows.map((row) => row.data));
+      } else {
+        for (const item of initial) await saveToFirestore(collection, item.id, item);
+        setStore([...initial]);
       }
     }
 
-    // Check and load tours
-    const toursSnap = await db.collection('tours').get();
-    if (!toursSnap.empty) {
-      tours = [];
-      toursSnap.forEach(doc => tours.push(doc.data() as any));
-    } else {
-      console.log('[Firestore Sync] "tours" collection empty. Seeding initial tours...');
-      for (const tour of INITIAL_TOURS) {
-        await saveToFirestore('tours', tour.id, tour);
-      }
-    }
-
-    // Check and load services
-    const servicesSnap = await db.collection('services').get();
-    if (!servicesSnap.empty) {
-      services = [];
-      servicesSnap.forEach(doc => services.push(doc.data() as any));
-    } else {
-      console.log('[Firestore Sync] "services" collection empty. Seeding initial services...');
-      for (const s of INITIAL_SERVICES) {
-        await saveToFirestore('services', s.id, s);
-      }
-    }
-
-    // Check and load bookings
-    const bookingsSnap = await db.collection('bookings').get();
-    if (!bookingsSnap.empty) {
-      bookings = [];
-      bookingsSnap.forEach(doc => bookings.push(doc.data() as any));
-    } else {
-      console.log('[Firestore Sync] "bookings" collection empty. Seeding initial bookings...');
-      for (const b of INITIAL_BOOKINGS) {
-        await saveToFirestore('bookings', b.id, b);
-      }
-    }
-
-    // Check and load customers
-    const customersSnap = await db.collection('customers').get();
-    if (!customersSnap.empty) {
-      customers = [];
-      customersSnap.forEach(doc => customers.push(doc.data() as any));
-    } else {
-      console.log('[Firestore Sync] "customers" collection empty. Seeding initial customers...');
-      for (const c of INITIAL_CUSTOMERS) {
-        await saveToFirestore('customers', c.id, c);
-      }
-    }
-
-    // Check and load posts
-    const postsSnap = await db.collection('posts').get();
-    if (!postsSnap.empty) {
-      posts = [];
-      postsSnap.forEach(doc => posts.push(doc.data() as any));
-
-      // Force update or seed post-botanica-04 to ensure the user gets "The other Hoi An" with all the new fields
-      const p04 = INITIAL_POSTS.find(p => p.id === 'post-botanica-04');
-      if (p04) {
-        const existing04 = posts.find(p => p.id === 'post-botanica-04');
-        if (!existing04 || !existing04.eyebrow || existing04.title !== p04.title) {
-          console.log('[Firestore Sync] Overwriting/Seeding updated "post-botanica-04" post...');
-          await saveToFirestore('posts', p04.id, p04);
-          if (existing04) {
-            Object.assign(existing04, p04);
-          } else {
-            posts.push(p04);
-          }
-        }
-      }
-    } else {
-      console.log('[Firestore Sync] "posts" collection empty. Seeding initial posts...');
-      for (const p of INITIAL_POSTS) {
-        await saveToFirestore('posts', p.id, p);
-      }
-    }
-
-    // Check and load feedbacks
-    const feedbacksSnap = await db.collection('feedbacks').get();
-    if (!feedbacksSnap.empty) {
-      feedbacks = [];
-      feedbacksSnap.forEach(doc => feedbacks.push(doc.data() as any));
-    } else {
-      console.log('[Firestore Sync] "feedbacks" collection empty. Seeding initial feedbacks...');
-      for (const f of INITIAL_FEEDBACKS) {
-        await saveToFirestore('feedbacks', f.id, f);
-      }
-    }
-
-    // Check and load categories
-    const categoriesSnap = await db.collection('categories').get();
-    if (!categoriesSnap.empty) {
-      categories = [];
-      categoriesSnap.forEach(doc => categories.push(doc.data() as any));
-    } else {
-      console.log('[Firestore Sync] "categories" collection empty. Seeding initial categories...');
-      for (const cat of INITIAL_CATEGORIES) {
-        await saveToFirestore('categories', cat.id, cat);
-      }
-    }
-
-    console.log('[Firestore Sync] All collections synchronized successfully from Google Cloud!');
+    console.log('[PostgreSQL] Database state restored successfully.');
   } catch (error) {
-    console.error('[Firestore Sync Error] Critical error during collection restoration:', error);
+    console.error('[PostgreSQL Error] Critical error during database restoration:', error);
+    throw error;
   }
 }
 
 // ================= PUBLIC APIS =================
+
+app.get('/api/health/db', async (_req: Request, res: Response) => {
+  if (!db) {
+    return res.status(503).json({ success: false, database: 'not_configured' });
+  }
+
+  try {
+    const result = await db.query('SELECT NOW() AS connected_at');
+    const collections = await db.query(
+      'SELECT collection, COUNT(*)::int AS count FROM app_records GROUP BY collection ORDER BY collection',
+    );
+    res.json({
+      success: true,
+      database: 'connected',
+      connectedAt: result.rows[0].connected_at,
+      collections: collections.rows,
+    });
+  } catch (error: any) {
+    res.status(503).json({ success: false, database: 'unavailable', message: error?.message || 'Database unavailable' });
+  }
+});
 
 // GET /api/public/home
 app.get('/api/public/home', (_req: Request, res: Response) => {
@@ -406,6 +364,11 @@ app.get('/api/admin/dashboard/stats', (_req: Request, res: Response) => {
     revenue: m.revenue,
     bookings: m.bookings,
   }));
+  const currentMonthRevenue = monthlyRevenue[monthlyRevenue.length - 1]?.revenue || 0;
+  const previousMonthRevenue = monthlyRevenue[monthlyRevenue.length - 2]?.revenue || 0;
+  const revenueChangePercent = previousMonthRevenue > 0
+    ? Math.round(((currentMonthRevenue - previousMonthRevenue) / previousMonthRevenue) * 1000) / 10
+    : null;
 
   res.json({
     success: true,
@@ -415,6 +378,7 @@ app.get('/api/admin/dashboard/stats', (_req: Request, res: Response) => {
       todayBookings,
       pendingBookings,
       totalRevenue,
+      revenueChangePercent,
       totalCustomers: customers.length,
       monthlyRevenue,
       tourCategoriesDistribution,
@@ -428,7 +392,7 @@ app.get('/api/admin/tours', (_req: Request, res: Response) => {
   res.json({ success: true, data: tours });
 });
 
-app.post('/api/admin/tours', (req: Request, res: Response) => {
+app.post('/api/admin/tours', async (req: Request, res: Response) => {
   const newTour = {
     ...req.body,
     id: 'tour-' + Date.now(),
@@ -440,39 +404,85 @@ app.post('/api/admin/tours', (req: Request, res: Response) => {
     updatedAt: new Date().toISOString(),
   };
   tours.unshift(newTour);
-  saveToFirestore('tours', newTour.id, newTour);
+  if (!(await saveToFirestore('tours', newTour.id, newTour))) {
+    return res.status(503).json({ success: false, message: 'Không thể lưu tour vào PostgreSQL' });
+  }
   res.status(201).json({ success: true, data: newTour });
 });
 
-app.put('/api/admin/tours/:id', (req: Request, res: Response) => {
+app.put('/api/admin/tours/:id', async (req: Request, res: Response) => {
   const { id } = req.params;
   const idx = tours.findIndex((t) => t.id === id);
   if (idx === -1) return res.status(404).json({ success: false, message: 'Not found' });
   tours[idx] = { ...tours[idx], ...req.body, updatedAt: new Date().toISOString() };
-  saveToFirestore('tours', id, tours[idx]);
+  if (!(await saveToFirestore('tours', id, tours[idx]))) {
+    return res.status(503).json({ success: false, message: 'Không thể cập nhật tour trong PostgreSQL' });
+  }
   res.json({ success: true, data: tours[idx] });
 });
 
-app.patch('/api/admin/tours/:id/status', (req: Request, res: Response) => {
+app.patch('/api/admin/tours/:id/status', async (req: Request, res: Response) => {
   const { id } = req.params;
   const idx = tours.findIndex((t) => t.id === id);
   if (idx === -1) return res.status(404).json({ success: false, message: 'Not found' });
   tours[idx].status = req.body.status;
   tours[idx].updatedAt = new Date().toISOString();
-  saveToFirestore('tours', id, tours[idx]);
+  if (!(await saveToFirestore('tours', id, tours[idx]))) {
+    return res.status(503).json({ success: false, message: 'Không thể cập nhật trạng thái tour trong PostgreSQL' });
+  }
   res.json({ success: true, data: tours[idx] });
 });
 
-app.delete('/api/admin/tours/:id', (req: Request, res: Response) => {
+app.delete('/api/admin/tours/:id', async (req: Request, res: Response) => {
   const { id } = req.params;
+  if (!tours.some((tour) => tour.id === id)) {
+    return res.status(404).json({ success: false, message: 'Tour không tồn tại' });
+  }
   tours = tours.filter((t) => t.id !== id);
-  deleteFromFirestore('tours', id);
+  if (!(await deleteFromFirestore('tours', id))) {
+    return res.status(503).json({ success: false, message: 'Không thể xóa tour khỏi PostgreSQL' });
+  }
   res.json({ success: true, message: 'Xóa tour thành công' });
 });
 
 // Services
 app.get('/api/admin/services', (_req: Request, res: Response) => {
   res.json({ success: true, data: services });
+});
+
+app.post('/api/admin/services', async (req: Request, res: Response) => {
+  const newService = {
+    ...req.body,
+    id: 'service-' + Date.now(),
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  };
+  services.unshift(newService);
+  if (!(await saveToFirestore('services', newService.id, newService))) {
+    return res.status(503).json({ success: false, message: 'Không thể lưu dịch vụ vào PostgreSQL' });
+  }
+  res.status(201).json({ success: true, data: newService });
+});
+
+app.put('/api/admin/services/:id', async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const idx = services.findIndex((service) => service.id === id);
+  if (idx === -1) return res.status(404).json({ success: false, message: 'Dịch vụ không tồn tại' });
+  services[idx] = { ...services[idx], ...req.body, updatedAt: new Date().toISOString() };
+  if (!(await saveToFirestore('services', id, services[idx]))) {
+    return res.status(503).json({ success: false, message: 'Không thể cập nhật dịch vụ trong PostgreSQL' });
+  }
+  res.json({ success: true, data: services[idx] });
+});
+
+app.delete('/api/admin/services/:id', async (req: Request, res: Response) => {
+  const { id } = req.params;
+  if (!services.some((service) => service.id === id)) return res.status(404).json({ success: false, message: 'Dịch vụ không tồn tại' });
+  services = services.filter((service) => service.id !== id);
+  if (!(await deleteFromFirestore('services', id))) {
+    return res.status(503).json({ success: false, message: 'Không thể xóa dịch vụ khỏi PostgreSQL' });
+  }
+  res.json({ success: true, message: 'Xóa dịch vụ thành công' });
 });
 
 // Bookings
@@ -512,6 +522,91 @@ app.post('/api/admin/bookings/:id/send-email', (req: Request, res: Response) => 
 // Customers
 app.get('/api/admin/customers', (_req: Request, res: Response) => {
   res.json({ success: true, data: customers });
+});
+
+app.put('/api/admin/customers/:id', async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const idx = customers.findIndex((customer) => customer.id === id);
+  if (idx === -1) return res.status(404).json({ success: false, message: 'Khách hàng không tồn tại' });
+  customers[idx] = { ...customers[idx], ...req.body };
+  if (!(await saveToFirestore('customers', id, customers[idx]))) {
+    return res.status(503).json({ success: false, message: 'Không thể cập nhật khách hàng trong PostgreSQL' });
+  }
+  res.json({ success: true, data: customers[idx] });
+});
+
+app.get('/api/admin/site-config', (_req: Request, res: Response) => {
+  res.json({ success: true, data: siteConfig });
+});
+
+app.put('/api/admin/site-config', async (req: Request, res: Response) => {
+  siteConfig = { ...siteConfig, ...req.body };
+  if (!(await saveToFirestore('site_config', 'main', siteConfig))) {
+    return res.status(503).json({ success: false, message: 'Không thể cập nhật cấu hình trong PostgreSQL' });
+  }
+  res.json({ success: true, data: siteConfig });
+});
+
+// Admin users and authentication
+app.post('/api/admin/login', async (req: Request, res: Response) => {
+  const username = String(req.body.username || '').trim().toLowerCase();
+  const password = String(req.body.password || '');
+  const idx = users.findIndex(
+    (user) => user.username.toLowerCase() === username && user.status === 'ACTIVE' && (user.password || '123456') === password,
+  );
+
+  if (idx === -1) return res.status(401).json({ success: false, message: 'Tên đăng nhập hoặc mật khẩu không đúng' });
+
+  users[idx] = { ...users[idx], lastLogin: new Date().toISOString() };
+  if (!(await saveToFirestore('users', users[idx].id, users[idx]))) {
+    return res.status(503).json({ success: false, message: 'Không thể cập nhật PostgreSQL' });
+  }
+  res.json({ success: true, data: users[idx] });
+});
+
+app.get('/api/admin/users', (_req: Request, res: Response) => {
+  res.json({ success: true, data: users });
+});
+
+app.post('/api/admin/users', async (req: Request, res: Response) => {
+  const newUser = { ...req.body, id: 'user-' + Date.now(), createdAt: new Date().toISOString() };
+  users.unshift(newUser);
+  if (!(await saveToFirestore('users', newUser.id, newUser))) {
+    return res.status(503).json({ success: false, message: 'Không thể lưu user vào PostgreSQL' });
+  }
+  res.status(201).json({ success: true, data: newUser });
+});
+
+app.put('/api/admin/users/:id', async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const idx = users.findIndex((user) => user.id === id);
+  if (idx === -1) return res.status(404).json({ success: false, message: 'User không tồn tại' });
+  users[idx] = { ...users[idx], ...req.body };
+  if (!(await saveToFirestore('users', id, users[idx]))) {
+    return res.status(503).json({ success: false, message: 'Không thể cập nhật user trong PostgreSQL' });
+  }
+  res.json({ success: true, data: users[idx] });
+});
+
+app.patch('/api/admin/users/:id/status', async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const idx = users.findIndex((user) => user.id === id);
+  if (idx === -1) return res.status(404).json({ success: false, message: 'User không tồn tại' });
+  users[idx] = { ...users[idx], status: req.body.status };
+  if (!(await saveToFirestore('users', id, users[idx]))) {
+    return res.status(503).json({ success: false, message: 'Không thể cập nhật trạng thái user trong PostgreSQL' });
+  }
+  res.json({ success: true, data: users[idx] });
+});
+
+app.delete('/api/admin/users/:id', async (req: Request, res: Response) => {
+  const { id } = req.params;
+  if (!users.some((user) => user.id === id)) return res.status(404).json({ success: false, message: 'User không tồn tại' });
+  users = users.filter((user) => user.id !== id);
+  if (!(await deleteFromFirestore('users', id))) {
+    return res.status(503).json({ success: false, message: 'Không thể xóa user khỏi PostgreSQL' });
+  }
+  res.json({ success: true, message: 'Xóa user thành công' });
 });
 
 // Banners
@@ -599,6 +694,29 @@ app.delete('/api/admin/posts/:id', (req: Request, res: Response) => {
 // Media
 app.get('/api/admin/media', (_req: Request, res: Response) => {
   res.json({ success: true, data: mediaFiles });
+});
+
+app.post('/api/admin/media', async (req: Request, res: Response) => {
+  const media = {
+    ...req.body,
+    id: req.body.id || 'media-' + Date.now(),
+    createdAt: req.body.createdAt || new Date().toISOString(),
+  };
+  mediaFiles.unshift(media);
+  if (!(await saveToFirestore('media', media.id, media))) {
+    return res.status(503).json({ success: false, message: 'Không thể lưu media vào PostgreSQL' });
+  }
+  res.status(201).json({ success: true, data: media });
+});
+
+app.delete('/api/admin/media/:id', async (req: Request, res: Response) => {
+  const { id } = req.params;
+  if (!mediaFiles.some((file) => file.id === id)) return res.status(404).json({ success: false, message: 'Tệp media không tồn tại' });
+  mediaFiles = mediaFiles.filter((file) => file.id !== id);
+  if (!(await deleteFromFirestore('media', id))) {
+    return res.status(503).json({ success: false, message: 'Không thể xóa media khỏi PostgreSQL' });
+  }
+  res.json({ success: true, message: 'Xóa media thành công' });
 });
 
 // Campaigns
@@ -794,7 +912,7 @@ app.delete('/api/admin/categories/:id', async (req: Request, res: Response) => {
 });
 
 async function startServer() {
-  // Sync state from Google Cloud Firestore on startup
+  // Restore application state from PostgreSQL before serving requests.
   await syncAllFromFirestore();
 
   if (process.env.NODE_ENV !== 'production') {

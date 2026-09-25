@@ -20,8 +20,15 @@ interface RevenueBookingComboChartProps {
 
 const RevenueBookingComboChart: React.FC<RevenueBookingComboChartProps> = ({ data }) => {
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+  const [selectedMonth, setSelectedMonth] = useState(() => data[data.length - 1]?.month || '');
 
   if (!data || data.length === 0) return null;
+
+  const selectedIndex = Math.max(
+    0,
+    data.findIndex((item) => item.month === selectedMonth),
+  );
+  const activeIndex = hoveredIndex ?? selectedIndex;
 
   const maxRevenue = Math.max(...data.map((d) => d.revenue), 1000000) * 1.15;
   const maxBookings = Math.max(...data.map((d) => d.bookings), 10) * 1.25;
@@ -47,7 +54,7 @@ const RevenueBookingComboChart: React.FC<RevenueBookingComboChartProps> = ({ dat
 
   const areaPathD = `${linePathD} L ${points[points.length - 1].x},${svgHeight - paddingBottom} L ${points[0].x},${svgHeight - paddingBottom} Z`;
 
-  const activeItem = hoveredIndex !== null ? data[hoveredIndex] : data[data.length - 1];
+  const activeItem = data[activeIndex];
 
   return (
     <div className="bg-white p-6 rounded-2xl border border-stone-200 shadow-2xs lg:col-span-2 flex flex-col justify-between">
@@ -67,10 +74,25 @@ const RevenueBookingComboChart: React.FC<RevenueBookingComboChartProps> = ({ dat
 
         {/* Dynamic Month Hover Card */}
         {activeItem && (
-          <div className="bg-stone-50 border border-stone-200 rounded-xl px-3 py-1.5 flex items-center gap-3 text-xs self-start sm:self-auto shadow-2xs">
-            <div className="text-stone-700 font-extrabold border-r border-stone-200 pr-2.5">
-              {activeItem.month}
-            </div>
+          <div className="flex items-center gap-2 self-start sm:self-auto">
+            <label className="sr-only" htmlFor="revenue-month-selector">Chọn tháng xem biểu đồ</label>
+            <select
+              id="revenue-month-selector"
+              value={selectedMonth}
+              onChange={(event) => {
+                setSelectedMonth(event.target.value);
+                setHoveredIndex(null);
+              }}
+              className="bg-white border border-stone-300 rounded-xl px-3 py-1.5 text-xs font-bold text-stone-700 outline-none focus:border-emerald-600"
+            >
+              {data.map((item) => (
+                <option key={item.month} value={item.month}>{item.month}</option>
+              ))}
+            </select>
+            <div className="bg-stone-50 border border-stone-200 rounded-xl px-3 py-1.5 flex items-center gap-3 text-xs shadow-2xs">
+              <div className="text-stone-700 font-extrabold border-r border-stone-200 pr-2.5">
+                {activeItem.month}
+              </div>
             <div className="flex items-center gap-3">
               <div className="flex items-center gap-1.5">
                 <span className="w-2.5 h-2.5 rounded-xs bg-amber-500 inline-block"></span>
@@ -84,6 +106,7 @@ const RevenueBookingComboChart: React.FC<RevenueBookingComboChartProps> = ({ dat
                   {activeItem.revenue.toLocaleString('vi-VN')} đ
                 </span>
               </div>
+            </div>
             </div>
           </div>
         )}
@@ -142,9 +165,10 @@ const RevenueBookingComboChart: React.FC<RevenueBookingComboChartProps> = ({ dat
             {/* Revenue Data Point Circles & Badges */}
             {points.map((pt, idx) => {
               const isHovered = hoveredIndex === idx;
+              const isSelected = activeIndex === idx;
               return (
                 <g key={idx}>
-                  {isHovered && (
+                  {isSelected && (
                     <circle
                       cx={pt.x}
                       cy={pt.y}
@@ -156,7 +180,7 @@ const RevenueBookingComboChart: React.FC<RevenueBookingComboChartProps> = ({ dat
                   <circle
                     cx={pt.x}
                     cy={pt.y}
-                    r={isHovered ? 6.5 : 4.5}
+                    r={isSelected ? 6.5 : 4.5}
                     fill="#047857"
                     stroke="#ffffff"
                     strokeWidth="2.5"
@@ -182,6 +206,7 @@ const RevenueBookingComboChart: React.FC<RevenueBookingComboChartProps> = ({ dat
             {data.map((m, idx) => {
               const bookingHeightPercent = Math.max(10, Math.min(92, Math.round((m.bookings / maxBookings) * 100)));
               const isHovered = hoveredIndex === idx;
+              const isSelected = activeIndex === idx;
 
               return (
                 <div
@@ -198,7 +223,7 @@ const RevenueBookingComboChart: React.FC<RevenueBookingComboChartProps> = ({ dat
                   {/* Booking Count Label */}
                   <div
                     className={`text-[10px] font-extrabold mb-1 px-1.5 py-0.5 rounded transition-all ${
-                      isHovered
+                      isSelected
                         ? 'bg-amber-600 text-white scale-105 shadow-xs'
                         : 'text-amber-800 bg-amber-50/90 border border-amber-200/60'
                     }`}
@@ -209,7 +234,7 @@ const RevenueBookingComboChart: React.FC<RevenueBookingComboChartProps> = ({ dat
                   {/* Column Bar */}
                   <div
                     className={`w-full max-w-[36px] rounded-t-lg transition-all duration-300 relative shadow-xs ${
-                      isHovered
+                      isSelected
                         ? 'bg-gradient-to-t from-amber-500 to-amber-400 ring-2 ring-amber-400 ring-offset-1'
                         : 'bg-amber-400/85 hover:bg-amber-500'
                     }`}
@@ -222,7 +247,7 @@ const RevenueBookingComboChart: React.FC<RevenueBookingComboChartProps> = ({ dat
                   <div className="mt-2 text-center">
                     <span
                       className={`text-[11px] font-bold block transition-colors ${
-                        isHovered ? 'text-emerald-900 underline' : 'text-stone-600'
+                        isSelected ? 'text-emerald-900 underline' : 'text-stone-600'
                       }`}
                     >
                       {m.month}
@@ -272,10 +297,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-black text-stone-900 font-serif tracking-tight">
-            Dashboard Tổng Quan Điều Hành
+            Bảng điều khiển tổng quan
           </h1>
           <p className="text-xs text-stone-500 mt-0.5">
-            Dữ liệu vận hành hệ thống Emic Travel theo thời gian thực (Real-time synced).
+            Dữ liệu vận hành hệ thống Emic Travel theo thời gian thực.
           </p>
         </div>
 
@@ -360,8 +385,17 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           <div className="text-2xl font-black text-emerald-900">
             {stats.totalRevenue.toLocaleString('vi-VN')} <span className="text-xs font-normal text-stone-500">đ</span>
           </div>
-          <div className="text-[10px] text-emerald-700 font-semibold mt-1 flex items-center gap-1">
-            <TrendingUp className="w-3 h-3" /> +18.5% so với tháng trước
+          <div className={`text-[10px] font-semibold mt-1 flex items-center gap-1 ${
+            stats.revenueChangePercent === null
+              ? 'text-stone-500'
+              : stats.revenueChangePercent >= 0
+              ? 'text-emerald-700'
+              : 'text-red-700'
+          }`}>
+            <TrendingUp className="w-3 h-3" />
+            {stats.revenueChangePercent === null
+              ? 'Chưa đủ dữ liệu so sánh'
+              : `${stats.revenueChangePercent >= 0 ? '+' : ''}${stats.revenueChangePercent.toFixed(1)}% so với tháng trước`}
           </div>
         </div>
       </div>

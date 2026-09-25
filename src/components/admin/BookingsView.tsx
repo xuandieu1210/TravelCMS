@@ -119,7 +119,7 @@ export const BookingsView: React.FC<BookingsViewProps> = ({
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-black text-stone-900 font-serif tracking-tight">
-            Quản Lý Booking & Đơn Đặt Chỗ
+            Quản lý đơn đặt chỗ
           </h1>
           <p className="text-xs text-stone-500 mt-0.5">
             Xử lý tiếp nhận đơn đặt tour, in phiếu voucher du lịch và gửi email xác nhận cho khách hàng.

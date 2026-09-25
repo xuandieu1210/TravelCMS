@@ -1,2 +1,7 @@
 @import "tailwindcss";
 @import "./botanica.css";
+
+.admin-page,
+.admin-page * {
+	font-family: "Times New Roman", Times, serif !important;
+}

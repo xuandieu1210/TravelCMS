@@ -898,6 +898,7 @@ export const INITIAL_ADMIN_USERS: AdminUser[] = [
   {
     id: 'user-01',
     username: 'lexuandieu',
+    password: '123456',
     fullName: 'Lê Xuân Diệu',
     email: 'lexuandieuIT94@gmail.com',
     phone: '0905 982 919',
@@ -912,6 +913,7 @@ export const INITIAL_ADMIN_USERS: AdminUser[] = [
   {
     id: 'user-02',
     username: 'maitran',
+    password: '123456',
     fullName: 'Trần Thị Mai',
     email: 'mai.tran@emictravel.com',
     phone: '0912 345 678',
@@ -926,6 +928,7 @@ export const INITIAL_ADMIN_USERS: AdminUser[] = [
   {
     id: 'user-03',
     username: 'longnguyen',
+    password: '123456',
     fullName: 'Nguyễn Hoàng Long',
     email: 'long.nguyen@emictravel.com',
     phone: '0935 888 999',
@@ -940,6 +943,7 @@ export const INITIAL_ADMIN_USERS: AdminUser[] = [
   {
     id: 'user-04',
     username: 'quynhanh',
+    password: '123456',
     fullName: 'Phạm Quỳnh Anh',
     email: 'quynhanh.pham@emictravel.com',
     phone: '0978 222 333',
@@ -954,6 +958,7 @@ export const INITIAL_ADMIN_USERS: AdminUser[] = [
   {
     id: 'user-05',
     username: 'tamvo',
+    password: '123456',
     fullName: 'Võ Văn Tâm',
     email: 'tam.vo@botanicagarden.vn',
     phone: '0905 112 233',

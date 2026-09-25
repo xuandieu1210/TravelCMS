@@ -505,6 +505,15 @@ export const apiClient = {
   },
 
   async getAdminFeedbacks() {
+    try {
+      const res = await fetch('/api/admin/feedbacks');
+      if (res.ok) {
+        const json = await res.json();
+        return json.data as CustomerFeedback[];
+      }
+    } catch {
+      // fallback
+    }
     return dataStore.getAllFeedbacks();
   },
 
@@ -553,6 +562,19 @@ export const apiClient = {
   },
 
   async updateAdminFeedback(id: string, isApproved: boolean, isFeatured?: boolean) {
+    try {
+      const res = await fetch(`/api/admin/feedbacks/${id}/approve`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isApproved, isFeatured }),
+      });
+      if (res.ok) {
+        const json = await res.json();
+        return json.data as CustomerFeedback;
+      }
+    } catch {
+      // fallback
+    }
     return dataStore.updateFeedbackApproval(id, isApproved, isFeatured);
   },
 
@@ -590,22 +612,61 @@ export const apiClient = {
   },
 
   async getAdminMedia() {
+    try {
+      const res = await fetch('/api/admin/media');
+      if (res.ok) {
+        const json = await res.json();
+        return json.data as MediaFile[];
+      }
+    } catch {
+      // fallback
+    }
     return dataStore.getAllMedia();
   },
 
   async uploadAdminMedia(fileData: { name: string; url: string; folder: MediaFile['folder']; sizeKb: number; mimeType: string }) {
+    try {
+      const res = await fetch('/api/admin/media', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(fileData),
+      });
+      if (res.ok) {
+        const json = await res.json();
+        return json.data as MediaFile;
+      }
+    } catch {
+      // fallback
+    }
     return dataStore.uploadMedia(fileData);
   },
 
   async deleteAdminMedia(id: string) {
+    try {
+      const res = await fetch(`/api/admin/media/${id}`, { method: 'DELETE' });
+      if (res.ok) return true;
+    } catch {
+      // fallback
+    }
     return dataStore.deleteMedia(id);
   },
 
   async clearAllAdminMedia() {
-    return dataStore.clearAllMedia();
+    const media = await this.getAdminMedia();
+    await Promise.all(media.map((file) => this.deleteAdminMedia(file.id)));
+    return true;
   },
 
   async getAdminAuditLogs() {
+    try {
+      const res = await fetch('/api/admin/audit-logs');
+      if (res.ok) {
+        const json = await res.json();
+        return json.data as AuditLog[];
+      }
+    } catch {
+      // fallback
+    }
     return dataStore.getAuditLogs();
   },
 
@@ -632,31 +693,129 @@ export const apiClient = {
   },
 
   async getSiteConfig() {
+    try {
+      const res = await fetch('/api/admin/site-config');
+      if (res.ok) {
+        const json = await res.json();
+        return json.data as import('../types').SiteConfig;
+      }
+    } catch {
+      // fallback
+    }
     return dataStore.getSiteConfig();
   },
 
   async updateSiteConfig(config: Partial<import('../types').SiteConfig>) {
+    try {
+      const res = await fetch('/api/admin/site-config', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(config),
+      });
+      if (res.ok) {
+        const json = await res.json();
+        return json.data as import('../types').SiteConfig;
+      }
+    } catch {
+      // fallback
+    }
     return dataStore.updateSiteConfig(config);
   },
 
   // Admin Users & Staff Management
+  async loginAdmin(username: string, password: string): Promise<AdminUser | null> {
+    try {
+      const res = await fetch('/api/admin/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password }),
+      });
+      if (!res.ok) return null;
+      const json = await res.json();
+      return json.data as AdminUser;
+    } catch {
+      const normalizedUsername = username.trim().toLowerCase();
+      const user = dataStore.getAllUsers().find(
+        (candidate) =>
+          candidate.username.toLowerCase() === normalizedUsername &&
+          candidate.status === 'ACTIVE' &&
+          (candidate.password || '123456') === password,
+      );
+      return user || null;
+    }
+  },
+
   async getAdminUsers(): Promise<AdminUser[]> {
+    try {
+      const res = await fetch('/api/admin/users');
+      if (res.ok) {
+        const json = await res.json();
+        return json.data as AdminUser[];
+      }
+    } catch {
+      // fallback
+    }
     return dataStore.getAllUsers();
   },
 
   async createAdminUser(data: Omit<AdminUser, 'id' | 'createdAt'>): Promise<AdminUser> {
+    try {
+      const res = await fetch('/api/admin/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      if (res.ok) {
+        const json = await res.json();
+        return json.data as AdminUser;
+      }
+    } catch {
+      // fallback
+    }
     return dataStore.createUser(data);
   },
 
   async updateAdminUser(id: string, updates: Partial<AdminUser>): Promise<AdminUser | null> {
+    try {
+      const res = await fetch(`/api/admin/users/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updates),
+      });
+      if (res.ok) {
+        const json = await res.json();
+        return json.data as AdminUser;
+      }
+    } catch {
+      // fallback
+    }
     return dataStore.updateUser(id, updates);
   },
 
   async deleteAdminUser(id: string): Promise<boolean> {
+    try {
+      const res = await fetch(`/api/admin/users/${id}`, { method: 'DELETE' });
+      if (res.ok) return true;
+    } catch {
+      // fallback
+    }
     return dataStore.deleteUser(id);
   },
 
   async toggleAdminUserStatus(id: string, status: UserStatus): Promise<AdminUser | null> {
+    try {
+      const res = await fetch(`/api/admin/users/${id}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status }),
+      });
+      if (res.ok) {
+        const json = await res.json();
+        return json.data as AdminUser;
+      }
+    } catch {
+      // fallback
+    }
     return dataStore.toggleUserStatus(id, status);
   },
 

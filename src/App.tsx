@@ -2,7 +2,6 @@
  * @license
  * SPDX-License-Identifier: Apache-2.0
  */
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { apiClient } from './services/apiClient';
 import {
@@ -24,15 +23,9 @@ import {
   MarketingCampaign,
 } from './types';
 import { INITIAL_SITE_CONFIG } from './data/mockData';
-
-// Common Components
-import { DomainSwitcher } from './components/common/DomainSwitcher';
-
-// Public Portal - Botanica Garden Hoi An (Original Interface Powered by CMS DB)
 import { BotanicaGardenPortal } from './components/public/BotanicaGardenPortal';
-
-// Admin CMS Components
 import { AdminLayout } from './components/admin/AdminLayout';
+import { AdminLogin } from './components/admin/AdminLogin';
 import { DashboardView } from './components/admin/DashboardView';
 import { CategoriesView } from './components/admin/CategoriesView';
 import { ToursView } from './components/admin/ToursView';
@@ -46,8 +39,10 @@ import { UsersView } from './components/admin/UsersView';
 import { AuditLogsView } from './components/admin/AuditLogsView';
 
 export default function App() {
-  // Domain View Switcher: 'public' (emictravel.aikpt.vn) or 'admin' (admin.emictravel.aikpt.vn)
-  const [currentDomainView, setCurrentDomainView] = useState<'public' | 'admin'>('public');
+  const isAdminRoute = window.location.pathname === '/admin' || window.location.pathname.startsWith('/admin/');
+  const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(
+    () => localStorage.getItem('emic_admin_authenticated') === 'true',
+  );
 
   // Admin Active Tab
   const [adminTab, setAdminTab] = useState<string>('dashboard');
@@ -290,12 +285,6 @@ export default function App() {
     await loadAllData();
   };
 
-  const handleResetFactoryData = async () => {
-    await apiClient.resetDemoData();
-    await loadAllData();
-    alert('Đã khôi phục cơ sở dữ liệu mẫu ban đầu của Botanica Garden & Emic Travel thành công!');
-  };
-
   const handleUpdateSiteConfig = async (configUpdates: Partial<SiteConfig>) => {
     const updated = await apiClient.updateSiteConfig(configUpdates);
     setSiteConfig(updated);
@@ -344,17 +333,111 @@ export default function App() {
     await loadAllData();
   };
 
+  const handleSwitchToPublic = () => {
+    window.history.pushState({}, '', '/');
+    window.location.reload();
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('emic_admin_authenticated');
+    localStorage.removeItem('emic_admin_username');
+    window.location.reload();
+  };
+
+  const currentAdminUsername = localStorage.getItem('emic_admin_username');
+  const currentUser = users.find((user) => user.username === currentAdminUsername) || null;
+
   return (
     <div className="min-h-screen bg-stone-50 text-stone-900">
-      {/* Top Domain Environment Switcher Bar */}
-      <DomainSwitcher
-        currentView={currentDomainView}
-        onSwitchView={setCurrentDomainView}
-        pendingBookingsCount={pendingBookingsCount}
-      />
-
-      {/* VIEW 1: PUBLIC TRAVEL PORTAL (emictravel.aikpt.vn) - GIỮ NGUYÊN GIAO DIỆN GỐC */}
-      {currentDomainView === 'public' && (
+      {isAdminRoute ? (
+        isAdminAuthenticated ? (
+          <AdminLayout
+            currentTab={adminTab}
+            onSelectTab={setAdminTab}
+            pendingBookingsCount={pendingBookingsCount}
+            onSwitchToPublic={handleSwitchToPublic}
+            onLogout={handleLogout}
+            currentUser={currentUser}
+          >
+            {adminTab === 'dashboard' && stats && (
+              <DashboardView
+                stats={stats}
+                onSelectBooking={() => setAdminTab('bookings')}
+              />
+            )}
+            {adminTab === 'tours' && (
+              <ToursView
+                tours={tours}
+                categories={categories}
+                onCreateTour={handleCreateTour}
+                onUpdateTour={handleUpdateTour}
+                onDeleteTour={handleDeleteTour}
+                onUpdateStatus={handleUpdateTourStatus}
+                onCreateCategory={handleCreateCategory}
+                onUpdateCategory={handleUpdateCategory}
+                onDeleteCategory={handleDeleteCategory}
+              />
+            )}
+            {adminTab === 'categories' && (
+              <CategoriesView
+                categories={categories}
+                tours={tours}
+                onCreateCategory={handleCreateCategory}
+                onUpdateCategory={handleUpdateCategory}
+                onDeleteCategory={handleDeleteCategory}
+                onToggleStatus={handleToggleCategoryStatus}
+              />
+            )}
+            {adminTab === 'bookings' && (
+              <BookingsView
+                bookings={bookings}
+                tours={tours}
+                onUpdateStatus={handleUpdateBookingStatus}
+                onUpdateBooking={handleUpdateBooking}
+              />
+            )}
+            {adminTab === 'cms' && (
+              <CmsContentView
+                posts={posts}
+                banners={banners}
+                feedbacks={feedbacks}
+                onCreatePost={handleCreatePost}
+                onUpdatePost={handleUpdatePost}
+                onDeletePost={handleDeletePost}
+                onCreateFeedback={handleCreateFeedback}
+                onUpdateFeedback={handleUpdateFeedback}
+                onDeleteFeedback={handleDeleteFeedback}
+                onCreateBanner={handleCreateBanner}
+                onUpdateBanner={handleUpdateBanner}
+                onDeleteBanner={handleDeleteBanner}
+                onUpdateSiteConfig={handleUpdateSiteConfig}
+              />
+            )}
+            {adminTab === 'media' && <MediaView />}
+            {adminTab === 'marketing' && (
+              <MarketingView
+                campaigns={campaigns}
+                onCreateCampaign={handleCreateCampaign}
+                onUpdateCampaign={handleUpdateCampaign}
+                onDeleteCampaign={handleDeleteCampaign}
+              />
+            )}
+            {adminTab === 'users' && (
+              <UsersView
+                users={users}
+                onCreateUser={handleCreateUser}
+                onUpdateUser={handleUpdateUser}
+                onDeleteUser={handleDeleteUser}
+              />
+            )}
+            {adminTab === 'audit-logs' && (
+              <AuditLogsView logs={auditLogs} />
+            )}
+          </AdminLayout>
+        ) : (
+          <AdminLogin onAuthenticated={() => setIsAdminAuthenticated(true)} />
+        )
+      ) : (
         <BotanicaGardenPortal
           tours={tours}
           categories={categories}
@@ -363,109 +446,9 @@ export default function App() {
           banners={banners}
           siteConfig={siteConfig}
           onSubmitBooking={handleWorkshopBooking}
-          onOpenAdmin={() => setCurrentDomainView('admin')}
         />
       )}
 
-      {/* VIEW 2: ENTERPRISE ADMIN CMS (admin.emictravel.aikpt.vn) */}
-      {currentDomainView === 'admin' && (
-        <AdminLayout
-          currentTab={adminTab}
-          onSelectTab={setAdminTab}
-          pendingBookingsCount={pendingBookingsCount}
-          onSwitchToPublic={() => setCurrentDomainView('public')}
-          onResetFactoryData={handleResetFactoryData}
-        >
-          {adminTab === 'dashboard' && stats && (
-            <DashboardView
-              stats={stats}
-              onSelectBooking={() => {
-                setAdminTab('bookings');
-              }}
-              onNavigateTab={setAdminTab}
-            />
-          )}
-
-          {adminTab === 'tours' && (
-            <ToursView
-              tours={tours}
-              categories={categories}
-              onCreateTour={handleCreateTour}
-              onUpdateTour={handleUpdateTour}
-              onDeleteTour={handleDeleteTour}
-              onUpdateStatus={handleUpdateTourStatus}
-              onCreateCategory={handleCreateCategory}
-              onUpdateCategory={handleUpdateCategory}
-              onDeleteCategory={handleDeleteCategory}
-            />
-          )}
-
-          {adminTab === 'categories' && (
-            <CategoriesView
-              categories={categories}
-              onCreateCategory={handleCreateCategory}
-              onUpdateCategory={handleUpdateCategory}
-              onDeleteCategory={handleDeleteCategory}
-              onToggleStatus={handleToggleCategoryStatus}
-            />
-          )}
-
-          {adminTab === 'bookings' && (
-            <BookingsView
-              bookings={bookings}
-              onUpdateStatus={handleUpdateBookingStatus}
-              onSendEmail={handleSendBookingEmail}
-              onUpdateBooking={handleUpdateBooking}
-            />
-          )}
-
-          {adminTab === 'cms' && (
-            <CmsContentView
-              banners={banners}
-              posts={posts}
-              feedbacks={feedbacks}
-              siteConfig={siteConfig}
-              onToggleBanner={handleToggleBanner}
-              onApproveFeedback={handleApproveFeedback}
-              onCreateFeedback={handleCreateFeedback}
-              onUpdateFeedback={handleUpdateFeedback}
-              onDeleteFeedback={handleDeleteFeedback}
-              onCreatePost={handleCreatePost}
-              onUpdatePost={handleUpdatePost}
-              onDeletePost={handleDeletePost}
-              onUpdateSiteConfig={handleUpdateSiteConfig}
-              onCreateBanner={handleCreateBanner}
-              onUpdateBanner={handleUpdateBanner}
-              onDeleteBanner={handleDeleteBanner}
-            />
-          )}
-
-          {adminTab === 'media' && <MediaView />}
-
-          {adminTab === 'marketing' && (
-            <MarketingView
-              campaigns={campaigns}
-              onCreateCampaign={handleCreateCampaign}
-              onUpdateCampaign={handleUpdateCampaign}
-              onDeleteCampaign={handleDeleteCampaign}
-            />
-          )}
-
-          {adminTab === 'users' && (
-            <UsersView
-              users={users}
-              onCreateUser={handleCreateUser}
-              onUpdateUser={handleUpdateUser}
-              onDeleteUser={handleDeleteUser}
-              onToggleStatus={handleToggleUserStatus}
-            />
-          )}
-
-          {adminTab === 'audit-logs' && (
-            <AuditLogsView logs={auditLogs} />
-          )}
-        </AdminLayout>
-      )}
     </div>
   );
 }

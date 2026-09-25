@@ -115,7 +115,7 @@ export const ServicesView: React.FC<ServicesViewProps> = ({
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-black text-stone-900 font-serif tracking-tight">
-            Quản Lý Dịch Vụ Du Lịch
+            Quản lý dịch vụ du lịch
           </h1>
           <p className="text-xs text-stone-500 mt-0.5">
             Quản lý các dịch vụ lẻ: Xe Jeep cổ, thuyền thúng rừng dừa, tiệc ẩm thực sinh thái và workshop.

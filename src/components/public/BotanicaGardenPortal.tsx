@@ -22,7 +22,6 @@ interface BotanicaGardenPortalProps {
     numChildren: number;
     notes?: string;
   }) => Promise<Booking | null>;
-  onOpenAdmin: () => void;
 }
 
 type LangType = 'en' | 'vn';
@@ -35,7 +34,6 @@ export const BotanicaGardenPortal: React.FC<BotanicaGardenPortalProps> = ({
   banners,
   siteConfig,
   onSubmitBooking,
-  onOpenAdmin,
 }) => {
   const [lang, setLang] = useState<LangType>('en');
   const [activeCategory, setActiveCategory] = useState<string>('all');
@@ -381,14 +379,6 @@ export const BotanicaGardenPortal: React.FC<BotanicaGardenPortalProps> = ({
               {t.nav_book}
             </button>
 
-            <button
-              type="button"
-              onClick={onOpenAdmin}
-              className="px-3 py-1.5 rounded-full border border-stone-300 text-stone-600 hover:text-emerald-800 hover:border-emerald-700 text-xs font-bold transition-colors shadow-xs"
-              title="Mở hệ thống quản trị Emic Travel CMS"
-            >
-              CMS Admin
-            </button>
           </div>
         </nav>
       </header>
@@ -832,16 +822,7 @@ export const BotanicaGardenPortal: React.FC<BotanicaGardenPortalProps> = ({
 
           <div className="foot-bottom">
             <span>© 2026 Botanica Garden Hoi An · Emic Travel Eco Tour</span>
-            <div className="flex items-center gap-3">
-              <span>{t.foot_made}</span>
-              <button
-                type="button"
-                onClick={onOpenAdmin}
-                className="text-stone-400 hover:text-white underline text-xs"
-              >
-                CMS Admin
-              </button>
-            </div>
+            <span>{t.foot_made}</span>
           </div>
         </div>
       </footer>

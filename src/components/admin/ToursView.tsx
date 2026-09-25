@@ -421,7 +421,7 @@ export const ToursView: React.FC<ToursViewProps> = ({
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-black text-stone-900 font-serif tracking-tight">
-            Quản Lý Tour Du Lịch
+            Quản lý tour du lịch
           </h1>
           <p className="text-xs text-stone-500 mt-0.5">
             Quản lý toàn diện lịch trình, bảng giá, media và trạng thái các tour du lịch sinh thái.
@@ -435,7 +435,7 @@ export const ToursView: React.FC<ToursViewProps> = ({
             className="bg-white hover:bg-stone-50 text-stone-700 font-bold px-3.5 py-2.5 rounded-xl text-xs border border-stone-200 shadow-2xs transition-all active:scale-95 flex items-center gap-1.5"
           >
             <FolderTree className="w-4 h-4 text-emerald-700" />
-            <span>Quản Lý Danh Mục Tour ({categories?.length || 0})</span>
+                          <span>Quản lý danh mục tour ({categories?.length || 0})</span>
           </button>
 
           <button
@@ -1220,7 +1220,7 @@ export const ToursView: React.FC<ToursViewProps> = ({
                 </div>
                 <div>
                   <h3 className="text-base font-bold text-stone-900 font-serif">
-                    Quản Lý Danh Mục Tour & Workshop
+                    Quản lý danh mục tour và workshop
                   </h3>
                   <p className="text-xs text-stone-500">
                     Tạo mới, chỉnh sửa và quản lý các nhóm tour phục vụ phân loại và bộ lọc.
