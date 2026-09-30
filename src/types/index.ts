@@ -48,9 +48,13 @@ export interface TourSchedule {
   id: string;
   dayNumber: number;
   title: string;
+  titleEn?: string;
   description: string;
+  descriptionEn?: string;
   mealsIncluded: string[]; // ['Sáng', 'Trưa', 'Tối']
+  mealsIncludedEn?: string[];
   accommodation?: string;
+  accommodationEn?: string;
 }
 
 export interface TourPrice {
@@ -76,21 +80,29 @@ export interface Tour {
   album: string[];
   videoUrl?: string;
   departureLocation: string;
+  departureLocationEn?: string;
   destinationLocation: string;
+  destinationLocationEn?: string;
   durationDays: number;
   durationNights: number;
   transportation: string;
+  transportationEn?: string;
   minGuests: number;
   maxGuests: number;
   pricing: TourPrice;
   schedules: TourSchedule[];
   policies: {
     includes: string[];
+    includesEn?: string[];
     excludes: string[];
+    excludesEn?: string[];
     cancellation: string;
+    cancellationEn?: string;
     notes: string;
+    notesEn?: string;
   };
   highlights: string[];
+  highlightsEn?: string[];
   status: TourStatus;
   isFeatured: boolean;
   viewCount: number;
@@ -115,6 +127,7 @@ export interface SiteConfig {
   phone: string;
   maps: string;
   address: string;
+  addressEn?: string;
   visitImage?: string;
 }
 
@@ -205,11 +218,14 @@ export interface Banner {
 export interface Post {
   id: string;
   title: string;
+  titleEn?: string;
   slug: string;
   category: string;
   thumbnail: string;
   summary: string;
+  summaryEn?: string;
   content: string;
+  contentEn?: string;
   author: string;
   status: 'DRAFT' | 'PUBLISHED';
   publishedAt: string;
@@ -217,8 +233,11 @@ export interface Post {
   seoTitle?: string;
   seoDescription?: string;
   eyebrow?: string;
+  eyebrowEn?: string;
   imageLabel?: string;
+  imageLabelEn?: string;
   guestReview?: string;
+  guestReviewEn?: string;
 }
 
 export interface CustomerFeedback {
@@ -227,8 +246,10 @@ export interface CustomerFeedback {
   avatar: string;
   location: string;
   tourName: string;
+  customerNameEn?: string;
   rating: number;
   comment: string;
+  commentEn?: string;
   isApproved: boolean;
   isFeatured: boolean;
   createdAt: string;

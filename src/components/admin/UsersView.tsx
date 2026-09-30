@@ -65,7 +65,7 @@ export const UsersView: React.FC<UsersViewProps> = ({
   // Form State
   const [formData, setFormData] = useState({
     username: '',
-    password: '123456',
+    password: '',
     fullName: '',
     email: '',
     phone: '',
@@ -80,7 +80,7 @@ export const UsersView: React.FC<UsersViewProps> = ({
     setEditingUser(null);
     setFormData({
       username: '',
-      password: '123456',
+      password: '',
       fullName: '',
       email: '',
       phone: '',
@@ -97,7 +97,7 @@ export const UsersView: React.FC<UsersViewProps> = ({
     setEditingUser(user);
     setFormData({
       username: user.username,
-      password: user.password || '123456',
+      password: '',
       fullName: user.fullName,
       email: user.email,
       phone: user.phone,
@@ -123,12 +123,12 @@ export const UsersView: React.FC<UsersViewProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.username || !formData.password || !formData.fullName || !formData.email) {
+    if (!formData.username || (!editingUser && !formData.password) || !formData.fullName || !formData.email) {
       alert('Vui lòng điền đầy đủ Tên đăng nhập, Mật khẩu, Họ tên và Email');
       return;
     }
 
-    if (formData.password.length < 6) {
+    if (formData.password && formData.password.length < 6) {
       alert('Mật khẩu phải có ít nhất 6 ký tự');
       return;
     }
@@ -510,15 +510,15 @@ export const UsersView: React.FC<UsersViewProps> = ({
 
                 <div>
                   <label className="block font-bold text-stone-700 mb-1">
-                    Mật khẩu <span className="text-red-500">*</span>
+                    Mật khẩu {!editingUser && <span className="text-red-500">*</span>}
                   </label>
                   <input
                     type="password"
-                    required
+                    required={!editingUser}
                     minLength={6}
                     value={formData.password}
                     onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                    placeholder="Ít nhất 6 ký tự"
+                    placeholder={editingUser ? 'Để trống nếu không đổi mật khẩu' : 'Ít nhất 6 ký tự'}
                     className="w-full p-2.5 rounded-xl border border-stone-200 text-xs focus:border-stone-900 outline-none"
                     autoComplete="new-password"
                   />

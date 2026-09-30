@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Image as ImageIcon, Upload, Folder, Copy, Check, Trash2, ExternalLink, Sparkles, AlertCircle } from 'lucide-react';
 import { apiClient } from '../../services/apiClient';
-import { dataStore } from '../../services/dataStore';
 import { MediaFile } from '../../types';
 
 export const MediaView: React.FC = () => {
@@ -30,12 +29,6 @@ export const MediaView: React.FC = () => {
 
   useEffect(() => {
     loadMedia();
-    const unsubscribe = dataStore.subscribe(() => {
-      loadMedia();
-    });
-    return () => {
-      unsubscribe();
-    };
   }, []);
 
   const handleCopyLink = (url: string, id: string) => {

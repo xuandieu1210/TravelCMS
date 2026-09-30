@@ -19,7 +19,6 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onAuthenticated }) => {
       return;
     }
 
-    localStorage.setItem('emic_admin_authenticated', 'true');
     localStorage.setItem('emic_admin_username', user.username);
     onAuthenticated();
   };

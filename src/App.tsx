@@ -22,7 +22,6 @@ import {
   Category,
   MarketingCampaign,
 } from './types';
-import { INITIAL_SITE_CONFIG } from './data/mockData';
 import { BotanicaGardenPortal } from './components/public/BotanicaGardenPortal';
 import { AdminLayout } from './components/admin/AdminLayout';
 import { AdminLogin } from './components/admin/AdminLogin';
@@ -38,11 +37,23 @@ import { MarketingView } from './components/admin/MarketingView';
 import { UsersView } from './components/admin/UsersView';
 import { AuditLogsView } from './components/admin/AuditLogsView';
 
+const EMPTY_SITE_CONFIG: SiteConfig = {
+  whatsapp: '',
+  messenger: '',
+  instagram: '',
+  facebook: '',
+  email: '',
+  phone: '',
+  maps: '',
+  address: '',
+  addressEn: '',
+  visitImage: '',
+};
+
 export default function App() {
   const isAdminRoute = window.location.pathname === '/admin' || window.location.pathname.startsWith('/admin/');
-  const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(
-    () => localStorage.getItem('emic_admin_authenticated') === 'true',
-  );
+  const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
+  const [isCheckingAdminSession, setIsCheckingAdminSession] = useState(isAdminRoute);
 
   // Admin Active Tab
   const [adminTab, setAdminTab] = useState<string>('dashboard');
@@ -55,67 +66,91 @@ export default function App() {
   const [banners, setBanners] = useState<Banner[]>([]);
   const [posts, setPosts] = useState<Post[]>([]);
   const [feedbacks, setFeedbacks] = useState<CustomerFeedback[]>([]);
-  const [siteConfig, setSiteConfig] = useState<SiteConfig>(INITIAL_SITE_CONFIG);
+  const [siteConfig, setSiteConfig] = useState<SiteConfig>(EMPTY_SITE_CONFIG);
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [campaigns, setCampaigns] = useState<MarketingCampaign[]>([]);
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
 
-  // Load all data from API / DataStore
+  // Load public data first; admin data requires a server-verified session.
   const loadAllData = useCallback(async () => {
     try {
+      const [home, fetchedTours, fetchedServices, fetchedConfig, publicCategories] = await Promise.all([
+        apiClient.getPublicHome(),
+        apiClient.getPublicTours(),
+        apiClient.getPublicServices(),
+        apiClient.getSiteConfig(),
+        apiClient.getPublicCategories(),
+      ]);
+
+      setTours(fetchedTours);
+      setServices(fetchedServices);
+      setBanners(home.banners || []);
+      setPosts(home.posts || []);
+      setFeedbacks(home.feedbacks || []);
+      setSiteConfig(fetchedConfig || EMPTY_SITE_CONFIG);
+      setCategories(publicCategories);
+
+      if (!isAdminRoute || !isAdminAuthenticated) return;
+
       const [
-        fetchedTours,
-        fetchedServices,
         fetchedBookings,
         fetchedCustomers,
-        fetchedBanners,
-        fetchedPosts,
         fetchedFeedbacks,
+        fetchedPosts,
         fetchedStats,
         fetchedLogs,
-        fetchedConfig,
         fetchedUsers,
         fetchedCategories,
         fetchedCampaigns,
       ] = await Promise.all([
-        apiClient.getPublicTours(),
-        apiClient.getPublicServices(),
         apiClient.getAdminBookings(),
         apiClient.getAdminCustomers(),
-        apiClient.getPublicBanners(),
-        apiClient.getPublicPosts(),
-        apiClient.getPublicFeedbacks(),
+        apiClient.getAdminFeedbacks(),
+        apiClient.getAdminPosts(),
         apiClient.getAdminDashboardStats(),
         apiClient.getAdminAuditLogs(),
-        apiClient.getSiteConfig(),
         apiClient.getAdminUsers(),
         apiClient.getAdminCategories(),
         apiClient.getAdminCampaigns(),
       ]);
 
-      setTours(fetchedTours);
-      setServices(fetchedServices);
       setBookings(fetchedBookings);
       setCustomers(fetchedCustomers);
-      setBanners(fetchedBanners);
-      setPosts(fetchedPosts);
       setFeedbacks(fetchedFeedbacks);
+      setPosts(fetchedPosts);
       setStats(fetchedStats);
       setAuditLogs(fetchedLogs);
-      if (fetchedConfig) setSiteConfig(fetchedConfig);
-      if (fetchedUsers) setUsers(fetchedUsers);
-      if (fetchedCategories) setCategories(fetchedCategories);
-      if (fetchedCampaigns) setCampaigns(fetchedCampaigns);
+      setUsers(fetchedUsers);
+      setCategories(fetchedCategories);
+      setCampaigns(fetchedCampaigns);
     } catch (err) {
       console.error('Error loading data:', err);
     }
-  }, []);
+  }, [isAdminRoute, isAdminAuthenticated]);
 
   useEffect(() => {
     loadAllData();
   }, [loadAllData]);
+
+  useEffect(() => {
+    if (!isAdminRoute) return;
+    let active = true;
+    apiClient.getAdminSession().then((user) => {
+      if (!active) return;
+      setIsAdminAuthenticated(Boolean(user));
+      if (user) localStorage.setItem('emic_admin_username', user.username);
+      else {
+        localStorage.removeItem('emic_admin_authenticated');
+        localStorage.removeItem('emic_admin_username');
+      }
+      setIsCheckingAdminSession(false);
+    });
+    return () => {
+      active = false;
+    };
+  }, [isAdminRoute]);
 
   // Compute Pending Bookings Count for badge notification
   const pendingBookingsCount = bookings.filter((b) => b.status === 'NEW').length;
@@ -264,6 +299,10 @@ export default function App() {
     await loadAllData();
   };
 
+  const handlePostViewed = (updatedPost: Post) => {
+    setPosts((currentPosts) => currentPosts.map((post) => (post.id === updatedPost.id ? updatedPost : post)));
+  };
+
   // Marketing Campaign Handlers
   const handleCreateCampaign = async (
     campaign: Omit<MarketingCampaign, 'id' | 'createdAt'>
@@ -338,10 +377,11 @@ export default function App() {
     window.location.reload();
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    await apiClient.logoutAdmin();
     localStorage.removeItem('emic_admin_authenticated');
     localStorage.removeItem('emic_admin_username');
-    window.location.reload();
+    setIsAdminAuthenticated(false);
   };
 
   const currentAdminUsername = localStorage.getItem('emic_admin_username');
@@ -350,7 +390,7 @@ export default function App() {
   return (
     <div className="min-h-screen bg-stone-50 text-stone-900">
       {isAdminRoute ? (
-        isAdminAuthenticated ? (
+        isCheckingAdminSession ? null : isAdminAuthenticated ? (
           <AdminLayout
             currentTab={adminTab}
             onSelectTab={setAdminTab}
@@ -401,6 +441,10 @@ export default function App() {
                 posts={posts}
                 banners={banners}
                 feedbacks={feedbacks}
+                tours={tours}
+                siteConfig={siteConfig}
+                onToggleBanner={handleToggleBanner}
+                onApproveFeedback={handleApproveFeedback}
                 onCreatePost={handleCreatePost}
                 onUpdatePost={handleUpdatePost}
                 onDeletePost={handleDeletePost}
@@ -445,6 +489,7 @@ export default function App() {
           feedbacks={feedbacks.filter((f) => f.isApproved)}
           banners={banners}
           siteConfig={siteConfig}
+          onPostViewed={handlePostViewed}
           onSubmitBooking={handleWorkshopBooking}
         />
       )}

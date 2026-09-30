@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Tour, CustomerFeedback, Banner, SiteConfig, Booking, Category, Post } from '../../types';
-import { translationsData } from '../../data/translations';
+import { publicContentTranslations, translationsData } from '../../data/translations';
 import { apiClient } from '../../services/apiClient';
-import { dataStore } from '../../services/dataStore';
 
 interface BotanicaGardenPortalProps {
   tours: Tour[];
@@ -11,6 +10,7 @@ interface BotanicaGardenPortalProps {
   feedbacks: CustomerFeedback[];
   banners: Banner[];
   siteConfig: SiteConfig;
+  onPostViewed?: (post: Post) => void;
   onSubmitBooking: (bookingPayload: {
     tourId?: string;
     tourName: string;
@@ -33,6 +33,7 @@ export const BotanicaGardenPortal: React.FC<BotanicaGardenPortalProps> = ({
   feedbacks,
   banners,
   siteConfig,
+  onPostViewed,
   onSubmitBooking,
 }) => {
   const [lang, setLang] = useState<LangType>('en');
@@ -47,8 +48,13 @@ export const BotanicaGardenPortal: React.FC<BotanicaGardenPortalProps> = ({
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
   const [isPostReaderOpen, setIsPostReaderOpen] = useState<boolean>(false);
 
-  const handleOpenPostReader = (post: Post) => {
-    setSelectedPost(post);
+  const handleOpenPostReader = async (post: Post) => {
+    const latestPost = await apiClient.getPublicNewsBySlug(post.slug).catch(() => null);
+    const nextPost = latestPost || post;
+    setSelectedPost(nextPost);
+    if (latestPost && onPostViewed) {
+      onPostViewed(latestPost);
+    }
     setIsPostReaderOpen(true);
     document.body.style.overflow = 'hidden';
   };
@@ -69,28 +75,20 @@ export const BotanicaGardenPortal: React.FC<BotanicaGardenPortalProps> = ({
 
   // Latest media file from Media Management
   const [latestMediaUrl, setLatestMediaUrl] = useState<string | null>(null);
+  const displayAddress = lang === 'vn'
+    ? (siteConfig.address || siteConfig.addressEn || '')
+    : (siteConfig.addressEn || siteConfig.address || '');
 
   useEffect(() => {
     const fetchLatestMedia = async () => {
       try {
-        const media = await apiClient.getAdminMedia();
-        if (media && media.length > 0) {
-          setLatestMediaUrl(media[0].url);
-        } else {
-          setLatestMediaUrl(null);
-        }
+        setLatestMediaUrl(await apiClient.getPublicLatestMedia());
       } catch (err) {
         console.error('Error fetching media:', err);
       }
     };
 
     fetchLatestMedia();
-    const unsubscribe = dataStore.subscribe(() => {
-      fetchLatestMedia();
-    });
-    return () => {
-      unsubscribe();
-    };
   }, []);
 
   const T = translationsData as Record<LangType, Record<string, string>>;
@@ -99,15 +97,7 @@ export const BotanicaGardenPortal: React.FC<BotanicaGardenPortalProps> = ({
   // Active categories directly loaded from Database (Hiển thị tất cả danh mục ở frontend)
   const workshopCategories = useMemo(() => {
     const list = (categories || []).filter((c) => c.isActive);
-    if (list.length > 0) {
-      return [...list].sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0));
-    }
-    // Fallback if categories haven't loaded
-    return [
-      { id: 'cat-ws-01', slug: 'family-crafts', name: 'Thủ công gia đình', nameEn: 'Family crafts', isActive: true },
-      { id: 'cat-ws-02', slug: 'culture-and-food', name: 'Văn hóa & ẩm thực Việt', nameEn: 'Vietnamese culture & food', isActive: true },
-      { id: 'cat-ws-03', slug: 'coffee-and-wellness', name: 'Cà phê & thư giãn', nameEn: 'Coffee & wellness', isActive: true },
-    ] as Category[];
+    return [...list].sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0));
   }, [categories]);
 
   // Filter workshops (only PUBLISHED)
@@ -129,22 +119,27 @@ export const BotanicaGardenPortal: React.FC<BotanicaGardenPortalProps> = ({
 
   // Parse description / summary into paragraphs
   const escapeParagraphs = useMemo(() => {
-    if (!escapePost || !escapePost.summary) return [];
-    return escapePost.summary.split(/\n+/).map(p => p.trim()).filter(Boolean);
-  }, [escapePost]);
+    const summary = lang === 'vn'
+      ? (escapePost?.summary || escapePost?.summaryEn || '')
+      : (escapePost?.summaryEn || escapePost?.summary || '');
+    if (!summary) return [];
+    return summary.split(/\n+/).map((paragraph) => paragraph.trim()).filter(Boolean);
+  }, [escapePost, lang]);
 
   // Parse review quote & author/citation from guestReview
   const escapeReviewParsed = useMemo(() => {
-    if (!escapePost || !escapePost.guestReview) return null;
-    const review = escapePost.guestReview;
+    const review = lang === 'vn'
+      ? (escapePost?.guestReview || escapePost?.guestReviewEn || '')
+      : (escapePost?.guestReviewEn || escapePost?.guestReview || '');
+    if (!review) return null;
     const parts = review.split(/—|-/);
     if (parts.length > 1) {
       const cite = parts[parts.length - 1].trim();
       const quote = parts.slice(0, parts.length - 1).join('—').trim();
       return { quote, cite: `— ${cite}` };
     }
-    return { quote: review, cite: '— Guest review' };
-  }, [escapePost]);
+    return { quote: review, cite: lang === 'vn' ? '— Cảm nhận của khách' : '— Guest review' };
+  }, [escapePost, lang]);
 
   // Filtered by active tab from DB
   const filteredTours = useMemo(() => {
@@ -218,13 +213,40 @@ export const BotanicaGardenPortal: React.FC<BotanicaGardenPortalProps> = ({
     return banners.find((b) => b.position === 'HOME_HERO' && b.isActive) || banners[0];
   }, [banners]);
 
+  const sortedFeaturedFeedbacks = useMemo(() => {
+    return feedbacks
+      .filter((feedback) => feedback.isFeatured)
+      .sort((left, right) => {
+        const leftTime = left.createdAt ? new Date(left.createdAt).getTime() : 0;
+        const rightTime = right.createdAt ? new Date(right.createdAt).getTime() : 0;
+        return rightTime - leftTime;
+      });
+  }, [feedbacks]);
+
+  const sortedRegularFeedbacks = useMemo(() => {
+    return feedbacks
+      .filter((feedback) => !feedback.isFeatured)
+      .sort((left, right) => {
+      const leftTime = left.createdAt ? new Date(left.createdAt).getTime() : 0;
+      const rightTime = right.createdAt ? new Date(right.createdAt).getTime() : 0;
+      return rightTime - leftTime;
+      });
+  }, [feedbacks]);
+
+  const featuredReview = sortedFeaturedFeedbacks[0] || null;
+  const reviewCards = sortedRegularFeedbacks.slice(0, 4);
+
   // Format price display
   const renderPrice = (w: Tour) => {
     if (w.priceDisplay === 'request' || w.pricing.adultPrice === 0) {
       return <span className="price">{t.onreq}</span>;
     }
-    const rawPrice = w.priceDisplay ? parseInt(w.priceDisplay, 10) : Math.round(w.pricing.adultPrice / 1000);
-    const n = lang === 'vn' ? `${rawPrice}.000₫` : `${rawPrice},000₫`;
+    const displayThousands = w.priceDisplay ? Number.parseInt(w.priceDisplay, 10) : NaN;
+    const priceAmount = Number.isFinite(displayThousands)
+      ? displayThousands * 1000
+      : w.pricing.adultPrice;
+    const locale = lang === 'vn' ? 'vi-VN' : 'en-US';
+    const n = `${priceAmount.toLocaleString(locale)}₫`;
     return (
       <span className="price">
         {n} <small>{t.per}</small>
@@ -235,7 +257,68 @@ export const BotanicaGardenPortal: React.FC<BotanicaGardenPortalProps> = ({
   // Get localized tour name & description
   const getTourTitle = (w: Tour) => {
     if (lang === 'vn') return w.name || w.nameEn || '';
-    return w.nameEn || w.name || '';
+    return w.nameEn || publicContentTranslations.en.tourNames[w.id] || w.name || '';
+  };
+
+  const getTourCategoryLabel = (w: Tour) => {
+    const matchedCategory = workshopCategories.find((category) => {
+      const tourCategory = (w.category || '').toLowerCase();
+      return (
+        tourCategory === category.name.toLowerCase() ||
+        tourCategory === (category.nameEn || '').toLowerCase() ||
+        tourCategory === category.slug.toLowerCase() ||
+        w.category === category.id ||
+        w.category === category.code
+      );
+    });
+
+    if (!matchedCategory) {
+      return w.category;
+    }
+
+    return lang === 'vn'
+      ? (matchedCategory.name || matchedCategory.nameEn || w.category)
+      : (matchedCategory.nameEn || matchedCategory.name || w.category);
+  };
+
+  const getPostEyebrow = (post: Post | null) => {
+    if (!post) return '';
+    if (lang === 'vn') return post.eyebrow || post.eyebrowEn || '';
+    return post.eyebrowEn || post.eyebrow || '';
+  };
+
+  const getPostTitle = (post: Post | null) => {
+    if (!post) return '';
+    if (lang === 'vn') return post.title || post.titleEn || '';
+    return post.titleEn || post.title || '';
+  };
+
+  const getPostSummary = (post: Post | null) => {
+    if (!post) return '';
+    if (lang === 'vn') return post.summary || post.summaryEn || '';
+    return post.summaryEn || post.summary || '';
+  };
+
+  const getPostContent = (post: Post | null) => {
+    if (!post) return '';
+    if (lang === 'vn') return post.content || post.contentEn || '';
+    return post.contentEn || post.content || '';
+  };
+
+  const getPostImageLabel = (post: Post | null) => {
+    if (!post) return '';
+    if (lang === 'vn') return post.imageLabel || post.imageLabelEn || '';
+    return post.imageLabelEn || post.imageLabel || '';
+  };
+
+  const getFeedbackComment = (feedback: CustomerFeedback) => {
+    if (lang === 'vn') return publicContentTranslations.vn.feedbackComments[feedback.id] || feedback.comment;
+    return feedback.commentEn || publicContentTranslations.en.feedbackComments[feedback.id] || feedback.comment;
+  };
+
+  const getFeedbackCustomerName = (feedback: CustomerFeedback) => {
+    if (lang === 'vn') return publicContentTranslations.vn.feedbackCustomerNames[feedback.id] || feedback.customerName;
+    return feedback.customerNameEn || publicContentTranslations.en.feedbackCustomerNames[feedback.id] || feedback.customerName;
   };
 
   const getTourDesc = (w: Tour) => {
@@ -426,8 +509,8 @@ export const BotanicaGardenPortal: React.FC<BotanicaGardenPortalProps> = ({
       <section className="escape">
         <div className="wrap escape-grid">
           <div className="reveal">
-            <span className="eyebrow">{escapePost?.eyebrow || t.escape_eyebrow}</span>
-            <h2>{escapePost?.title || t.escape_title}</h2>
+            <span className="eyebrow">{getPostEyebrow(escapePost) || t.escape_eyebrow}</span>
+            <h2>{getPostTitle(escapePost) || t.escape_title}</h2>
             {escapeParagraphs.length > 0 ? (
               escapeParagraphs.map((para, idx) => (
                 <p key={idx}>{para}</p>
@@ -453,10 +536,10 @@ export const BotanicaGardenPortal: React.FC<BotanicaGardenPortalProps> = ({
           <div className="escape-img reveal">
             <img
               src={escapePost?.thumbnail || "/images/img_1.jpeg"}
-              alt={escapePost?.imageLabel || "Herbs hand-picked from the Botanica garden"}
+              alt={getPostImageLabel(escapePost) || "Herbs hand-picked from the Botanica garden"}
               loading="lazy"
             />
-            <div className="tag">{escapePost?.imageLabel || t.escape_tag}</div>
+            <div className="tag">{getPostImageLabel(escapePost) || t.escape_tag}</div>
           </div>
         </div>
       </section>
@@ -564,6 +647,7 @@ export const BotanicaGardenPortal: React.FC<BotanicaGardenPortalProps> = ({
               const fullIdx = publishedTours.indexOf(w);
               const title = getTourTitle(w);
               const desc = getTourDesc(w);
+              const categoryLabel = getTourCategoryLabel(w);
               const hasImg = w.thumbnail && !w.thumbnail.startsWith('{{');
 
               return (
@@ -583,6 +667,7 @@ export const BotanicaGardenPortal: React.FC<BotanicaGardenPortalProps> = ({
                     ) : (
                       <span className="badge">{t.ages}</span>
                     )}
+                    <span className="badge" style={{ marginInlineStart: '8px' }}>{categoryLabel}</span>
                   </div>
 
                   <div className="card-body">
@@ -647,17 +732,17 @@ export const BotanicaGardenPortal: React.FC<BotanicaGardenPortalProps> = ({
             <h2>{t.rev_title}</h2>
           </div>
           <div className="rev-grid">
-            {feedbacks.slice(0, 4).map((fb) => (
+            {reviewCards.map((fb) => (
               <div key={fb.id} className="rev reveal">
                 <div className="stars">{'★'.repeat(fb.rating || 5)}</div>
-                <q>{fb.comment}</q>
-                <cite>— {fb.customerName}</cite>
+                <q>{getFeedbackComment(fb)}</q>
+                <cite>— {getFeedbackCustomerName(fb)}</cite>
               </div>
             ))}
-            {feedbacks.length >= 5 && (
+            {featuredReview && (
               <div className="rev rev-feature reveal">
-                <q>{feedbacks[4]?.comment || t.rev5}</q>
-                <cite>— {feedbacks[4]?.customerName || t.rev5c}</cite>
+                <q>{getFeedbackComment(featuredReview)}</q>
+                <cite>— {getFeedbackCustomerName(featuredReview)}</cite>
               </div>
             )}
           </div>
@@ -672,7 +757,7 @@ export const BotanicaGardenPortal: React.FC<BotanicaGardenPortalProps> = ({
             <h2>{t.visit_title}</h2>
             <p>{t.visit_p1}</p>
             <p>{t.visit_p2}</p>
-            <div className="addr">{siteConfig.address || '208 Le Thanh Tong, Cam Chau, Hoi An'}</div>
+            <div className="addr">{displayAddress}</div>
 
             <div className="visit-actions">
               <a
@@ -769,7 +854,7 @@ export const BotanicaGardenPortal: React.FC<BotanicaGardenPortalProps> = ({
 
             <div>
               <h4>{t.foot_visit_t}</h4>
-              <p dangerouslySetInnerHTML={{ __html: siteConfig.address.replace(',', ',<br>') }} />
+              <p dangerouslySetInnerHTML={{ __html: displayAddress.replace(',', ',<br>') }} />
               <a
                 id="mapFoot"
                 href={siteConfig.maps}
@@ -1042,7 +1127,7 @@ export const BotanicaGardenPortal: React.FC<BotanicaGardenPortalProps> = ({
             <div className="relative h-64 sm:h-72 w-full bg-stone-100">
               <img
                 src={selectedPost.thumbnail}
-                alt={selectedPost.title}
+                alt={getPostTitle(selectedPost)}
                 className="w-full h-full object-cover"
               />
               <button
@@ -1055,25 +1140,31 @@ export const BotanicaGardenPortal: React.FC<BotanicaGardenPortalProps> = ({
               </button>
             </div>
 
+            {getPostImageLabel(selectedPost) && (
+              <p className="text-[10px] text-stone-400 font-medium italic text-right px-6 mt-1.5">
+                {getPostImageLabel(selectedPost)}
+              </p>
+            )}
+
             <div className="p-6 sm:p-8">
               <div className="flex flex-wrap items-center gap-2 text-xs text-stone-500 mb-3">
                 <span className="font-bold text-stone-800">{selectedPost.author}</span>
                 <span>•</span>
                 <span>{new Date(selectedPost.publishedAt).toLocaleDateString(lang === 'vn' ? 'vi-VN' : 'en-US', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
                 <span>•</span>
-                <span>{selectedPost.viewCount || 1000} lượt đọc</span>
+                <span>{(selectedPost.viewCount || 0).toLocaleString()} lượt đọc</span>
               </div>
 
               <h2 className="text-2xl sm:text-3xl font-serif font-black text-stone-900 leading-snug mb-4">
-                {selectedPost.title}
+                {getPostTitle(selectedPost)}
               </h2>
 
               <div className="bg-amber-50/80 border-l-4 border-amber-600 p-4 rounded-r-xl text-xs sm:text-sm text-stone-700 italic leading-relaxed mb-6">
-                {selectedPost.summary}
+                {getPostSummary(selectedPost)}
               </div>
 
               <div className="text-stone-700 text-sm leading-relaxed whitespace-pre-line space-y-4 mb-8">
-                {selectedPost.content}
+                {getPostContent(selectedPost)}
               </div>
 
               <div className="border-t border-stone-200 pt-5 flex flex-col sm:flex-row items-center justify-between gap-4">

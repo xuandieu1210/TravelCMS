@@ -1,13 +1,13 @@
-import express, { Request, Response } from 'express';
+import express, { NextFunction, Request, Response } from 'express';
 import { createServer as createViteServer } from 'vite';
-import { INITIAL_TOURS, INITIAL_SERVICES, INITIAL_BOOKINGS, INITIAL_CUSTOMERS, INITIAL_BANNERS, INITIAL_POSTS, INITIAL_FEEDBACKS, INITIAL_CAMPAIGNS, INITIAL_MEDIA_FILES, INITIAL_AUDIT_LOGS, INITIAL_CATEGORIES, INITIAL_ADMIN_USERS, INITIAL_SITE_CONFIG } from './src/data/mockData';
 import 'dotenv/config';
 import { Pool } from 'pg';
+import { randomBytes, scryptSync, timingSafeEqual } from 'crypto';
 
 import path from 'path';
 import fs from 'fs';
 
-const PORT = 3000;
+const PORT = Number(process.env.PORT || 3000);
 const app = express();
 
 app.use(express.json({ limit: '50mb' }));
@@ -67,24 +67,104 @@ async function deleteFromFirestore(collection: string, id: string): Promise<bool
 }
 
 // In-memory data store for backend acting as a performance cache
-let tours = [...INITIAL_TOURS];
-let services = [...INITIAL_SERVICES];
-let bookings = [...INITIAL_BOOKINGS];
-let customers = [...INITIAL_CUSTOMERS];
-let banners = [...INITIAL_BANNERS];
-let posts = [...INITIAL_POSTS];
-let feedbacks = [...INITIAL_FEEDBACKS];
-let campaigns = [...INITIAL_CAMPAIGNS];
-let mediaFiles = [...INITIAL_MEDIA_FILES];
-let auditLogs = [...INITIAL_AUDIT_LOGS];
-let categories = [...INITIAL_CATEGORIES];
-let users = [...INITIAL_ADMIN_USERS];
-let siteConfig = { ...INITIAL_SITE_CONFIG };
+let tours: any[] = [];
+let services: any[] = [];
+let bookings: any[] = [];
+let customers: any[] = [];
+let banners: any[] = [];
+let posts: any[] = [];
+let feedbacks: any[] = [];
+let campaigns: any[] = [];
+let mediaFiles: any[] = [];
+let auditLogs: any[] = [];
+let categories: any[] = [];
+let users: any[] = [];
+let siteConfig: Record<string, string> = {
+  whatsapp: '',
+  messenger: '',
+  instagram: '',
+  facebook: '',
+  email: '',
+  phone: '',
+  maps: '',
+  address: '',
+  addressEn: '',
+  visitImage: '',
+};
+
+const adminSessions = new Map<string, { userId: string; expiresAt: number }>();
+const adminSessionCookie = 'emic_admin_session';
+const adminSessionMaxAgeSeconds = 60 * 60 * 8;
+
+function hashPassword(password: string): string {
+  const salt = randomBytes(16).toString('hex');
+  const hash = scryptSync(password, salt, 64).toString('hex');
+  return `scrypt$${salt}$${hash}`;
+}
+
+function verifyPassword(storedPassword: string | undefined, password: string): boolean {
+  if (!storedPassword) return false;
+  if (storedPassword.startsWith('scrypt$')) {
+    const [, salt, storedHash] = storedPassword.split('$');
+    if (!salt || !storedHash) return false;
+    try {
+      const expected = Buffer.from(storedHash, 'hex');
+      const actual = scryptSync(password, salt, expected.length);
+      return expected.length > 0 && timingSafeEqual(actual, expected);
+    } catch {
+      return false;
+    }
+  }
+
+  const expected = Buffer.from(storedPassword);
+  const actual = Buffer.from(password);
+  return expected.length === actual.length && timingSafeEqual(actual, expected);
+}
+
+function sanitizeAdminUser(user: any) {
+  const { password: _password, ...safeUser } = user;
+  return safeUser;
+}
+
+function getCookieValue(cookieHeader: string | undefined, name: string): string | undefined {
+  return cookieHeader
+    ?.split(';')
+    .map((part) => part.trim())
+    .find((part) => part.startsWith(`${name}=`))
+    ?.slice(name.length + 1);
+}
+
+function setAdminSessionCookie(res: Response, value: string, maxAge: number): void {
+  const secure = process.env.NODE_ENV === 'production' ? '; Secure' : '';
+  res.setHeader(
+    'Set-Cookie',
+    `${adminSessionCookie}=${value}; Path=/api/admin; HttpOnly; SameSite=Strict; Max-Age=${maxAge}${secure}`,
+  );
+}
+
+app.use('/api/admin', (req: Request, res: Response, next: NextFunction) => {
+  if ((req.path === '/login' || req.path === '/logout') && req.method === 'POST') return next();
+
+  const sessionId = getCookieValue(req.headers.cookie, adminSessionCookie);
+  const session = sessionId ? adminSessions.get(sessionId) : undefined;
+  if (!session || session.expiresAt <= Date.now()) {
+    if (sessionId) adminSessions.delete(sessionId);
+    return res.status(401).json({ success: false, message: 'Yêu cầu đăng nhập quản trị' });
+  }
+
+  const user = users.find((candidate) => candidate.id === session.userId && candidate.status === 'ACTIVE');
+  if (!user) {
+    adminSessions.delete(sessionId!);
+    return res.status(401).json({ success: false, message: 'Phiên đăng nhập không còn hợp lệ' });
+  }
+
+  res.locals.adminUser = user;
+  next();
+});
 
 async function syncAllFromFirestore() {
   if (!db) {
-    console.warn('[PostgreSQL] DATABASE_URL is missing; using in-memory data only.');
-    return;
+    throw new Error('DATABASE_URL is required; refusing to start without PostgreSQL.');
   }
 
   try {
@@ -97,31 +177,24 @@ async function syncAllFromFirestore() {
     )`);
 
     const stores = [
-      ['banners', INITIAL_BANNERS, (value: any[]) => { banners = value; }],
-      ['tours', INITIAL_TOURS, (value: any[]) => { tours = value; }],
-      ['services', INITIAL_SERVICES, (value: any[]) => { services = value; }],
-      ['bookings', INITIAL_BOOKINGS, (value: any[]) => { bookings = value; }],
-      ['customers', INITIAL_CUSTOMERS, (value: any[]) => { customers = value; }],
-      ['posts', INITIAL_POSTS, (value: any[]) => { posts = value; }],
-      ['feedbacks', INITIAL_FEEDBACKS, (value: any[]) => { feedbacks = value; }],
-      ['campaigns', INITIAL_CAMPAIGNS, (value: any[]) => { campaigns = value; }],
-      ['media', INITIAL_MEDIA_FILES, (value: any[]) => { mediaFiles = value; }],
-      ['audit_logs', INITIAL_AUDIT_LOGS, (value: any[]) => { auditLogs = value; }],
-      ['categories', INITIAL_CATEGORIES, (value: any[]) => { categories = value; }],
-      ['users', INITIAL_ADMIN_USERS, (value: any[]) => { users = value; }],
-      ['site_config', [{ id: 'main', ...INITIAL_SITE_CONFIG }], (value: any[]) => {
-        if (value[0]) siteConfig = value[0];
-      }],
+      ['banners', (value: any[]) => { banners = value; }],
+      ['tours', (value: any[]) => { tours = value; }],
+      ['services', (value: any[]) => { services = value; }],
+      ['bookings', (value: any[]) => { bookings = value; }],
+      ['customers', (value: any[]) => { customers = value; }],
+      ['posts', (value: any[]) => { posts = value; }],
+      ['feedbacks', (value: any[]) => { feedbacks = value; }],
+      ['campaigns', (value: any[]) => { campaigns = value; }],
+      ['media', (value: any[]) => { mediaFiles = value; }],
+      ['audit_logs', (value: any[]) => { auditLogs = value; }],
+      ['categories', (value: any[]) => { categories = value; }],
+      ['users', (value: any[]) => { users = value; }],
+      ['site_config', (value: any[]) => { siteConfig = value[0] || siteConfig; }],
     ] as const;
 
-    for (const [collection, initial, setStore] of stores) {
+    for (const [collection, setStore] of stores) {
       const result = await db.query('SELECT data FROM app_records WHERE collection = $1 ORDER BY id', [collection]);
-      if (result.rows.length > 0) {
-        setStore(result.rows.map((row) => row.data));
-      } else {
-        for (const item of initial) await saveToFirestore(collection, item.id, item);
-        setStore([...initial]);
-      }
+      setStore(result.rows.map((row) => row.data));
     }
 
     console.log('[PostgreSQL] Database state restored successfully.');
@@ -164,13 +237,7 @@ app.get('/api/public/home', (_req: Request, res: Response) => {
       allTours: tours.filter((t) => t.status === 'PUBLISHED'),
       services: services.filter((s) => s.isActive),
       posts: posts.filter((p) => p.status === 'PUBLISHED').slice(0, 3),
-      feedbacks: feedbacks.filter((f) => f.isApproved && f.isFeatured),
-      ecoMetrics: {
-        plasticBottlesAvoided: 18450,
-        organicWasteCompostedKg: 4200,
-        soapRecycledKg: 850,
-        treesPlanted: 1200,
-      },
+      feedbacks: feedbacks.filter((f) => f.isApproved),
     },
   });
 });
@@ -209,6 +276,30 @@ app.get('/api/public/services', (_req: Request, res: Response) => {
 // GET /api/public/news
 app.get('/api/public/news', (_req: Request, res: Response) => {
   res.json({ success: true, data: posts.filter((p) => p.status === 'PUBLISHED') });
+});
+
+// GET /api/public/news/:slug
+app.get('/api/public/news/:slug', (req: Request, res: Response) => {
+  const post = posts.find((item) => item.slug === req.params.slug && item.status === 'PUBLISHED');
+  if (!post) return res.status(404).json({ success: false, message: 'Bài viết không tồn tại' });
+  post.viewCount = (post.viewCount || 0) + 1;
+  saveToFirestore('posts', post.id, post);
+  res.json({ success: true, data: post });
+});
+
+app.get('/api/public/categories', (_req: Request, res: Response) => {
+  res.json({
+    success: true,
+    data: categories.filter((category) => category.isActive).sort((a, b) => a.displayOrder - b.displayOrder),
+  });
+});
+
+app.get('/api/public/site-config', (_req: Request, res: Response) => {
+  res.json({ success: true, data: siteConfig });
+});
+
+app.get('/api/public/media/latest', (_req: Request, res: Response) => {
+  res.json({ success: true, data: mediaFiles[0]?.url || null });
 });
 
 // POST /api/public/bookings
@@ -552,40 +643,81 @@ app.post('/api/admin/login', async (req: Request, res: Response) => {
   const username = String(req.body.username || '').trim().toLowerCase();
   const password = String(req.body.password || '');
   const idx = users.findIndex(
-    (user) => user.username.toLowerCase() === username && user.status === 'ACTIVE' && (user.password || '123456') === password,
+    (user) => user.username.toLowerCase() === username && user.status === 'ACTIVE' && verifyPassword(user.password, password),
   );
 
   if (idx === -1) return res.status(401).json({ success: false, message: 'Tên đăng nhập hoặc mật khẩu không đúng' });
 
-  users[idx] = { ...users[idx], lastLogin: new Date().toISOString() };
+  const loggedInUser = users[idx];
+  users[idx] = {
+    ...loggedInUser,
+    password: loggedInUser.password?.startsWith('scrypt$') ? loggedInUser.password : hashPassword(password),
+    lastLogin: new Date().toISOString(),
+  };
   if (!(await saveToFirestore('users', users[idx].id, users[idx]))) {
     return res.status(503).json({ success: false, message: 'Không thể cập nhật PostgreSQL' });
   }
-  res.json({ success: true, data: users[idx] });
+
+  const sessionId = randomBytes(32).toString('hex');
+  adminSessions.set(sessionId, {
+    userId: users[idx].id,
+    expiresAt: Date.now() + adminSessionMaxAgeSeconds * 1000,
+  });
+  setAdminSessionCookie(res, sessionId, adminSessionMaxAgeSeconds);
+  res.json({ success: true, data: sanitizeAdminUser(users[idx]) });
+});
+
+app.get('/api/admin/session', (_req: Request, res: Response) => {
+  res.json({ success: true, data: sanitizeAdminUser(res.locals.adminUser) });
+});
+
+app.post('/api/admin/logout', (req: Request, res: Response) => {
+  const sessionId = getCookieValue(req.headers.cookie, adminSessionCookie);
+  if (sessionId) adminSessions.delete(sessionId);
+  setAdminSessionCookie(res, '', 0);
+  res.json({ success: true });
 });
 
 app.get('/api/admin/users', (_req: Request, res: Response) => {
-  res.json({ success: true, data: users });
+  res.json({ success: true, data: users.map(sanitizeAdminUser) });
 });
 
 app.post('/api/admin/users', async (req: Request, res: Response) => {
-  const newUser = { ...req.body, id: 'user-' + Date.now(), createdAt: new Date().toISOString() };
+  const password = String(req.body.password || '');
+  if (password.length < 6) {
+    return res.status(400).json({ success: false, message: 'Mật khẩu phải có ít nhất 6 ký tự' });
+  }
+
+  const newUser = {
+    ...req.body,
+    password: hashPassword(password),
+    id: 'user-' + Date.now(),
+    createdAt: new Date().toISOString(),
+  };
   users.unshift(newUser);
   if (!(await saveToFirestore('users', newUser.id, newUser))) {
     return res.status(503).json({ success: false, message: 'Không thể lưu user vào PostgreSQL' });
   }
-  res.status(201).json({ success: true, data: newUser });
+  res.status(201).json({ success: true, data: sanitizeAdminUser(newUser) });
 });
 
 app.put('/api/admin/users/:id', async (req: Request, res: Response) => {
   const { id } = req.params;
   const idx = users.findIndex((user) => user.id === id);
   if (idx === -1) return res.status(404).json({ success: false, message: 'User không tồn tại' });
-  users[idx] = { ...users[idx], ...req.body };
+  const { password, ...updates } = req.body;
+  if (password && String(password).length < 6) {
+    return res.status(400).json({ success: false, message: 'Mật khẩu phải có ít nhất 6 ký tự' });
+  }
+  users[idx] = {
+    ...users[idx],
+    ...updates,
+    ...(password ? { password: hashPassword(String(password)) } : {}),
+  };
   if (!(await saveToFirestore('users', id, users[idx]))) {
     return res.status(503).json({ success: false, message: 'Không thể cập nhật user trong PostgreSQL' });
   }
-  res.json({ success: true, data: users[idx] });
+  res.json({ success: true, data: sanitizeAdminUser(users[idx]) });
 });
 
 app.patch('/api/admin/users/:id/status', async (req: Request, res: Response) => {
@@ -596,7 +728,7 @@ app.patch('/api/admin/users/:id/status', async (req: Request, res: Response) => 
   if (!(await saveToFirestore('users', id, users[idx]))) {
     return res.status(503).json({ success: false, message: 'Không thể cập nhật trạng thái user trong PostgreSQL' });
   }
-  res.json({ success: true, data: users[idx] });
+  res.json({ success: true, data: sanitizeAdminUser(users[idx]) });
 });
 
 app.delete('/api/admin/users/:id', async (req: Request, res: Response) => {
@@ -900,11 +1032,13 @@ app.delete('/api/admin/categories/:id', async (req: Request, res: Response) => {
   await deleteFromFirestore('categories', id);
 
   // Cascade fallback category to tours
-  const fallbackCat = categories[0]?.name || 'Thủ công gia đình';
-  tours = tours.map((t) => (t.category === deletedName ? { ...t, category: fallbackCat } : t));
-  for (const t of tours) {
-    if (t.category === fallbackCat) {
-      await saveToFirestore('tours', t.id, t);
+  const fallbackCat = categories[0]?.name;
+  if (fallbackCat) {
+    tours = tours.map((t) => (t.category === deletedName ? { ...t, category: fallbackCat } : t));
+    for (const t of tours) {
+      if (t.category === fallbackCat) {
+        await saveToFirestore('tours', t.id, t);
+      }
     }
   }
 
@@ -917,7 +1051,11 @@ async function startServer() {
 
   if (process.env.NODE_ENV !== 'production') {
     const vite = await createViteServer({
-      server: { middlewareMode: true },
+      server: {
+        middlewareMode: true,
+        hmr: process.env.DISABLE_HMR !== 'true',
+        ws: process.env.DISABLE_HMR === 'true' ? false : { port: PORT + 1 },
+      },
       appType: 'spa',
     });
     app.use(vite.middlewares);

@@ -1,29 +1,54 @@
 import React, { useState } from 'react';
-import { Tour } from '../../types';
+import { Category, Tour } from '../../types';
 import { Clock, Users, Star, ArrowRight, CheckCircle, Compass, Sparkles } from 'lucide-react';
 
 interface PublicTourListProps {
   tours: Tour[];
+  categories?: Category[];
   onSelectTour: (tour: Tour) => void;
   onBookTour: (tour: Tour) => void;
   activeCategory: string;
   onCategoryChange: (cat: string) => void;
+  lang?: 'vn' | 'en';
 }
 
 export const PublicTourList: React.FC<PublicTourListProps> = ({
   tours,
+  categories = [],
   onSelectTour,
   onBookTour,
   activeCategory,
   onCategoryChange,
+  lang = 'vn',
 }) => {
+  const isVn = lang === 'vn';
+  const getCategoryLabel = (tour: Tour) => {
+    const matchedCategory = categories.find((category) => {
+      const tourCategory = (tour.category || '').toLowerCase();
+      return (
+        tourCategory === category.name.toLowerCase() ||
+        tourCategory === (category.nameEn || '').toLowerCase() ||
+        tourCategory === category.slug.toLowerCase() ||
+        tour.category === category.id ||
+        tour.category === category.code
+      );
+    });
+
+    if (!matchedCategory) {
+      return tour.category;
+    }
+
+    return isVn
+      ? (matchedCategory.name || matchedCategory.nameEn || tour.category)
+      : (matchedCategory.nameEn || matchedCategory.name || tour.category);
+  };
   const categories = [
-    { id: 'ALL', label: 'Tất Cả Tour' },
-    { id: 'Jeep Tour & Khám phá', label: 'Jeep Tour Quân Sự' },
-    { id: 'Du lịch Sinh thái Bản địa', label: 'Sinh Thái Rừng Dừa' },
-    { id: 'Workshop Bền Vững & Giáo Dục', label: 'Workshop Tái Chế' },
-    { id: 'Văn hóa & Đời sống Bản địa', label: 'Văn Hóa Làng Nghề' },
-    { id: 'Ẩm thực & Nông nghiệp Hữu cơ', label: 'Ẩm Thực Hữu Cơ' },
+    { id: 'ALL', label: isVn ? 'Tất Cả Tour' : 'All Tours' },
+    { id: 'Jeep Tour & Khám phá', label: isVn ? 'Jeep Tour Quân Sự' : 'Military Jeep Tours' },
+    { id: 'Du lịch Sinh thái Bản địa', label: isVn ? 'Sinh Thái Rừng Dừa' : 'Coconut Forest Ecology' },
+    { id: 'Workshop Bền Vững & Giáo Dục', label: isVn ? 'Workshop Tái Chế' : 'Sustainable Workshops' },
+    { id: 'Văn hóa & Đời sống Bản địa', label: isVn ? 'Văn Hóa Làng Nghề' : 'Local Culture & Craft' },
+    { id: 'Ẩm thực & Nông nghiệp Hữu cơ', label: isVn ? 'Ẩm Thực Hữu Cơ' : 'Organic Food & Farming' },
   ];
 
   return (
@@ -32,13 +57,15 @@ export const PublicTourList: React.FC<PublicTourListProps> = ({
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-12">
           <div>
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 text-xs font-semibold mb-3">
-              <Compass className="w-3.5 h-3.5" /> Hành Trình Trải Nghiệm Độc Bản
+              <Compass className="w-3.5 h-3.5" /> {isVn ? 'Hành Trình Trải Nghiệm Độc Bản' : 'Curated Signature Journeys'}
             </div>
             <h2 className="text-3xl sm:text-4xl font-black font-serif text-stone-900 tracking-tight">
-              Tour Sinh Thái & Văn Hóa Hội An
+              {isVn ? 'Tour Sinh Thái & Văn Hóa Hội An' : 'Hoi An Eco & Cultural Tours'}
             </h2>
             <p className="text-stone-600 mt-2 text-sm sm:text-base max-w-xl">
-              Được thiết kế tỉ mỉ bởi những chuyên gia bản địa của Emic Travel, tôn trọng văn hóa và gìn giữ môi trường.
+              {isVn
+                ? 'Được thiết kế tỉ mỉ bởi những chuyên gia bản địa của Emic Travel, tôn trọng văn hóa và gìn giữ môi trường.'
+                : 'Thoughtfully designed by Emic Travel local experts with respect for culture and environmental stewardship.'}
             </p>
           </div>
 
@@ -71,16 +98,16 @@ export const PublicTourList: React.FC<PublicTourListProps> = ({
               <div className="relative h-60 overflow-hidden">
                 <img
                   src={tour.thumbnail}
-                  alt={tour.name}
+                  alt={isVn ? (tour.name || tour.nameEn || '') : (tour.nameEn || tour.name || '')}
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                 />
                 <div className="absolute top-3 left-3 flex flex-col gap-1.5">
                   <span className="bg-emerald-800/90 text-white text-[11px] font-bold px-3 py-1 rounded-full backdrop-blur-xs shadow-xs">
-                    {tour.category}
+                    {getCategoryLabel(tour)}
                   </span>
                   {tour.isFeatured && (
                     <span className="bg-amber-500 text-stone-950 text-[10px] font-extrabold px-2.5 py-0.5 rounded-full flex items-center gap-1 shadow-xs">
-                      <Sparkles className="w-3 h-3" /> Nổi bật
+                      <Sparkles className="w-3 h-3" /> {isVn ? 'Nổi bật' : 'Featured'}
                     </span>
                   )}
                 </div>
@@ -98,12 +125,14 @@ export const PublicTourList: React.FC<PublicTourListProps> = ({
                   <div className="flex items-center gap-4 text-xs text-stone-500 mb-3">
                     <span className="flex items-center gap-1">
                       <Clock className="w-3.5 h-3.5 text-emerald-600" />
-                      {tour.durationDays} ngày {tour.durationNights > 0 ? `${tour.durationNights} đêm` : ''}
+                      {isVn
+                        ? `${tour.durationDays} ngày ${tour.durationNights > 0 ? `${tour.durationNights} đêm` : ''}`.trim()
+                        : `${tour.durationDays} day${tour.durationDays > 1 ? 's' : ''} ${tour.durationNights > 0 ? `${tour.durationNights} night${tour.durationNights > 1 ? 's' : ''}` : ''}`.trim()}
                     </span>
                     <span>•</span>
                     <span className="flex items-center gap-1">
                       <Users className="w-3.5 h-3.5 text-emerald-600" />
-                      Tối đa {tour.maxGuests} khách
+                      {isVn ? `Tối đa ${tour.maxGuests} khách` : `Up to ${tour.maxGuests} guests`}
                     </span>
                   </div>
 
@@ -111,12 +140,12 @@ export const PublicTourList: React.FC<PublicTourListProps> = ({
                     onClick={() => onSelectTour(tour)}
                     className="text-lg font-bold text-stone-900 group-hover:text-emerald-700 transition-colors cursor-pointer line-clamp-2 leading-snug mb-3"
                   >
-                    {tour.name}
+                    {isVn ? (tour.name || tour.nameEn || '') : (tour.nameEn || tour.name || '')}
                   </h3>
 
                   {/* Highlights snippet */}
                   <ul className="space-y-1.5 mb-6 text-xs text-stone-600">
-                    {tour.highlights.slice(0, 2).map((hl, idx) => (
+                    {(isVn ? tour.highlights : (tour.highlightsEn || tour.highlights)).slice(0, 2).map((hl, idx) => (
                       <li key={idx} className="flex items-start gap-1.5">
                         <CheckCircle className="w-3.5 h-3.5 text-emerald-600 shrink-0 mt-0.5" />
                         <span className="line-clamp-1">{hl}</span>
@@ -128,7 +157,7 @@ export const PublicTourList: React.FC<PublicTourListProps> = ({
                 {/* Card Footer: Price & Actions */}
                 <div className="pt-4 border-t border-stone-100 flex items-center justify-between">
                   <div>
-                    <span className="text-[11px] text-stone-400 block font-medium">Giá từ / người lớn</span>
+                    <span className="text-[11px] text-stone-400 block font-medium">{isVn ? 'Giá từ / người lớn' : 'From / adult'}</span>
                     <div className="text-lg font-black text-emerald-800">
                       {tour.pricing.adultPrice.toLocaleString('vi-VN')} <span className="text-xs font-normal text-stone-600">đ</span>
                     </div>
@@ -139,13 +168,13 @@ export const PublicTourList: React.FC<PublicTourListProps> = ({
                       onClick={() => onSelectTour(tour)}
                       className="px-3 py-2 text-xs font-semibold text-stone-700 hover:text-emerald-700 transition-colors"
                     >
-                      Chi tiết
+                      {isVn ? 'Chi tiết' : 'Details'}
                     </button>
                     <button
                       onClick={() => onBookTour(tour)}
                       className="bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold px-4 py-2 rounded-lg shadow-xs transition-transform active:scale-95 flex items-center gap-1"
                     >
-                      Đặt Tour
+                      {isVn ? 'Đặt Tour' : 'Book Tour'}
                       <ArrowRight className="w-3 h-3" />
                     </button>
                   </div>
@@ -158,12 +187,12 @@ export const PublicTourList: React.FC<PublicTourListProps> = ({
         {tours.length === 0 && (
           <div className="text-center py-16 bg-white rounded-2xl border border-stone-200">
             <Compass className="w-12 h-12 text-stone-300 mx-auto mb-3" />
-            <p className="text-stone-600 font-medium">Không tìm thấy tour phù hợp với tiêu chí lọc.</p>
+            <p className="text-stone-600 font-medium">{isVn ? 'Không tìm thấy tour phù hợp với tiêu chí lọc.' : 'No tours matched the selected filters.'}</p>
             <button
               onClick={() => onCategoryChange('ALL')}
               className="mt-3 text-xs font-bold text-emerald-700 underline"
             >
-              Xem tất cả tour
+              {isVn ? 'Xem tất cả tour' : 'View all tours'}
             </button>
           </div>
         )}

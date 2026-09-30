@@ -206,10 +206,13 @@ export const ToursView: React.FC<ToursViewProps> = ({
     ],
     videoUrl: '',
     departureLocation: 'Phố cổ Hội An',
+    departureLocationEn: 'Hoi An Ancient Town',
     destinationLocation: 'Thánh địa Mỹ Sơn',
+    destinationLocationEn: 'My Son Sanctuary',
     durationDays: 1,
     durationNights: 0,
     transportation: 'Xe đưa đón / Tự túc',
+    transportationEn: 'Shuttle service / Self-arranged transfer',
     minGuests: 1,
     maxGuests: 16,
     adultPrice: 390000,
@@ -218,17 +221,25 @@ export const ToursView: React.FC<ToursViewProps> = ({
     status: 'PUBLISHED' as TourStatus,
     isFeatured: true,
     highlights: ['Trải nghiệm thủ công mộc mạc', 'Không gian xanh mát vườn Botanica'],
+    highlightsEn: ['Hands-on craft experience', 'Botanica garden greenery'],
     policiesIncludes: ['Đồ uống chào mừng', 'Hướng dẫn viên nhiệt tình', 'Hộp quà mang về'],
+    policiesIncludesEn: ['Welcome drink', 'Friendly host', 'Take-home gift box'],
     policiesExcludes: ['Chi phí ngoài chương trình'],
+    policiesExcludesEn: ['Personal expenses outside the program'],
     cancellation: 'Báo trước 2 giờ nếu cần đổi lịch.',
+    cancellationEn: 'Please notify us 2 hours in advance if you need to reschedule.',
     notes: 'Phù hợp cho mọi lứa tuổi và gia đình có trẻ nhỏ.',
+    notesEn: 'Suitable for all ages and families with young children.',
     schedules: [
       {
         id: 'sch-temp-1',
         dayNumber: 1,
         title: 'Trải nghiệm workshop tại vườn (khoảng 2 giờ thong thả)',
+        titleEn: 'Garden workshop experience (around 2 relaxed hours)',
         description: 'Tự tay làm sản phẩm thủ công, thưởng thức trà thảo mộc và trò chuyện cùng host.',
+        descriptionEn: 'Create a handmade product, enjoy herbal tea, and chat with the host.',
         mealsIncluded: ['Đồ uống chào mừng (Welcome Drink)'],
+        mealsIncludedEn: ['Welcome drink'],
       },
     ] as TourSchedule[],
     seoTitle: '',
@@ -237,10 +248,13 @@ export const ToursView: React.FC<ToursViewProps> = ({
   });
 
   const resetForm = () => {
+  departureLocationEn: '208 Le Thanh Tong Street, Cam Chau, Hoi An',
     setEditingTour(null);
+  destinationLocationEn: 'Botanica Garden Hoi An',
     setFormData({
       code: `BG-WS-0${tours.length + 1}`,
       name: '',
+  transportationEn: 'Self-arranged transfer or shuttle service',
       nameEn: '',
       description: '',
       descriptionEn: '',
@@ -262,17 +276,25 @@ export const ToursView: React.FC<ToursViewProps> = ({
       status: 'PUBLISHED',
       isFeatured: true,
       highlights: ['Tự tay sáng tạo tác phẩm mang về', 'Thảo mộc tự nhiên từ vườn Botanica'],
+      highlightsEn: ['Create your own keepsake', 'Natural herbs from Botanica Garden'],
       policiesIncludes: ['Đồ uống chào mừng', 'Nguyên vật liệu đầy đủ', 'Hướng dẫn viên tận tình'],
+      policiesIncludesEn: ['Welcome drink', 'All materials included', 'Dedicated instructor'],
       policiesExcludes: ['Chi phí cá nhân ngoài chương trình'],
+      policiesExcludesEn: ['Personal expenses outside the experience'],
       cancellation: 'Báo trước 2h nếu muốn đổi lịch.',
+      cancellationEn: 'Please notify us 2 hours ahead if you want to reschedule.',
       notes: 'Thích hợp cho cả gia đình và trẻ nhỏ từ 2 tuổi.',
+      notesEn: 'Suitable for families and children from 2 years old.',
       schedules: [
         {
           id: 'sch-new-1',
           dayNumber: 1,
           title: 'Trải nghiệm workshop (khoảng 2 giờ)',
+          titleEn: 'Workshop experience (around 2 hours)',
           description: 'Học cách làm sản phẩm, tìm hiểu nguyên liệu thảo mộc bản địa.',
+          descriptionEn: 'Learn to create your piece and discover local botanical ingredients.',
           mealsIncluded: ['Đồ uống chào mừng'],
+          mealsIncludedEn: ['Welcome drink'],
         },
       ],
       seoTitle: '',
@@ -301,10 +323,13 @@ export const ToursView: React.FC<ToursViewProps> = ({
       album: tour.album,
       videoUrl: tour.videoUrl || '',
       departureLocation: tour.departureLocation,
+      departureLocationEn: tour.departureLocationEn || '',
       destinationLocation: tour.destinationLocation,
+      destinationLocationEn: tour.destinationLocationEn || '',
       durationDays: tour.durationDays,
       durationNights: tour.durationNights,
       transportation: tour.transportation,
+      transportationEn: tour.transportationEn || '',
       minGuests: tour.minGuests,
       maxGuests: tour.maxGuests,
       adultPrice: tour.pricing.adultPrice,
@@ -313,10 +338,15 @@ export const ToursView: React.FC<ToursViewProps> = ({
       status: tour.status,
       isFeatured: tour.isFeatured,
       highlights: tour.highlights,
+      highlightsEn: tour.highlightsEn || [],
       policiesIncludes: tour.policies.includes,
+      policiesIncludesEn: tour.policies.includesEn || [],
       policiesExcludes: tour.policies.excludes,
+      policiesExcludesEn: tour.policies.excludesEn || [],
       cancellation: tour.policies.cancellation,
+      cancellationEn: tour.policies.cancellationEn || '',
       notes: tour.policies.notes,
+      notesEn: tour.policies.notesEn || '',
       schedules: tour.schedules,
       seoTitle: tour.seo.title,
       seoDescription: tour.seo.description,
@@ -369,10 +399,13 @@ export const ToursView: React.FC<ToursViewProps> = ({
       album: formData.album,
       videoUrl: formData.videoUrl,
       departureLocation: formData.departureLocation,
+      departureLocationEn: formData.departureLocationEn || formData.departureLocation,
       destinationLocation: formData.destinationLocation,
+      destinationLocationEn: formData.destinationLocationEn || formData.destinationLocation,
       durationDays: formData.durationDays,
       durationNights: formData.durationNights,
       transportation: formData.transportation,
+      transportationEn: formData.transportationEn || formData.transportation,
       minGuests: formData.minGuests,
       maxGuests: formData.maxGuests,
       pricing: {
@@ -383,11 +416,16 @@ export const ToursView: React.FC<ToursViewProps> = ({
       schedules: formData.schedules,
       policies: {
         includes: formData.policiesIncludes,
+        includesEn: formData.policiesIncludesEn,
         excludes: formData.policiesExcludes,
+        excludesEn: formData.policiesExcludesEn,
         cancellation: formData.cancellation,
+        cancellationEn: formData.cancellationEn || formData.cancellation,
         notes: formData.notes,
+        notesEn: formData.notesEn || formData.notes,
       },
       highlights: formData.highlights,
+      highlightsEn: formData.highlightsEn,
       status: formData.status,
       isFeatured: formData.isFeatured,
       seo: {
@@ -846,6 +884,16 @@ export const ToursView: React.FC<ToursViewProps> = ({
                         className="w-full p-2.5 rounded-xl border border-stone-200 text-xs"
                       />
                     </div>
+                    <div>
+                      <label className="block text-xs font-bold text-stone-700 mb-1">Transportation (English)</label>
+                      <input
+                        type="text"
+                        value={formData.transportationEn}
+                        onChange={(e) => setFormData({ ...formData, transportationEn: e.target.value })}
+                        placeholder="Military Jeep / Bamboo bike / Basket boat..."
+                        className="w-full p-2.5 rounded-xl border border-stone-200 text-xs"
+                      />
+                    </div>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
@@ -893,7 +941,7 @@ export const ToursView: React.FC<ToursViewProps> = ({
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-xs font-bold text-stone-700 mb-1">Điểm Khởi Hành</label>
+                      <label className="block text-xs font-bold text-stone-700 mb-1">Điểm Khởi Hành (Tiếng Việt)</label>
                       <input
                         type="text"
                         value={formData.departureLocation}
@@ -902,11 +950,32 @@ export const ToursView: React.FC<ToursViewProps> = ({
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-bold text-stone-700 mb-1">Điểm Đến</label>
+                      <label className="block text-xs font-bold text-stone-700 mb-1">Điểm Đến (Tiếng Việt)</label>
                       <input
                         type="text"
                         value={formData.destinationLocation}
                         onChange={(e) => setFormData({ ...formData, destinationLocation: e.target.value })}
+                        className="w-full p-2.5 rounded-xl border border-stone-200 text-xs"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-bold text-stone-700 mb-1">Departure Location (English)</label>
+                      <input
+                        type="text"
+                        value={formData.departureLocationEn}
+                        onChange={(e) => setFormData({ ...formData, departureLocationEn: e.target.value })}
+                        className="w-full p-2.5 rounded-xl border border-stone-200 text-xs"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-stone-700 mb-1">Destination (English)</label>
+                      <input
+                        type="text"
+                        value={formData.destinationLocationEn}
+                        onChange={(e) => setFormData({ ...formData, destinationLocationEn: e.target.value })}
                         className="w-full p-2.5 rounded-xl border border-stone-200 text-xs"
                       />
                     </div>
@@ -959,8 +1028,11 @@ export const ToursView: React.FC<ToursViewProps> = ({
                               id: 'sch-' + Date.now(),
                               dayNumber: newDayNum,
                               title: `Ngày ${newDayNum}: Hoạt động trải nghiệm`,
+                              titleEn: `Day ${newDayNum}: Experience activities`,
                               description: 'Chi tiết các hoạt động trong ngày...',
+                              descriptionEn: 'Detailed itinerary for the day...',
                               mealsIncluded: ['Ăn sáng', 'Ăn trưa'],
+                              mealsIncludedEn: ['Breakfast', 'Lunch'],
                             },
                           ],
                         });
@@ -1010,6 +1082,20 @@ export const ToursView: React.FC<ToursViewProps> = ({
                         </div>
 
                         <div>
+                          <label className="block text-[11px] font-bold text-stone-600 mb-1">Day Title (English)</label>
+                          <input
+                            type="text"
+                            value={sch.titleEn || ''}
+                            onChange={(e) => {
+                              const updated = [...formData.schedules];
+                              updated[idx].titleEn = e.target.value;
+                              setFormData({ ...formData, schedules: updated });
+                            }}
+                            className="w-full p-2 rounded-lg border border-stone-200 text-xs"
+                          />
+                        </div>
+
+                        <div>
                           <label className="block text-[11px] font-bold text-stone-600 mb-1">Mô Tả Hoạt Động Chi Tiết</label>
                           <textarea
                             rows={3}
@@ -1024,6 +1110,20 @@ export const ToursView: React.FC<ToursViewProps> = ({
                         </div>
 
                         <div>
+                          <label className="block text-[11px] font-bold text-stone-600 mb-1">Detailed Description (English)</label>
+                          <textarea
+                            rows={3}
+                            value={sch.descriptionEn || ''}
+                            onChange={(e) => {
+                              const updated = [...formData.schedules];
+                              updated[idx].descriptionEn = e.target.value;
+                              setFormData({ ...formData, schedules: updated });
+                            }}
+                            className="w-full p-2 rounded-lg border border-stone-200 text-xs"
+                          />
+                        </div>
+
+                        <div>
                           <label className="block text-[11px] font-bold text-stone-600 mb-1">Bữa Ăn Bao Gồm (ngăn cách bằng dấu phẩy)</label>
                           <input
                             type="text"
@@ -1031,6 +1131,20 @@ export const ToursView: React.FC<ToursViewProps> = ({
                             onChange={(e) => {
                               const updated = [...formData.schedules];
                               updated[idx].mealsIncluded = e.target.value.split(',').map((m) => m.trim());
+                              setFormData({ ...formData, schedules: updated });
+                            }}
+                            className="w-full p-2 rounded-lg border border-stone-200 text-xs"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-[11px] font-bold text-stone-600 mb-1">Meals Included (comma separated, English)</label>
+                          <input
+                            type="text"
+                            value={(sch.mealsIncludedEn || []).join(', ')}
+                            onChange={(e) => {
+                              const updated = [...formData.schedules];
+                              updated[idx].mealsIncludedEn = e.target.value.split(',').map((m) => m.trim()).filter(Boolean);
                               setFormData({ ...formData, schedules: updated });
                             }}
                             className="w-full p-2 rounded-lg border border-stone-200 text-xs"
@@ -1090,6 +1204,16 @@ export const ToursView: React.FC<ToursViewProps> = ({
                   </div>
 
                   <div>
+                    <label className="block text-xs font-bold text-stone-700 mb-1">Includes (English, one item per line)</label>
+                    <textarea
+                      rows={3}
+                      value={formData.policiesIncludesEn.join('\n')}
+                      onChange={(e) => setFormData({ ...formData, policiesIncludesEn: e.target.value.split('\n').filter(Boolean) })}
+                      className="w-full p-2.5 rounded-xl border border-stone-200 text-xs"
+                    />
+                  </div>
+
+                  <div>
                     <label className="block text-xs font-bold text-stone-700 mb-1">Không Bao Gồm (Mỗi dòng một mục)</label>
                     <textarea
                       rows={2}
@@ -1100,11 +1224,71 @@ export const ToursView: React.FC<ToursViewProps> = ({
                   </div>
 
                   <div>
+                    <label className="block text-xs font-bold text-stone-700 mb-1">Excludes (English, one item per line)</label>
+                    <textarea
+                      rows={2}
+                      value={formData.policiesExcludesEn.join('\n')}
+                      onChange={(e) => setFormData({ ...formData, policiesExcludesEn: e.target.value.split('\n').filter(Boolean) })}
+                      className="w-full p-2.5 rounded-xl border border-stone-200 text-xs"
+                    />
+                  </div>
+
+                  <div>
                     <label className="block text-xs font-bold text-stone-700 mb-1">Chính Sách Hoàn Hủy</label>
                     <input
                       type="text"
                       value={formData.cancellation}
                       onChange={(e) => setFormData({ ...formData, cancellation: e.target.value })}
+                      className="w-full p-2.5 rounded-xl border border-stone-200 text-xs"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-stone-700 mb-1">Cancellation Policy (English)</label>
+                    <input
+                      type="text"
+                      value={formData.cancellationEn}
+                      onChange={(e) => setFormData({ ...formData, cancellationEn: e.target.value })}
+                      className="w-full p-2.5 rounded-xl border border-stone-200 text-xs"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-stone-700 mb-1">Điểm Nổi Bật (Tiếng Việt, mỗi dòng một mục)</label>
+                    <textarea
+                      rows={3}
+                      value={formData.highlights.join('\n')}
+                      onChange={(e) => setFormData({ ...formData, highlights: e.target.value.split('\n').filter(Boolean) })}
+                      className="w-full p-2.5 rounded-xl border border-stone-200 text-xs"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-stone-700 mb-1">Highlights (English, one item per line)</label>
+                    <textarea
+                      rows={3}
+                      value={formData.highlightsEn.join('\n')}
+                      onChange={(e) => setFormData({ ...formData, highlightsEn: e.target.value.split('\n').filter(Boolean) })}
+                      className="w-full p-2.5 rounded-xl border border-stone-200 text-xs"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-stone-700 mb-1">Lưu Ý (Tiếng Việt)</label>
+                    <textarea
+                      rows={2}
+                      value={formData.notes}
+                      onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                      className="w-full p-2.5 rounded-xl border border-stone-200 text-xs"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-stone-700 mb-1">Notes (English)</label>
+                    <textarea
+                      rows={2}
+                      value={formData.notesEn}
+                      onChange={(e) => setFormData({ ...formData, notesEn: e.target.value })}
                       className="w-full p-2.5 rounded-xl border border-stone-200 text-xs"
                     />
                   </div>

@@ -1,3 +1,39 @@
+export const publicContentTranslations = {
+  vn: {
+    feedbackComments: {
+      'fb-botanica-01': 'Trải nghiệm rất tuyệt. Người hướng dẫn ấm áp, thân thiện và giải thích mọi thứ rất dễ hiểu. Một nơi đẹp để trốn khỏi sự ồn ào.',
+      'fb-botanica-02': 'Nếu bạn yêu thiên nhiên, nơi này khiến bạn muốn chậm lại, hít thở và tận hưởng khoảnh khắc. Đội ngũ ở đây rất tâm huyết với điều họ làm.',
+      'fb-botanica-03': 'Một viên ngọc ẩn dành cho thủ công và văn hóa. Không chỉ là quán cà phê, mà còn là không gian để học hỏi và khám phá.',
+      'fb-botanica-04': 'Các cô hướng dẫn vô cùng tử tế, kiên nhẫn và hiếu khách. Không gian yên bình và ngập tràn cây xanh.',
+      'fb-botanica-05': 'Trong suốt năm tuần ở đây, chúng tôi đã quay lại hai lần mỗi tuần.',
+      'fb-03': 'Một dự án thực sự truyền cảm hứng. Việc tìm hiểu về kinh tế tuần hoàn ở Hội An và tự tay làm xà phòng thiên nhiên là trải nghiệm khó quên. Emic thể hiện rất rõ cam kết với các tiêu chuẩn Travelife.',
+    } as Record<string, string>,
+    feedbackCustomerNames: {
+      'fb-botanica-01': 'Khách lớp cà phê thảo mộc',
+      'fb-botanica-02': 'Khách tham quan vườn',
+      'fb-botanica-03': 'Khách lớp trải nghiệm',
+      'fb-botanica-04': 'Khách lớp Kokedama',
+      'fb-botanica-05': 'Khách quay lại',
+    } as Record<string, string>,
+  },
+  en: {
+    tourNames: {
+      'tour-01': 'My Son Sanctuary & Hoi An Countryside Jeep Tour',
+      'tour-02': 'Van Lang Fishing Village & Bay Mau Coconut Forest Basket Boat Eco Tour',
+      'tour-03': 'Sustainable Bio-Workshop: Organic Waste Recycling & Natural Soap Making',
+      'tour-04': 'Cam Kim Countryside & Kim Bong Traditional Carpentry Motorbike Tour',
+      'tour-05': 'Tra Que Vegetable Village Farmer Experience & Cooking Class Combo',
+    } as Record<string, string>,
+    feedbackComments: {
+      'fb-01': 'We had the best travel experience in Vietnam! The vintage Jeep was so cool, the driver was careful, and the guide explained Cham culture in such depth. Thank you, Emic Travel, for your thoughtful care!',
+      'fb-02': 'Our two kids loved catching crabs and learning to fold grasshoppers from coconut leaves. The highlight was the tour’s commitment to avoiding single-use plastic bottles and serving chilled water in reusable glass containers.',
+    } as Record<string, string>,
+    feedbackCustomerNames: {
+      'fb-02': "Lan Anh's family",
+    } as Record<string, string>,
+  },
+};
+
 export const translationsData = {
   en:{
     nav_workshops:"Workshops",nav_how:"How it works",nav_reviews:"Reviews",nav_stories:"Stories & Blog",nav_visit:"Visit",nav_book:"Book a workshop",

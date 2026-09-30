@@ -1,4 +1,3 @@
-import { dataStore } from './dataStore';
 import {
   Tour,
   ServiceItem,
@@ -19,6 +18,12 @@ import {
   CategoryType,
 } from '../types';
 
+const disabledLocalFallback = new Proxy({} as Record<string, (...args: any[]) => never>, {
+  get: (_target, property) => () => {
+    throw new Error(`API request failed and all local mock fallbacks have been removed (${String(property)}).`);
+  },
+});
+
 export const apiClient = {
   // Public APIs
   async getPublicHome() {
@@ -31,7 +36,7 @@ export const apiClient = {
     } catch {
       // fallback
     }
-    return dataStore.getPublicHome();
+    return disabledLocalFallback.getPublicHome();
   },
 
   async getPublicTours(filter?: { category?: string; search?: string; maxPrice?: number }) {
@@ -48,7 +53,7 @@ export const apiClient = {
     } catch {
       // fallback
     }
-    return dataStore.getPublicTours(filter);
+    return disabledLocalFallback.getPublicTours(filter);
   },
 
   async getPublicTourBySlug(slug: string) {
@@ -61,7 +66,7 @@ export const apiClient = {
     } catch {
       // fallback
     }
-    return dataStore.getPublicTourBySlug(slug);
+    return disabledLocalFallback.getPublicTourBySlug(slug);
   },
 
   async getPublicServices() {
@@ -74,7 +79,7 @@ export const apiClient = {
     } catch {
       // fallback
     }
-    return dataStore.getPublicServices();
+    return disabledLocalFallback.getPublicServices();
   },
 
   async getPublicNews() {
@@ -87,7 +92,46 @@ export const apiClient = {
     } catch {
       // fallback
     }
-    return dataStore.getPublicNews();
+    return disabledLocalFallback.getPublicNews();
+  },
+
+  async getPublicNewsBySlug(slug: string) {
+    try {
+      const res = await fetch(`/api/public/news/${slug}`);
+      if (res.ok) {
+        const json = await res.json();
+        return json.data as Post;
+      }
+    } catch {
+      // fallback
+    }
+    return disabledLocalFallback.getPublicNewsBySlug(slug);
+  },
+
+  async getPublicCategories(): Promise<Category[]> {
+    try {
+      const res = await fetch('/api/public/categories');
+      if (res.ok) {
+        const json = await res.json();
+        return json.data as Category[];
+      }
+    } catch {
+      // API errors must not fall back to local data.
+    }
+    return disabledLocalFallback.getAllCategories();
+  },
+
+  async getPublicLatestMedia(): Promise<string | null> {
+    try {
+      const res = await fetch('/api/public/media/latest');
+      if (res.ok) {
+        const json = await res.json();
+        return json.data as string | null;
+      }
+    } catch {
+      // API errors must not fall back to local data.
+    }
+    return null;
   },
 
   async createPublicBooking(payload: {
@@ -117,7 +161,7 @@ export const apiClient = {
     } catch {
       // fallback
     }
-    return dataStore.createPublicBooking(payload);
+    return disabledLocalFallback.createPublicBooking(payload);
   },
 
   // Admin APIs
@@ -131,7 +175,7 @@ export const apiClient = {
     } catch {
       // fallback
     }
-    return dataStore.getDashboardStats();
+    return disabledLocalFallback.getDashboardStats();
   },
 
   async getAdminTours() {
@@ -144,7 +188,7 @@ export const apiClient = {
     } catch {
       // fallback
     }
-    return dataStore.getAllTours();
+    return disabledLocalFallback.getAllTours();
   },
 
   async createAdminTour(data: Omit<Tour, 'id' | 'createdAt' | 'updatedAt' | 'viewCount' | 'bookingCount' | 'rating' | 'reviewCount'>) {
@@ -161,7 +205,7 @@ export const apiClient = {
     } catch {
       // fallback
     }
-    return dataStore.createTour(data);
+    return disabledLocalFallback.createTour(data);
   },
 
   async updateAdminTour(id: string, updates: Partial<Tour>) {
@@ -178,7 +222,7 @@ export const apiClient = {
     } catch {
       // fallback
     }
-    return dataStore.updateTour(id, updates);
+    return disabledLocalFallback.updateTour(id, updates);
   },
 
   async updateAdminTourStatus(id: string, status: TourStatus) {
@@ -195,7 +239,7 @@ export const apiClient = {
     } catch {
       // fallback
     }
-    return dataStore.updateTourStatus(id, status);
+    return disabledLocalFallback.updateTourStatus(id, status);
   },
 
   async deleteAdminTour(id: string) {
@@ -205,7 +249,7 @@ export const apiClient = {
     } catch {
       // fallback
     }
-    return dataStore.deleteTour(id);
+    return disabledLocalFallback.deleteTour(id);
   },
 
   async getAdminServices() {
@@ -218,7 +262,7 @@ export const apiClient = {
     } catch {
       // fallback
     }
-    return dataStore.getAllServices();
+    return disabledLocalFallback.getAllServices();
   },
 
   async createAdminService(data: Omit<ServiceItem, 'id' | 'createdAt' | 'updatedAt'>) {
@@ -235,7 +279,7 @@ export const apiClient = {
     } catch {
       // fallback
     }
-    return dataStore.createService(data);
+    return disabledLocalFallback.createService(data);
   },
 
   async updateAdminService(id: string, updates: Partial<ServiceItem>) {
@@ -252,7 +296,7 @@ export const apiClient = {
     } catch {
       // fallback
     }
-    return dataStore.updateService(id, updates);
+    return disabledLocalFallback.updateService(id, updates);
   },
 
   async deleteAdminService(id: string) {
@@ -262,7 +306,7 @@ export const apiClient = {
     } catch {
       // fallback
     }
-    return dataStore.deleteService(id);
+    return disabledLocalFallback.deleteService(id);
   },
 
   async getAdminBookings() {
@@ -275,7 +319,7 @@ export const apiClient = {
     } catch {
       // fallback
     }
-    return dataStore.getAllBookings();
+    return disabledLocalFallback.getAllBookings();
   },
 
   async updateAdminBookingStatus(id: string, status: BookingStatus) {
@@ -292,7 +336,7 @@ export const apiClient = {
     } catch {
       // fallback
     }
-    return dataStore.updateBookingStatus(id, status);
+    return disabledLocalFallback.updateBookingStatus(id, status);
   },
 
   async updateAdminBooking(id: string, updates: Partial<Booking>) {
@@ -309,7 +353,7 @@ export const apiClient = {
     } catch {
       // fallback
     }
-    return dataStore.updateBooking(id, updates);
+    return disabledLocalFallback.updateBooking(id, updates);
   },
 
   async sendAdminBookingEmail(id: string) {
@@ -322,7 +366,7 @@ export const apiClient = {
     } catch {
       // fallback
     }
-    return dataStore.sendBookingEmail(id);
+    return disabledLocalFallback.sendBookingEmail(id);
   },
 
   async getAdminCustomers() {
@@ -335,7 +379,7 @@ export const apiClient = {
     } catch {
       // fallback
     }
-    return dataStore.getAllCustomers();
+    return disabledLocalFallback.getAllCustomers();
   },
 
   async updateAdminCustomer(id: string, updates: Partial<Customer>) {
@@ -352,7 +396,7 @@ export const apiClient = {
     } catch {
       // fallback
     }
-    return dataStore.updateCustomer(id, updates);
+    return disabledLocalFallback.updateCustomer(id, updates);
   },
 
   async getAdminBanners() {
@@ -365,7 +409,7 @@ export const apiClient = {
     } catch {
       // fallback
     }
-    return dataStore.getAllBanners();
+    return disabledLocalFallback.getAllBanners();
   },
 
   async createAdminBanner(banner: Omit<Banner, 'id'>) {
@@ -378,14 +422,13 @@ export const apiClient = {
       if (res.ok) {
         const json = await res.json();
         if (json.success && json.data) {
-          dataStore.createBanner(banner);
           return json.data as Banner;
         }
       }
     } catch {
       // fallback
     }
-    return dataStore.createBanner(banner);
+    return disabledLocalFallback.createBanner(banner);
   },
 
   async updateAdminBanner(id: string, updates: Partial<Banner>) {
@@ -398,14 +441,13 @@ export const apiClient = {
       if (res.ok) {
         const json = await res.json();
         if (json.success && json.data) {
-          dataStore.updateBanner(id, updates);
           return json.data as Banner;
         }
       }
     } catch {
       // fallback
     }
-    return dataStore.updateBanner(id, updates);
+    return disabledLocalFallback.updateBanner(id, updates);
   },
 
   async deleteAdminBanner(id: string) {
@@ -414,13 +456,12 @@ export const apiClient = {
         method: 'DELETE',
       });
       if (res.ok) {
-        dataStore.deleteBanner(id);
         return true;
       }
     } catch {
       // fallback
     }
-    return dataStore.deleteBanner(id);
+    return disabledLocalFallback.deleteBanner(id);
   },
 
   async updateAdminBanners(banners: Banner[]) {
@@ -437,7 +478,7 @@ export const apiClient = {
     } catch {
       // fallback
     }
-    return dataStore.updateBanners(banners);
+    return disabledLocalFallback.updateBanners(banners);
   },
 
   async getAdminPosts() {
@@ -450,7 +491,7 @@ export const apiClient = {
     } catch {
       // fallback
     }
-    return dataStore.getAllPosts();
+    return disabledLocalFallback.getAllPosts();
   },
 
   async createAdminPost(post: Omit<Post, 'id' | 'viewCount' | 'publishedAt'>) {
@@ -462,13 +503,12 @@ export const apiClient = {
       });
       if (res.ok) {
         const json = await res.json();
-        dataStore.createPost(post);
         return json.data as Post;
       }
     } catch {
       // fallback
     }
-    return dataStore.createPost(post);
+    return disabledLocalFallback.createPost(post);
   },
 
   async updateAdminPost(id: string, post: Partial<Post>) {
@@ -480,13 +520,12 @@ export const apiClient = {
       });
       if (res.ok) {
         const json = await res.json();
-        dataStore.updatePost(id, post);
         return json.data as Post;
       }
     } catch {
       // fallback
     }
-    return dataStore.updatePost(id, post);
+    return disabledLocalFallback.updatePost(id, post);
   },
 
   async deleteAdminPost(id: string) {
@@ -495,13 +534,12 @@ export const apiClient = {
         method: 'DELETE',
       });
       if (res.ok) {
-        dataStore.deletePost(id);
         return true;
       }
     } catch {
       // fallback
     }
-    return dataStore.deletePost(id);
+    return disabledLocalFallback.deletePost(id);
   },
 
   async getAdminFeedbacks() {
@@ -514,7 +552,7 @@ export const apiClient = {
     } catch {
       // fallback
     }
-    return dataStore.getAllFeedbacks();
+    return disabledLocalFallback.getAllFeedbacks();
   },
 
   async createAdminFeedback(data: Omit<CustomerFeedback, 'id' | 'createdAt'>) {
@@ -531,7 +569,7 @@ export const apiClient = {
     } catch {
       // fallback
     }
-    return dataStore.createFeedback(data);
+    return disabledLocalFallback.createFeedback(data);
   },
 
   async editAdminFeedback(id: string, updates: Partial<CustomerFeedback>) {
@@ -548,7 +586,7 @@ export const apiClient = {
     } catch {
       // fallback
     }
-    return dataStore.updateFeedback(id, updates);
+    return disabledLocalFallback.updateFeedback(id, updates);
   },
 
   async deleteAdminFeedback(id: string) {
@@ -558,7 +596,7 @@ export const apiClient = {
     } catch {
       // fallback
     }
-    return dataStore.deleteFeedback(id);
+    return disabledLocalFallback.deleteFeedback(id);
   },
 
   async updateAdminFeedback(id: string, isApproved: boolean, isFeatured?: boolean) {
@@ -575,7 +613,7 @@ export const apiClient = {
     } catch {
       // fallback
     }
-    return dataStore.updateFeedbackApproval(id, isApproved, isFeatured);
+    return disabledLocalFallback.updateFeedbackApproval(id, isApproved, isFeatured);
   },
 
   async uploadImage(payload: { filename: string; base64Data: string; folder?: MediaFile['folder'] }) {
@@ -588,20 +626,13 @@ export const apiClient = {
       if (res.ok) {
         const json = await res.json();
         if (json.success && json.data?.url) {
-          dataStore.uploadMedia({
-            name: payload.filename,
-            url: json.data.url,
-            folder: payload.folder || 'OTHER',
-            sizeKb: json.data.sizeKb || Math.round((payload.base64Data.length * 0.75) / 1024),
-            mimeType: 'image/jpeg',
-          });
           return json.data.url as string;
         }
       }
     } catch {
       // fallback
     }
-    dataStore.uploadMedia({
+    disabledLocalFallback.uploadMedia({
       name: payload.filename,
       url: payload.base64Data,
       folder: payload.folder || 'OTHER',
@@ -621,7 +652,7 @@ export const apiClient = {
     } catch {
       // fallback
     }
-    return dataStore.getAllMedia();
+    return disabledLocalFallback.getAllMedia();
   },
 
   async uploadAdminMedia(fileData: { name: string; url: string; folder: MediaFile['folder']; sizeKb: number; mimeType: string }) {
@@ -638,7 +669,7 @@ export const apiClient = {
     } catch {
       // fallback
     }
-    return dataStore.uploadMedia(fileData);
+    return disabledLocalFallback.uploadMedia(fileData);
   },
 
   async deleteAdminMedia(id: string) {
@@ -648,7 +679,7 @@ export const apiClient = {
     } catch {
       // fallback
     }
-    return dataStore.deleteMedia(id);
+    return disabledLocalFallback.deleteMedia(id);
   },
 
   async clearAllAdminMedia() {
@@ -667,7 +698,7 @@ export const apiClient = {
     } catch {
       // fallback
     }
-    return dataStore.getAuditLogs();
+    return disabledLocalFallback.getAuditLogs();
   },
 
   async getPublicBanners() {
@@ -694,7 +725,7 @@ export const apiClient = {
 
   async getSiteConfig() {
     try {
-      const res = await fetch('/api/admin/site-config');
+      const res = await fetch('/api/public/site-config');
       if (res.ok) {
         const json = await res.json();
         return json.data as import('../types').SiteConfig;
@@ -702,7 +733,7 @@ export const apiClient = {
     } catch {
       // fallback
     }
-    return dataStore.getSiteConfig();
+    return disabledLocalFallback.getSiteConfig();
   },
 
   async updateSiteConfig(config: Partial<import('../types').SiteConfig>) {
@@ -719,7 +750,7 @@ export const apiClient = {
     } catch {
       // fallback
     }
-    return dataStore.updateSiteConfig(config);
+    return disabledLocalFallback.updateSiteConfig(config);
   },
 
   // Admin Users & Staff Management
@@ -734,15 +765,23 @@ export const apiClient = {
       const json = await res.json();
       return json.data as AdminUser;
     } catch {
-      const normalizedUsername = username.trim().toLowerCase();
-      const user = dataStore.getAllUsers().find(
-        (candidate) =>
-          candidate.username.toLowerCase() === normalizedUsername &&
-          candidate.status === 'ACTIVE' &&
-          (candidate.password || '123456') === password,
-      );
-      return user || null;
+      return null;
     }
+  },
+
+  async getAdminSession(): Promise<AdminUser | null> {
+    try {
+      const res = await fetch('/api/admin/session');
+      if (!res.ok) return null;
+      const json = await res.json();
+      return json.data as AdminUser;
+    } catch {
+      return null;
+    }
+  },
+
+  async logoutAdmin(): Promise<void> {
+    await fetch('/api/admin/logout', { method: 'POST' });
   },
 
   async getAdminUsers(): Promise<AdminUser[]> {
@@ -755,7 +794,7 @@ export const apiClient = {
     } catch {
       // fallback
     }
-    return dataStore.getAllUsers();
+    return disabledLocalFallback.getAllUsers();
   },
 
   async createAdminUser(data: Omit<AdminUser, 'id' | 'createdAt'>): Promise<AdminUser> {
@@ -772,7 +811,7 @@ export const apiClient = {
     } catch {
       // fallback
     }
-    return dataStore.createUser(data);
+    return disabledLocalFallback.createUser(data);
   },
 
   async updateAdminUser(id: string, updates: Partial<AdminUser>): Promise<AdminUser | null> {
@@ -789,7 +828,7 @@ export const apiClient = {
     } catch {
       // fallback
     }
-    return dataStore.updateUser(id, updates);
+    return disabledLocalFallback.updateUser(id, updates);
   },
 
   async deleteAdminUser(id: string): Promise<boolean> {
@@ -799,7 +838,7 @@ export const apiClient = {
     } catch {
       // fallback
     }
-    return dataStore.deleteUser(id);
+    return disabledLocalFallback.deleteUser(id);
   },
 
   async toggleAdminUserStatus(id: string, status: UserStatus): Promise<AdminUser | null> {
@@ -816,7 +855,7 @@ export const apiClient = {
     } catch {
       // fallback
     }
-    return dataStore.toggleUserStatus(id, status);
+    return disabledLocalFallback.toggleUserStatus(id, status);
   },
 
   // Category Management
@@ -831,7 +870,7 @@ export const apiClient = {
     } catch {
       // fallback to local dataStore
     }
-    return dataStore.getAllCategories(type);
+    return disabledLocalFallback.getAllCategories(type);
   },
 
   async createAdminCategory(data: Omit<Category, 'id' | 'createdAt'>): Promise<Category> {
@@ -844,14 +883,13 @@ export const apiClient = {
       if (res.ok) {
         const json = await res.json();
         if (json.success && json.data) {
-          dataStore.createCategory(data);
           return json.data as Category;
         }
       }
     } catch {
       // fallback
     }
-    return dataStore.createCategory(data);
+    return disabledLocalFallback.createCategory(data);
   },
 
   async updateAdminCategory(id: string, updates: Partial<Category>): Promise<Category | null> {
@@ -864,14 +902,13 @@ export const apiClient = {
       if (res.ok) {
         const json = await res.json();
         if (json.success && json.data) {
-          dataStore.updateCategory(id, updates);
           return json.data as Category;
         }
       }
     } catch {
       // fallback
     }
-    return dataStore.updateCategory(id, updates);
+    return disabledLocalFallback.updateCategory(id, updates);
   },
 
   async deleteAdminCategory(id: string): Promise<boolean> {
@@ -880,13 +917,12 @@ export const apiClient = {
         method: 'DELETE',
       });
       if (res.ok) {
-        dataStore.deleteCategory(id);
         return true;
       }
     } catch {
       // fallback
     }
-    return dataStore.deleteCategory(id);
+    return disabledLocalFallback.deleteCategory(id);
   },
 
   async toggleAdminCategoryStatus(id: string, active: boolean): Promise<Category | null> {
@@ -904,7 +940,7 @@ export const apiClient = {
     } catch {
       // fallback
     }
-    return dataStore.getAllCampaigns();
+    return disabledLocalFallback.getAllCampaigns();
   },
 
   async createAdminCampaign(data: Omit<MarketingCampaign, 'id' | 'createdAt'>): Promise<MarketingCampaign> {
@@ -921,7 +957,7 @@ export const apiClient = {
     } catch {
       // fallback
     }
-    return dataStore.createCampaign(data);
+    return disabledLocalFallback.createCampaign(data);
   },
 
   async updateAdminCampaign(id: string, updates: Partial<MarketingCampaign>): Promise<MarketingCampaign | null> {
@@ -938,7 +974,7 @@ export const apiClient = {
     } catch {
       // fallback
     }
-    return dataStore.updateCampaign(id, updates);
+    return disabledLocalFallback.updateCampaign(id, updates);
   },
 
   async deleteAdminCampaign(id: string): Promise<boolean> {
@@ -948,7 +984,7 @@ export const apiClient = {
     } catch {
       // fallback
     }
-    return dataStore.deleteCampaign(id);
+    return disabledLocalFallback.deleteCampaign(id);
   },
 
   resetDemoData() {
@@ -956,6 +992,6 @@ export const apiClient = {
   },
 
   resetFactoryData() {
-    dataStore.resetData();
+    disabledLocalFallback.resetData();
   },
 };

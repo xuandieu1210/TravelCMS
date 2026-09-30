@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Banner, Post, CustomerFeedback, SiteConfig } from '../../types';
+import { Banner, Post, CustomerFeedback, SiteConfig, Tour } from '../../types';
 import {
   FileText,
   Image as ImageIcon,
@@ -19,12 +19,14 @@ import {
   Search,
   BookOpen,
 } from 'lucide-react';
+import { publicContentTranslations } from '../../data/translations';
 import { ImageUploadField } from '../common/ImageUploadField';
 
 interface CmsContentViewProps {
   banners: Banner[];
   posts: Post[];
   feedbacks: CustomerFeedback[];
+  tours: Tour[];
   siteConfig?: SiteConfig;
   onToggleBanner: (id: string, active: boolean) => void;
   onApproveFeedback: (id: string, isApproved: boolean) => void;
@@ -44,6 +46,7 @@ export const CmsContentView: React.FC<CmsContentViewProps> = ({
   banners,
   posts,
   feedbacks,
+  tours,
   siteConfig,
   onToggleBanner,
   onApproveFeedback,
@@ -65,14 +68,15 @@ export const CmsContentView: React.FC<CmsContentViewProps> = ({
 
   const [configForm, setConfigForm] = useState<SiteConfig>(
     siteConfig || {
-      whatsapp: '84905982919',
-      messenger: '61573941593197',
-      instagram: 'botanicagarden_hoian',
-      facebook: 'https://www.facebook.com/profile.php?id=61573941593197',
+      whatsapp: '',
+      messenger: '',
+      instagram: '',
+      facebook: '',
       email: '',
-      phone: '+84 905 982 919',
-      maps: 'https://www.google.com/maps/search/?api=1&query=Botanica+Garden+208+Le+Thanh+Tong+Cam+Chau+Hoi+An',
-      address: '208 Le Thanh Tong, Cam Chau, Hoi An',
+      phone: '',
+      maps: '',
+      address: '',
+      addressEn: '',
       visitImage: '',
     }
   );
@@ -89,6 +93,7 @@ export const CmsContentView: React.FC<CmsContentViewProps> = ({
         phone: siteConfig.phone || '',
         maps: siteConfig.maps || '',
         address: siteConfig.address || '',
+        addressEn: siteConfig.addressEn || '',
         visitImage: siteConfig.visitImage || '',
       });
     }
@@ -99,16 +104,22 @@ export const CmsContentView: React.FC<CmsContentViewProps> = ({
   const [editingPostId, setEditingPostId] = useState<string | null>(null);
   const [postFormData, setPostFormData] = useState({
     title: '',
+    titleEn: '',
     slug: '',
     category: 'Phát Triển Bền Vững',
     thumbnail: 'https://images.unsplash.com/photo-1544717305-2782549b5136?auto=format&fit=crop&w=800&q=80',
     summary: '',
+    summaryEn: '',
     content: '',
+    contentEn: '',
     author: 'Emic Media Team',
     status: 'PUBLISHED' as 'DRAFT' | 'PUBLISHED',
     eyebrow: '',
+    eyebrowEn: '',
     imageLabel: '',
+    imageLabelEn: '',
     guestReview: '',
+    guestReviewEn: '',
   });
 
   // Feedback modal (create & edit)
@@ -121,6 +132,7 @@ export const CmsContentView: React.FC<CmsContentViewProps> = ({
     tourName: 'Lớp Làm Nến Thơm & Tranh Sỏi Thảo Mộc',
     rating: 5,
     comment: '',
+    commentEn: '',
     isApproved: true,
     isFeatured: true,
   });
@@ -205,16 +217,22 @@ export const CmsContentView: React.FC<CmsContentViewProps> = ({
     setEditingPostId(null);
     setPostFormData({
       title: '',
+      titleEn: '',
       slug: '',
       category: 'Phát Triển Bền Vững',
       thumbnail: 'https://images.unsplash.com/photo-1544717305-2782549b5136?auto=format&fit=crop&w=800&q=80',
       summary: '',
+      summaryEn: '',
       content: '',
+      contentEn: '',
       author: 'Emic Media Team',
       status: 'PUBLISHED',
       eyebrow: '',
+      eyebrowEn: '',
       imageLabel: '',
+      imageLabelEn: '',
       guestReview: '',
+      guestReviewEn: '',
     });
     setIsPostModalOpen(true);
   };
@@ -224,16 +242,22 @@ export const CmsContentView: React.FC<CmsContentViewProps> = ({
     setEditingPostId(post.id);
     setPostFormData({
       title: post.title,
+      titleEn: post.titleEn || '',
       slug: post.slug,
       category: post.category,
       thumbnail: post.thumbnail,
       summary: post.summary,
+      summaryEn: post.summaryEn || '',
       content: post.content,
+      contentEn: post.contentEn || '',
       author: post.author,
       status: post.status,
       eyebrow: post.eyebrow || '',
+      eyebrowEn: post.eyebrowEn || '',
       imageLabel: post.imageLabel || '',
+      imageLabelEn: post.imageLabelEn || '',
       guestReview: post.guestReview || '',
+      guestReviewEn: post.guestReviewEn || '',
     });
     setIsPostModalOpen(true);
   };
@@ -246,35 +270,47 @@ export const CmsContentView: React.FC<CmsContentViewProps> = ({
     if (editingPostId && onUpdatePost) {
       onUpdatePost(editingPostId, {
         title: postFormData.title,
+        titleEn: postFormData.titleEn,
         slug: postFormData.slug || postFormData.title.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
         category: postFormData.category,
         thumbnail: postFormData.thumbnail,
         summary: postFormData.summary,
+        summaryEn: postFormData.summaryEn,
         content: postFormData.content || postFormData.summary,
+        contentEn: postFormData.contentEn || postFormData.summaryEn,
         author: postFormData.author,
         status: postFormData.status,
         seoTitle: postFormData.title,
         seoDescription: postFormData.summary,
         eyebrow: postFormData.eyebrow,
+        eyebrowEn: postFormData.eyebrowEn,
         imageLabel: postFormData.imageLabel,
+        imageLabelEn: postFormData.imageLabelEn,
         guestReview: postFormData.guestReview,
+        guestReviewEn: postFormData.guestReviewEn,
       });
     } else {
       onCreatePost({
         title: postFormData.title,
+        titleEn: postFormData.titleEn,
         slug: postFormData.slug || postFormData.title.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
         category: postFormData.category,
         thumbnail: postFormData.thumbnail,
         summary: postFormData.summary,
+        summaryEn: postFormData.summaryEn,
         content: postFormData.content || postFormData.summary,
+        contentEn: postFormData.contentEn || postFormData.summaryEn,
         author: postFormData.author,
         status: postFormData.status,
         publishedAt: new Date().toISOString(),
         seoTitle: postFormData.title,
         seoDescription: postFormData.summary,
         eyebrow: postFormData.eyebrow,
+        eyebrowEn: postFormData.eyebrowEn,
         imageLabel: postFormData.imageLabel,
+        imageLabelEn: postFormData.imageLabelEn,
         guestReview: postFormData.guestReview,
+        guestReviewEn: postFormData.guestReviewEn,
       });
     }
 
@@ -291,6 +327,7 @@ export const CmsContentView: React.FC<CmsContentViewProps> = ({
       tourName: 'Lớp Làm Nến Thơm & Tranh Sỏi Thảo Mộc',
       rating: 5,
       comment: '',
+      commentEn: '',
       isApproved: true,
       isFeatured: true,
     });
@@ -307,6 +344,7 @@ export const CmsContentView: React.FC<CmsContentViewProps> = ({
       tourName: fb.tourName,
       rating: fb.rating,
       comment: fb.comment,
+      commentEn: fb.commentEn || publicContentTranslations.en.feedbackComments[fb.id] || '',
       isApproved: fb.isApproved,
       isFeatured: fb.isFeatured,
     });
@@ -316,8 +354,8 @@ export const CmsContentView: React.FC<CmsContentViewProps> = ({
   // Submit Feedback Form
   const handleSaveFeedbackSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!feedbackFormData.customerName.trim() || !feedbackFormData.comment.trim()) {
-      alert('Vui lòng nhập họ tên khách hàng và nội dung đánh giá');
+    if (!feedbackFormData.customerName.trim() || !feedbackFormData.comment.trim() || !feedbackFormData.commentEn.trim()) {
+      alert('Vui lòng nhập họ tên khách hàng và nội dung đánh giá bằng cả tiếng Việt và tiếng Anh');
       return;
     }
 
@@ -364,6 +402,17 @@ export const CmsContentView: React.FC<CmsContentViewProps> = ({
     });
     return Array.from(set);
   }, [posts]);
+
+  const feedbackTourOptions = useMemo(() => {
+    const names = new Set<string>();
+    tours.forEach((tour) => {
+      if (tour.name?.trim()) names.add(tour.name.trim());
+    });
+    feedbacks.forEach((feedback) => {
+      if (feedback.tourName?.trim()) names.add(feedback.tourName.trim());
+    });
+    return Array.from(names).sort((left, right) => left.localeCompare(right, 'vi'));
+  }, [tours, feedbacks]);
 
   return (
     <div className="space-y-6">
@@ -734,8 +783,11 @@ export const CmsContentView: React.FC<CmsContentViewProps> = ({
                     </div>
                   </div>
 
+                  <p className="text-xs text-stone-700 italic leading-relaxed mb-2 bg-stone-50/50 p-3 rounded-xl border border-stone-100">
+                    <strong>VI:</strong> {fb.comment}
+                  </p>
                   <p className="text-xs text-stone-700 italic leading-relaxed mb-4 bg-stone-50/50 p-3 rounded-xl border border-stone-100">
-                    "{fb.comment}"
+                    <strong>EN:</strong> {fb.commentEn || publicContentTranslations.en.feedbackComments[fb.id] || 'Chưa có bản dịch tiếng Anh'}
                   </p>
 
                   <div className="text-[11px] text-stone-600 bg-emerald-50/60 border border-emerald-100/80 p-2.5 rounded-xl mb-4 flex items-center gap-1.5">
@@ -874,12 +926,23 @@ export const CmsContentView: React.FC<CmsContentViewProps> = ({
             </div>
 
             <div>
-              <label className="block font-bold text-stone-700 mb-1">Địa Chỉ Hiển Thị</label>
+              <label className="block font-bold text-stone-700 mb-1">Địa Chỉ Hiển Thị (Tiếng Việt)</label>
               <input
                 type="text"
                 value={configForm.address}
                 onChange={(e) => setConfigForm({ ...configForm, address: e.target.value })}
                 placeholder="208 Le Thanh Tong, Cam Chau, Hoi An"
+                className="w-full p-2.5 rounded-xl border border-stone-200 text-xs focus:border-emerald-600 outline-none"
+              />
+            </div>
+
+            <div>
+              <label className="block font-bold text-stone-700 mb-1">Display Address (English)</label>
+              <input
+                type="text"
+                value={configForm.addressEn || ''}
+                onChange={(e) => setConfigForm({ ...configForm, addressEn: e.target.value })}
+                placeholder="208 Le Thanh Tong Street, Cam Chau Ward, Hoi An"
                 className="w-full p-2.5 rounded-xl border border-stone-200 text-xs focus:border-emerald-600 outline-none"
               />
             </div>
@@ -942,7 +1005,7 @@ export const CmsContentView: React.FC<CmsContentViewProps> = ({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block font-bold text-stone-700 mb-1">
-                    Nhãn Phụ / Eyebrow / Label
+                    Nhãn Phụ / Eyebrow (Tiếng Việt)
                   </label>
                   <input
                     type="text"
@@ -954,7 +1017,7 @@ export const CmsContentView: React.FC<CmsContentViewProps> = ({
                 </div>
                 <div>
                   <label className="block font-bold text-stone-700 mb-1">
-                    Tiêu Đề Bài Viết <span className="text-red-500">*</span>
+                    Tiêu Đề Bài Viết (Tiếng Việt) <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
@@ -962,6 +1025,33 @@ export const CmsContentView: React.FC<CmsContentViewProps> = ({
                     value={postFormData.title}
                     onChange={(e) => setPostFormData({ ...postFormData, title: e.target.value })}
                     placeholder="Tiêu đề bài viết..."
+                    className="w-full p-2.5 rounded-xl border border-stone-200 text-xs focus:border-emerald-600 outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold text-stone-700 mb-1">
+                    Eyebrow (English)
+                  </label>
+                  <input
+                    type="text"
+                    value={postFormData.eyebrowEn}
+                    onChange={(e) => setPostFormData({ ...postFormData, eyebrowEn: e.target.value })}
+                    placeholder="e.g. LOCAL STORY, SLOW LIVING..."
+                    className="w-full p-2.5 rounded-xl border border-stone-200 text-xs focus:border-emerald-600 outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block font-bold text-stone-700 mb-1">
+                    Post Title (English)
+                  </label>
+                  <input
+                    type="text"
+                    value={postFormData.titleEn}
+                    onChange={(e) => setPostFormData({ ...postFormData, titleEn: e.target.value })}
+                    placeholder="English title..."
                     className="w-full p-2.5 rounded-xl border border-stone-200 text-xs focus:border-emerald-600 outline-none"
                   />
                 </div>
@@ -991,7 +1081,7 @@ export const CmsContentView: React.FC<CmsContentViewProps> = ({
                   className="w-full"
                 />
                 <div>
-                  <label className="block font-bold text-stone-700 mb-1">Chú Thích Ảnh / Image Label</label>
+                  <label className="block font-bold text-stone-700 mb-1">Chú Thích Ảnh (Tiếng Việt)</label>
                   <input
                     type="text"
                     value={postFormData.imageLabel}
@@ -1003,7 +1093,18 @@ export const CmsContentView: React.FC<CmsContentViewProps> = ({
               </div>
 
               <div>
-                <label className="block font-bold text-stone-700 mb-1">Tóm Tắt Ngắn</label>
+                <label className="block font-bold text-stone-700 mb-1">Image Label (English)</label>
+                <input
+                  type="text"
+                  value={postFormData.imageLabelEn}
+                  onChange={(e) => setPostFormData({ ...postFormData, imageLabelEn: e.target.value })}
+                  placeholder="e.g. Guests arriving at Botanica Garden..."
+                  className="w-full p-2.5 rounded-xl border border-stone-200 text-xs focus:border-emerald-600 outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block font-bold text-stone-700 mb-1">Tóm Tắt Ngắn (Tiếng Việt)</label>
                 <textarea
                   rows={2}
                   value={postFormData.summary}
@@ -1014,7 +1115,18 @@ export const CmsContentView: React.FC<CmsContentViewProps> = ({
               </div>
 
               <div>
-                <label className="block font-bold text-stone-700 mb-1">Nội Dung Chi Tiết</label>
+                <label className="block font-bold text-stone-700 mb-1">Summary (English)</label>
+                <textarea
+                  rows={2}
+                  value={postFormData.summaryEn}
+                  onChange={(e) => setPostFormData({ ...postFormData, summaryEn: e.target.value })}
+                  placeholder="Short summary for the English version..."
+                  className="w-full p-2.5 rounded-xl border border-stone-200 text-xs resize-none focus:border-emerald-600 outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block font-bold text-stone-700 mb-1">Nội Dung Chi Tiết (Tiếng Việt)</label>
                 <textarea
                   rows={5}
                   value={postFormData.content}
@@ -1025,12 +1137,34 @@ export const CmsContentView: React.FC<CmsContentViewProps> = ({
               </div>
 
               <div>
-                <label className="block font-bold text-stone-700 mb-1">Đánh giá của khách hàng đi kèm / Guest Review</label>
+                <label className="block font-bold text-stone-700 mb-1">Content (English)</label>
+                <textarea
+                  rows={5}
+                  value={postFormData.contentEn}
+                  onChange={(e) => setPostFormData({ ...postFormData, contentEn: e.target.value })}
+                  placeholder="English article content..."
+                  className="w-full p-2.5 rounded-xl border border-stone-200 text-xs resize-none focus:border-emerald-600 outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block font-bold text-stone-700 mb-1">Đánh Giá Đi Kèm (Tiếng Việt)</label>
                 <textarea
                   rows={3}
                   value={postFormData.guestReview}
                   onChange={(e) => setPostFormData({ ...postFormData, guestReview: e.target.value })}
                   placeholder="Ví dụ: 'Buổi học hôm nay rất thú vị, người hướng dẫn siêu dễ thương...' — Sarah, Úc."
+                  className="w-full p-2.5 rounded-xl border border-stone-200 text-xs resize-none focus:border-emerald-600 outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block font-bold text-stone-700 mb-1">Guest Review (English)</label>
+                <textarea
+                  rows={3}
+                  value={postFormData.guestReviewEn}
+                  onChange={(e) => setPostFormData({ ...postFormData, guestReviewEn: e.target.value })}
+                  placeholder="e.g. 'A beautiful spot to escape the chaos.' — Guest review"
                   className="w-full p-2.5 rounded-xl border border-stone-200 text-xs resize-none focus:border-emerald-600 outline-none"
                 />
               </div>
@@ -1123,16 +1257,23 @@ export const CmsContentView: React.FC<CmsContentViewProps> = ({
                 <label className="block font-bold text-stone-700 mb-1">
                   Tour / Lớp Workshop Đã Trải Nghiệm <span className="text-red-500">*</span>
                 </label>
-                <input
-                  type="text"
+                <select
                   required
                   value={feedbackFormData.tourName}
                   onChange={(e) =>
                     setFeedbackFormData({ ...feedbackFormData, tourName: e.target.value })
                   }
-                  placeholder="Ví dụ: Lớp Làm Nến Thơm & Tranh Sỏi Thảo Mộc"
                   className="w-full p-2.5 rounded-xl border border-stone-200 text-xs focus:border-emerald-600 outline-none"
-                />
+                >
+                  <option value="" disabled>
+                    Chọn tour hoặc lớp workshop
+                  </option>
+                  {feedbackTourOptions.map((tourName) => (
+                    <option key={tourName} value={tourName}>
+                      {tourName}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               {/* Rating Stars Interactive Selector */}
@@ -1181,7 +1322,7 @@ export const CmsContentView: React.FC<CmsContentViewProps> = ({
 
               <div>
                 <label className="block font-bold text-stone-700 mb-1">
-                  Nội Dung Cảm Nhận / Đánh Giá <span className="text-red-500">*</span>
+                  Nội Dung Cảm Nhận / Đánh Giá (Tiếng Việt) <span className="text-red-500">*</span>
                 </label>
                 <textarea
                   rows={4}
@@ -1191,6 +1332,22 @@ export const CmsContentView: React.FC<CmsContentViewProps> = ({
                     setFeedbackFormData({ ...feedbackFormData, comment: e.target.value })
                   }
                   placeholder="Chia sẻ chân thực của khách hàng về trải nghiệm tại vườn..."
+                  className="w-full p-2.5 rounded-xl border border-stone-200 text-xs resize-none focus:border-emerald-600 outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block font-bold text-stone-700 mb-1">
+                  Review Content (English) <span className="text-red-500">*</span>
+                </label>
+                <textarea
+                  rows={4}
+                  required
+                  value={feedbackFormData.commentEn}
+                  onChange={(e) =>
+                    setFeedbackFormData({ ...feedbackFormData, commentEn: e.target.value })
+                  }
+                  placeholder="Enter the English version of the guest review..."
                   className="w-full p-2.5 rounded-xl border border-stone-200 text-xs resize-none focus:border-emerald-600 outline-none"
                 />
               </div>
@@ -1277,10 +1434,19 @@ export const CmsContentView: React.FC<CmsContentViewProps> = ({
               </div>
             </div>
 
-            {previewingPost.imageLabel && (
-              <p className="text-[10px] text-stone-400 font-medium italic text-right px-6 mt-1.5">
-                {previewingPost.imageLabel}
-              </p>
+            {(previewingPost.imageLabel || previewingPost.imageLabelEn) && (
+              <div className="px-6 mt-1.5 space-y-1">
+                {previewingPost.imageLabel && (
+                  <p className="text-[10px] text-stone-400 font-medium italic text-right">
+                    VI: {previewingPost.imageLabel}
+                  </p>
+                )}
+                {previewingPost.imageLabelEn && (
+                  <p className="text-[10px] text-stone-400 font-medium italic text-right">
+                    EN: {previewingPost.imageLabelEn}
+                  </p>
+                )}
+              </div>
             )}
 
             <div className="p-6 sm:p-8 space-y-4 pt-4">
@@ -1292,35 +1458,85 @@ export const CmsContentView: React.FC<CmsContentViewProps> = ({
                 <span>{(previewingPost.viewCount || 0).toLocaleString()} lượt đọc</span>
               </div>
 
-              <div>
-                {previewingPost.eyebrow && (
-                  <span className="text-[10px] font-black tracking-widest text-emerald-700 uppercase block mb-1">
-                    {previewingPost.eyebrow}
-                  </span>
-                )}
-                <h2 className="text-xl sm:text-2xl font-black text-stone-900 font-serif leading-snug">
-                  {previewingPost.title}
-                </h2>
-              </div>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <section className="border border-stone-200 rounded-2xl p-4 bg-stone-50/60 space-y-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-700">Tiếng Việt</span>
+                    {!previewingPost.title && previewingPost.titleEn && (
+                      <span className="text-[10px] text-amber-700 font-semibold">Đang dùng fallback EN</span>
+                    )}
+                  </div>
 
-              <div className="bg-amber-50/80 border-l-4 border-amber-600 p-3.5 rounded-r-xl text-xs sm:text-sm text-stone-700 italic leading-relaxed">
-                {previewingPost.summary}
-              </div>
+                  <div>
+                    {previewingPost.eyebrow && (
+                      <span className="text-[10px] font-black tracking-widest text-emerald-700 uppercase block mb-1">
+                        {previewingPost.eyebrow}
+                      </span>
+                    )}
+                    <h2 className="text-lg sm:text-xl font-black text-stone-900 font-serif leading-snug">
+                      {previewingPost.title || previewingPost.titleEn || 'Chưa có tiêu đề'}
+                    </h2>
+                  </div>
 
-              <div className="text-stone-700 text-xs sm:text-sm leading-relaxed whitespace-pre-line space-y-3 pt-2">
-                {previewingPost.content}
-              </div>
+                  <div className="bg-amber-50/80 border-l-4 border-amber-600 p-3.5 rounded-r-xl text-xs sm:text-sm text-stone-700 italic leading-relaxed">
+                    {previewingPost.summary || previewingPost.summaryEn || 'Chưa có tóm tắt'}
+                  </div>
 
-              {previewingPost.guestReview && (
-                <div className="bg-emerald-50/50 border border-emerald-100/60 rounded-2xl p-4 mt-5 space-y-2">
-                  <span className="text-[9px] font-black uppercase text-emerald-800 tracking-wider block">
-                    Đánh giá từ du khách / Guest Review
-                  </span>
-                  <p className="text-xs text-stone-600 italic">
-                    "{previewingPost.guestReview}"
-                  </p>
-                </div>
-              )}
+                  <div className="text-stone-700 text-xs sm:text-sm leading-relaxed whitespace-pre-line space-y-3 pt-1">
+                    {previewingPost.content || previewingPost.contentEn || 'Chưa có nội dung'}
+                  </div>
+
+                  {(previewingPost.guestReview || previewingPost.guestReviewEn) && (
+                    <div className="bg-emerald-50/50 border border-emerald-100/60 rounded-2xl p-4 mt-3 space-y-2">
+                      <span className="text-[9px] font-black uppercase text-emerald-800 tracking-wider block">
+                        Đánh giá đi kèm
+                      </span>
+                      <p className="text-xs text-stone-600 italic">
+                        "{previewingPost.guestReview || previewingPost.guestReviewEn}"
+                      </p>
+                    </div>
+                  )}
+                </section>
+
+                <section className="border border-stone-200 rounded-2xl p-4 bg-sky-50/60 space-y-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-sky-700">English</span>
+                    {!previewingPost.titleEn && previewingPost.title && (
+                      <span className="text-[10px] text-amber-700 font-semibold">Using VI fallback</span>
+                    )}
+                  </div>
+
+                  <div>
+                    {previewingPost.eyebrowEn && (
+                      <span className="text-[10px] font-black tracking-widest text-sky-700 uppercase block mb-1">
+                        {previewingPost.eyebrowEn}
+                      </span>
+                    )}
+                    <h2 className="text-lg sm:text-xl font-black text-stone-900 font-serif leading-snug">
+                      {previewingPost.titleEn || previewingPost.title || 'No title yet'}
+                    </h2>
+                  </div>
+
+                  <div className="bg-sky-50 border-l-4 border-sky-600 p-3.5 rounded-r-xl text-xs sm:text-sm text-stone-700 italic leading-relaxed">
+                    {previewingPost.summaryEn || previewingPost.summary || 'No summary yet'}
+                  </div>
+
+                  <div className="text-stone-700 text-xs sm:text-sm leading-relaxed whitespace-pre-line space-y-3 pt-1">
+                    {previewingPost.contentEn || previewingPost.content || 'No content yet'}
+                  </div>
+
+                  {(previewingPost.guestReviewEn || previewingPost.guestReview) && (
+                    <div className="bg-white/80 border border-sky-100 rounded-2xl p-4 mt-3 space-y-2">
+                      <span className="text-[9px] font-black uppercase text-sky-800 tracking-wider block">
+                        Guest Review
+                      </span>
+                      <p className="text-xs text-stone-600 italic">
+                        "{previewingPost.guestReviewEn || previewingPost.guestReview}"
+                      </p>
+                    </div>
+                  )}
+                </section>
+              </div>
 
               <div className="pt-6 border-t border-stone-200 flex items-center justify-between">
                 <span className="text-[11px] text-stone-400 font-mono">
