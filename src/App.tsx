@@ -97,6 +97,7 @@ export default function App() {
       const [
         fetchedBookings,
         fetchedCustomers,
+        fetchedBanners,
         fetchedFeedbacks,
         fetchedPosts,
         fetchedStats,
@@ -107,6 +108,7 @@ export default function App() {
       ] = await Promise.all([
         apiClient.getAdminBookings(),
         apiClient.getAdminCustomers(),
+        apiClient.getAdminBanners(),
         apiClient.getAdminFeedbacks(),
         apiClient.getAdminPosts(),
         apiClient.getAdminDashboardStats(),
@@ -118,6 +120,7 @@ export default function App() {
 
       setBookings(fetchedBookings);
       setCustomers(fetchedCustomers);
+  setBanners(fetchedBanners);
       setFeedbacks(fetchedFeedbacks);
       setPosts(fetchedPosts);
       setStats(fetchedStats);

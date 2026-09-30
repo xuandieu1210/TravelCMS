@@ -260,6 +260,30 @@ export const BotanicaGardenPortal: React.FC<BotanicaGardenPortalProps> = ({
     return w.nameEn || publicContentTranslations.en.tourNames[w.id] || w.name || '';
   };
 
+  const getBannerEyebrow = (banner: Banner | undefined) => {
+    if (!banner) return '';
+    if (lang === 'vn') return banner.badgeTextVn || banner.badgeText || banner.badgeTextEn || '';
+    return banner.badgeTextEn || banner.badgeText || banner.badgeTextVn || '';
+  };
+
+  const getBannerTitle = (banner: Banner | undefined) => {
+    if (!banner) return '';
+    if (lang === 'vn') return banner.titleVn || banner.title || banner.titleEn || '';
+    return banner.titleEn || banner.title || banner.titleVn || '';
+  };
+
+  const getBannerSubtitle = (banner: Banner | undefined) => {
+    if (!banner) return '';
+    if (lang === 'vn') return banner.subtitleVn || banner.subtitle || banner.subtitleEn || '';
+    return banner.subtitleEn || banner.subtitle || banner.subtitleVn || '';
+  };
+
+  const getBannerButtonText = (banner: Banner | undefined) => {
+    if (!banner) return '';
+    if (lang === 'vn') return banner.buttonTextVn || banner.buttonText || banner.buttonTextEn || '';
+    return banner.buttonTextEn || banner.buttonText || banner.buttonTextVn || '';
+  };
+
   const getTourCategoryLabel = (w: Tour) => {
     const matchedCategory = workshopCategories.find((category) => {
       const tourCategory = (w.category || '').toLowerCase();
@@ -471,22 +495,24 @@ export const BotanicaGardenPortal: React.FC<BotanicaGardenPortalProps> = ({
         className="hero"
         id="top"
         style={{
-          backgroundImage: `url('${activeHeroBanner?.imageUrl || '/images/img_0.jpeg'}')`,
+          backgroundImage: activeHeroBanner?.imageUrl ? `url('${activeHeroBanner.imageUrl}')` : 'none',
         }}
       >
         <div className="hero-inner">
-          <span className="eyebrow">{activeHeroBanner?.badgeText || t.hero_eyebrow}</span>
-          <h1>{lang === 'vn' && activeHeroBanner?.title.includes('Slow down') ? t.hero_title : activeHeroBanner?.title || t.hero_title}</h1>
-          <p className="lead">{lang === 'vn' && activeHeroBanner?.subtitle.includes('Spend two') ? t.hero_sub : activeHeroBanner?.subtitle || t.hero_sub}</p>
+          {getBannerEyebrow(activeHeroBanner) && <span className="eyebrow">{getBannerEyebrow(activeHeroBanner)}</span>}
+          {getBannerTitle(activeHeroBanner) && <h1>{getBannerTitle(activeHeroBanner)}</h1>}
+          {getBannerSubtitle(activeHeroBanner) && <p className="lead">{getBannerSubtitle(activeHeroBanner)}</p>}
 
           <div className="hero-cta">
-            <button
-              type="button"
-              className="btn btn-primary"
-              onClick={() => handleOpenModal()}
-            >
-              {t.hero_cta}
-            </button>
+            {getBannerButtonText(activeHeroBanner) && (
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={() => handleOpenModal()}
+              >
+                {getBannerButtonText(activeHeroBanner)}
+              </button>
+            )}
             <a
               href="#workshops"
               className="btn btn-ghost"

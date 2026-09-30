@@ -142,30 +142,48 @@ export const CmsContentView: React.FC<CmsContentViewProps> = ({
   const [editingBannerId, setEditingBannerId] = useState<string | null>(null);
   const [bannerFormData, setBannerFormData] = useState({
     title: '',
+    titleEn: '',
+    titleVn: '',
     subtitle: '',
+    subtitleEn: '',
+    subtitleVn: '',
     imageUrl: 'https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?auto=format&fit=crop&w=1600&q=80',
     linkUrl: '#workshops',
     badgeText: '',
+    badgeTextEn: '',
+    badgeTextVn: '',
     buttonText: 'Choose a workshop',
+    buttonTextEn: 'Choose a workshop',
+    buttonTextVn: 'Chọn lớp trải nghiệm',
     position: 'HOME_HERO',
     order: 1,
+    isActive: true,
+  });
+
+  const createEmptyBannerFormData = (order: number) => ({
+    title: '',
+    titleEn: '',
+    titleVn: '',
+    subtitle: '',
+    subtitleEn: '',
+    subtitleVn: '',
+    imageUrl: '',
+    linkUrl: '#workshops',
+    badgeText: '',
+    badgeTextEn: '',
+    badgeTextVn: '',
+    buttonText: '',
+    buttonTextEn: '',
+    buttonTextVn: '',
+    position: 'HOME_HERO',
+    order,
     isActive: true,
   });
 
   // Open Create Banner Modal
   const handleOpenCreateBanner = () => {
     setEditingBannerId(null);
-    setBannerFormData({
-      title: '',
-      subtitle: '',
-      imageUrl: '/images/img_0.jpeg',
-      linkUrl: '#workshops',
-      badgeText: 'HOI AN · 2 KM FROM THE OLD TOWN',
-      buttonText: 'Choose a workshop',
-      position: 'HOME_HERO',
-      order: banners.length + 1,
-      isActive: true,
-    });
+    setBannerFormData(createEmptyBannerFormData(banners.length + 1));
     setIsBannerModalOpen(true);
   };
 
@@ -173,12 +191,20 @@ export const CmsContentView: React.FC<CmsContentViewProps> = ({
   const handleOpenEditBanner = (banner: Banner) => {
     setEditingBannerId(banner.id);
     setBannerFormData({
-      title: banner.title,
-      subtitle: banner.subtitle,
+      title: banner.titleEn || banner.title || banner.titleVn || '',
+      titleEn: banner.titleEn || banner.title || '',
+      titleVn: banner.titleVn || banner.title || '',
+      subtitle: banner.subtitleEn || banner.subtitle || banner.subtitleVn || '',
+      subtitleEn: banner.subtitleEn || banner.subtitle || '',
+      subtitleVn: banner.subtitleVn || banner.subtitle || '',
       imageUrl: banner.imageUrl,
       linkUrl: banner.linkUrl || '#workshops',
-      badgeText: banner.badgeText || 'HOI AN · 2 KM FROM THE OLD TOWN',
-      buttonText: banner.buttonText || 'Choose a workshop',
+      badgeText: banner.badgeTextEn || banner.badgeText || banner.badgeTextVn || '',
+      badgeTextEn: banner.badgeTextEn || banner.badgeText || '',
+      badgeTextVn: banner.badgeTextVn || banner.badgeText || '',
+      buttonText: banner.buttonTextEn || banner.buttonText || banner.buttonTextVn || '',
+      buttonTextEn: banner.buttonTextEn || banner.buttonText || '',
+      buttonTextVn: banner.buttonTextVn || banner.buttonText || '',
       position: banner.position || 'HOME_HERO',
       order: banner.order || 1,
       isActive: banner.isActive !== false,
@@ -189,13 +215,27 @@ export const CmsContentView: React.FC<CmsContentViewProps> = ({
   // Submit Banner Form
   const handleSaveBannerSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!bannerFormData.title.trim() || !bannerFormData.subtitle.trim()) {
-      alert('Vui lòng điền tiêu đề và mô tả của banner');
+    if (
+      !bannerFormData.badgeTextVn.trim() ||
+      !bannerFormData.badgeTextEn.trim() ||
+      !bannerFormData.titleVn.trim() ||
+      !bannerFormData.titleEn.trim() ||
+      !bannerFormData.subtitleVn.trim() ||
+      !bannerFormData.subtitleEn.trim() ||
+      !bannerFormData.buttonTextVn.trim() ||
+      !bannerFormData.buttonTextEn.trim() ||
+      !bannerFormData.imageUrl.trim()
+    ) {
+      alert('Vui lòng điền đầy đủ dữ liệu banner bằng cả tiếng Việt và tiếng Anh, bao gồm ảnh nền và chữ trên nút.');
       return;
     }
 
     const submissionData = {
       ...bannerFormData,
+      title: bannerFormData.titleEn || bannerFormData.titleVn,
+      subtitle: bannerFormData.subtitleEn || bannerFormData.subtitleVn,
+      badgeText: bannerFormData.badgeTextEn || bannerFormData.badgeTextVn || '',
+      buttonText: bannerFormData.buttonTextEn || bannerFormData.buttonTextVn || '',
       position: bannerFormData.position as "HOME_HERO" | "PROMOTION_BAR" | "SIDEBAR"
     };
 
@@ -534,19 +574,35 @@ export const CmsContentView: React.FC<CmsContentViewProps> = ({
                 </div>
                 <div className="p-4 space-y-3 flex-1 flex flex-col justify-between">
                   <div>
-                    <span className="text-[10px] font-bold tracking-widest text-emerald-700 uppercase bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100 block w-max mb-1.5">
-                      {b.badgeText || 'HOI AN · 2 KM FROM THE OLD TOWN'}
-                    </span>
-                    <h4 className="text-sm font-bold text-stone-900 leading-snug">{b.title}</h4>
-                    <p className="text-xs text-stone-500 line-clamp-3 mt-1 leading-relaxed">{b.subtitle}</p>
-                    {b.buttonText && (
-                      <div className="mt-2 text-[11px] text-stone-600 flex items-center gap-1.5 flex-wrap">
-                        <span className="font-semibold">Nút CTA:</span> 
-                        <span className="bg-stone-100 px-1.5 py-0.5 rounded text-stone-800 font-medium">{b.buttonText}</span> 
-                        <span className="text-stone-300">→</span> 
-                        <span className="text-stone-400 font-mono text-[10px]">{b.linkUrl || '#'}</span>
+                    <div className="space-y-2">
+                      <div className="rounded-xl border border-emerald-100 bg-emerald-50/70 p-2.5">
+                        <div className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 mb-1">Vietnamese</div>
+                        <span className="text-[10px] font-bold tracking-widest text-emerald-700 uppercase block w-max mb-1">
+                          {b.badgeTextVn || b.badgeText || 'Chưa có nhãn phụ tiếng Việt'}
+                        </span>
+                        <h4 className="text-sm font-bold text-stone-900 leading-snug">{b.titleVn || b.title || 'Chưa có tiêu đề tiếng Việt'}</h4>
+                        <p className="text-xs text-stone-600 line-clamp-3 mt-1 leading-relaxed">{b.subtitleVn || b.subtitle || 'Chưa có mô tả tiếng Việt'}</p>
+                        <div className="mt-2 text-[11px] text-stone-600 flex items-center gap-1.5 flex-wrap">
+                          <span className="font-semibold">Nút CTA:</span>
+                          <span className="bg-white px-1.5 py-0.5 rounded text-stone-800 font-medium">{b.buttonTextVn || b.buttonText || 'Chưa có nút tiếng Việt'}</span>
+                        </div>
                       </div>
-                    )}
+
+                      <div className="rounded-xl border border-sky-100 bg-sky-50/70 p-2.5">
+                        <div className="text-[10px] font-bold uppercase tracking-wider text-sky-700 mb-1">English</div>
+                        <span className="text-[10px] font-bold tracking-widest text-sky-700 uppercase block w-max mb-1">
+                          {b.badgeTextEn || b.badgeText || 'Missing English eyebrow'}
+                        </span>
+                        <h4 className="text-sm font-bold text-stone-900 leading-snug">{b.titleEn || b.title || 'Missing English title'}</h4>
+                        <p className="text-xs text-stone-600 line-clamp-3 mt-1 leading-relaxed">{b.subtitleEn || b.subtitle || 'Missing English subtitle'}</p>
+                        <div className="mt-2 text-[11px] text-stone-600 flex items-center gap-1.5 flex-wrap">
+                          <span className="font-semibold">CTA Button:</span>
+                          <span className="bg-white px-1.5 py-0.5 rounded text-stone-800 font-medium">{b.buttonTextEn || b.buttonText || 'Missing English button text'}</span>
+                        </div>
+                      </div>
+
+                      <div className="text-[10px] text-stone-400 font-mono">{b.linkUrl || '#'}</div>
+                    </div>
                   </div>
                   <div className="flex items-center justify-between pt-3 border-t border-stone-100 gap-2">
                     <div className="flex gap-1">
@@ -1591,77 +1647,138 @@ export const CmsContentView: React.FC<CmsContentViewProps> = ({
               <form onSubmit={handleSaveBannerSubmit} className="space-y-4 text-xs lg:col-span-7">
                 <div>
                   <label className="block font-bold text-stone-700 mb-1">
-                    Nhãn phụ / Eyebrow / Label (Dòng 1) <span className="text-red-500">*</span>
+                    Nhãn phụ tiếng Việt (Dòng 1) <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
                     required
-                    value={bannerFormData.badgeText}
+                    value={bannerFormData.badgeTextVn}
                     onChange={(e) =>
-                      setBannerFormData({ ...bannerFormData, badgeText: e.target.value })
+                      setBannerFormData({ ...bannerFormData, badgeTextVn: e.target.value })
                     }
-                    placeholder="Ví dụ: HOI AN · 2 KM FROM THE OLD TOWN"
+                    placeholder="Ví dụ: Hội An · cách Phố Cổ 2 km"
                     className="w-full p-2.5 rounded-xl border border-stone-200 text-xs focus:border-emerald-600 outline-none"
                   />
                 </div>
 
                 <div>
                   <label className="block font-bold text-stone-700 mb-1">
-                    Tiêu đề chính / Title (Dòng 2) <span className="text-red-500">*</span>
+                    Eyebrow / Label (English) <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
                     required
-                    value={bannerFormData.title}
+                    value={bannerFormData.badgeTextEn}
                     onChange={(e) =>
-                      setBannerFormData({ ...bannerFormData, title: e.target.value })
+                      setBannerFormData({ ...bannerFormData, badgeTextEn: e.target.value })
                     }
-                    placeholder="Ví dụ: Slow down in a Hoi An Botanica Garden."
+                    placeholder="Example: Hoi An · 2 km from the Old Town"
                     className="w-full p-2.5 rounded-xl border border-stone-200 text-xs focus:border-emerald-600 outline-none"
                   />
                 </div>
 
                 <div>
                   <label className="block font-bold text-stone-700 mb-1">
-                    Mô tả / Description / Subtitle (Dòng 3) <span className="text-red-500">*</span>
+                    Tiêu đề chính tiếng Việt (Dòng 2) <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={bannerFormData.titleVn}
+                    onChange={(e) =>
+                      setBannerFormData({ ...bannerFormData, titleVn: e.target.value })
+                    }
+                    placeholder="Ví dụ: Chậm lại trong khu vườn Botanica Hội An."
+                    className="w-full p-2.5 rounded-xl border border-stone-200 text-xs focus:border-emerald-600 outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-bold text-stone-700 mb-1">
+                    Title (English, Dòng 2) <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={bannerFormData.titleEn}
+                    onChange={(e) =>
+                      setBannerFormData({ ...bannerFormData, titleEn: e.target.value })
+                    }
+                    placeholder="Example: Slow down in a Hoi An Botanica Garden."
+                    className="w-full p-2.5 rounded-xl border border-stone-200 text-xs focus:border-emerald-600 outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-bold text-stone-700 mb-1">
+                    Mô tả tiếng Việt / Subtitle (Dòng 3) <span className="text-red-500">*</span>
                   </label>
                   <textarea
                     required
                     rows={4}
-                    value={bannerFormData.subtitle}
+                    value={bannerFormData.subtitleVn}
                     onChange={(e) =>
-                      setBannerFormData({ ...bannerFormData, subtitle: e.target.value })
+                      setBannerFormData({ ...bannerFormData, subtitleVn: e.target.value })
                     }
-                    placeholder="Ví dụ: Spend two unhurried hours making something Vietnamese by hand — with a warm, English-speaking host, in a green garden away from the crowds."
+                    placeholder="Ví dụ: Dành hai giờ thong thả tự tay làm nên một món đồ Việt Nam..."
+                    className="w-full p-2.5 rounded-xl border border-stone-200 text-xs focus:border-emerald-600 outline-none resize-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-bold text-stone-700 mb-1">
+                    Description / Subtitle (English, Dòng 3) <span className="text-red-500">*</span>
+                  </label>
+                  <textarea
+                    required
+                    rows={4}
+                    value={bannerFormData.subtitleEn}
+                    onChange={(e) =>
+                      setBannerFormData({ ...bannerFormData, subtitleEn: e.target.value })
+                    }
+                    placeholder="Example: Spend two unhurried hours making something Vietnamese by hand..."
                     className="w-full p-2.5 rounded-xl border border-stone-200 text-xs focus:border-emerald-600 outline-none resize-none"
                   />
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block font-bold text-stone-700 mb-1">Chữ trên nút (CTA Button)</label>
+                    <label className="block font-bold text-stone-700 mb-1">Chữ trên nút tiếng Việt</label>
                     <input
                       type="text"
-                      value={bannerFormData.buttonText}
+                      value={bannerFormData.buttonTextVn}
                       onChange={(e) =>
-                        setBannerFormData({ ...bannerFormData, buttonText: e.target.value })
+                        setBannerFormData({ ...bannerFormData, buttonTextVn: e.target.value })
                       }
-                      placeholder="Ví dụ: Choose a workshop"
+                      placeholder="Ví dụ: Chọn lớp trải nghiệm"
                       className="w-full p-2.5 rounded-xl border border-stone-200 text-xs focus:border-emerald-600 outline-none"
                     />
                   </div>
                   <div>
-                    <label className="block font-bold text-stone-700 mb-1">Đường dẫn nút (CTA Link)</label>
+                    <label className="block font-bold text-stone-700 mb-1">CTA Button (English)</label>
                     <input
                       type="text"
-                      value={bannerFormData.linkUrl}
+                      value={bannerFormData.buttonTextEn}
                       onChange={(e) =>
-                        setBannerFormData({ ...bannerFormData, linkUrl: e.target.value })
+                        setBannerFormData({ ...bannerFormData, buttonTextEn: e.target.value })
                       }
-                      placeholder="Ví dụ: #workshops"
+                      placeholder="Example: Choose a workshop"
                       className="w-full p-2.5 rounded-xl border border-stone-200 text-xs focus:border-emerald-600 outline-none"
                     />
                   </div>
+                </div>
+
+                <div>
+                  <label className="block font-bold text-stone-700 mb-1">Đường dẫn nút (CTA Link)</label>
+                  <input
+                    type="text"
+                    value={bannerFormData.linkUrl}
+                    onChange={(e) =>
+                      setBannerFormData({ ...bannerFormData, linkUrl: e.target.value })
+                    }
+                    placeholder="Ví dụ: #workshops"
+                    className="w-full p-2.5 rounded-xl border border-stone-200 text-xs focus:border-emerald-600 outline-none"
+                  />
                 </div>
 
                 <ImageUploadField
@@ -1734,25 +1851,51 @@ export const CmsContentView: React.FC<CmsContentViewProps> = ({
                   }}
                 >
                   <div className="space-y-2">
-                    <span className="text-[10px] font-black tracking-widest text-emerald-400 uppercase">
-                      {bannerFormData.badgeText || 'LABEL / EYEBROW'}
-                    </span>
-                    <h4 className="text-base font-serif font-bold leading-tight">
-                      {bannerFormData.title || 'Tiêu Đề Banner...'}
-                    </h4>
-                    <p className="text-[11px] text-stone-300 line-clamp-3 leading-relaxed">
-                      {bannerFormData.subtitle || 'Mô tả chi tiết banner...'}
-                    </p>
-                    {(bannerFormData.buttonText || bannerFormData.linkUrl) && (
-                      <div className="pt-1.5">
-                        <button
-                          type="button"
-                          className="bg-emerald-600 text-white font-bold px-3 py-1.5 rounded-lg text-[10px] pointer-events-none"
-                        >
-                          {bannerFormData.buttonText || 'Button'}
-                        </button>
+                      <div className="space-y-1 pb-2 border-b border-white/10">
+                        <div className="text-[10px] font-bold uppercase tracking-wider text-stone-300">Vietnamese</div>
+                        <span className="text-[10px] font-black tracking-widest text-emerald-400 uppercase">
+                          {bannerFormData.badgeTextVn || 'LABEL / EYEBROW'}
+                        </span>
+                        <h4 className="text-base font-serif font-bold leading-tight">
+                          {bannerFormData.titleVn || 'Tiêu đề banner...'}
+                        </h4>
+                        <p className="text-[11px] text-stone-300 line-clamp-3 leading-relaxed">
+                          {bannerFormData.subtitleVn || 'Mô tả chi tiết banner...'}
+                        </p>
+                        {(bannerFormData.buttonTextVn || bannerFormData.linkUrl) && (
+                          <div className="pt-1.5">
+                            <button
+                              type="button"
+                              className="bg-emerald-600 text-white font-bold px-3 py-1.5 rounded-lg text-[10px] pointer-events-none"
+                            >
+                              {bannerFormData.buttonTextVn || 'Nút CTA'}
+                            </button>
+                          </div>
+                        )}
                       </div>
-                    )}
+
+                      <div className="space-y-1 pt-1">
+                        <div className="text-[10px] font-bold uppercase tracking-wider text-stone-300">English</div>
+                        <span className="text-[10px] font-black tracking-widest text-emerald-400 uppercase">
+                          {bannerFormData.badgeTextEn || 'LABEL / EYEBROW'}
+                        </span>
+                        <h4 className="text-base font-serif font-bold leading-tight">
+                          {bannerFormData.titleEn || 'Banner title...'}
+                        </h4>
+                        <p className="text-[11px] text-stone-300 line-clamp-3 leading-relaxed">
+                          {bannerFormData.subtitleEn || 'Banner description...'}
+                        </p>
+                        {(bannerFormData.buttonTextEn || bannerFormData.linkUrl) && (
+                          <div className="pt-1.5">
+                            <button
+                              type="button"
+                              className="bg-emerald-600 text-white font-bold px-3 py-1.5 rounded-lg text-[10px] pointer-events-none"
+                            >
+                              {bannerFormData.buttonTextEn || 'CTA Button'}
+                            </button>
+                          </div>
+                        )}
+                      </div>
                   </div>
                 </div>
                 <p className="text-[10px] text-stone-400 italic text-center">

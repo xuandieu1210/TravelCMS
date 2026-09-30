@@ -211,6 +211,8 @@ export interface Banner {
   titleVn?: string;
   subtitleEn?: string;
   subtitleVn?: string;
+  buttonTextEn?: string;
+  buttonTextVn?: string;
   createdAt?: string;
   updatedAt?: string;
 }
