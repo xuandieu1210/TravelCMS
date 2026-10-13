@@ -249,13 +249,10 @@ export const BotanicaGardenPortal: React.FC<BotanicaGardenPortalProps> = ({
 
   // Format price display
   const renderPrice = (w: Tour) => {
-    if (w.priceDisplay === 'request' || w.pricing.adultPrice === 0) {
+    const priceAmount = Number(w.pricing?.adultPrice || 0);
+    if (priceAmount <= 0) {
       return <span className="price">{t.onreq}</span>;
     }
-    const displayThousands = w.priceDisplay ? Number.parseInt(w.priceDisplay, 10) : NaN;
-    const priceAmount = Number.isFinite(displayThousands)
-      ? displayThousands * 1000
-      : w.pricing.adultPrice;
     const locale = lang === 'vn' ? 'vi-VN' : 'en-US';
     const n = `${priceAmount.toLocaleString(locale)}₫`;
     return (
