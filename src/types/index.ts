@@ -160,7 +160,9 @@ export interface Booking {
   customerName: string;
   customerPhone: string;
   customerEmail: string;
+  pickupLocation?: string;
   departureDate: string;
+  preferredTimeSlot?: 'MORNING' | 'AFTERNOON';
   numAdults: number;
   numChildren: number;
   numInfants: number;
@@ -176,6 +178,15 @@ export interface Booking {
   updatedAt: string;
   confirmedAt?: string;
   confirmedBy?: string;
+  paymentQrUrl?: string;
+  paymentTransferNote?: string;
+  paymentAccountName?: string;
+  paymentAccountNumber?: string;
+  paymentBankId?: string;
+  paymentExpiresAt?: string;
+  paymentReceivedAt?: string;
+  paymentReference?: string;
+  cassoTransactionId?: string;
 }
 
 export interface Customer {

@@ -47,17 +47,48 @@ export const ImageUploadField: React.FC<ImageUploadFieldProps> = ({
     }
   };
 
-  // Compress and read image file to Base64
-  const processImageFile = async (file: File): Promise<{ base64: string; filename: string }> => {
+  const readFileAsDataUrl = async (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
-      reader.onload = (e) => {
-        const img = new Image();
-        img.onload = () => {
-          // Max dimension 1920px
+      reader.onload = () => {
+        if (typeof reader.result === 'string') {
+          resolve(reader.result);
+          return;
+        }
+        reject(new Error('Không đọc được dữ liệu hình ảnh'));
+      };
+      reader.onerror = () => reject(reader.error || new Error('Không đọc được tệp ảnh'));
+      reader.readAsDataURL(file);
+    });
+  };
+
+  // Compress and read image file to Base64
+  const processImageFile = async (file: File): Promise<{ base64: string; filename: string }> => {
+    const originalBase64 = await readFileAsDataUrl(file);
+    const preserveOriginalFormat = /image\/(gif|svg\+xml)/i.test(file.type);
+
+    if (preserveOriginalFormat) {
+      return {
+        base64: originalBase64,
+        filename: file.name,
+      };
+    }
+
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => {
+        try {
           const maxDim = 1920;
           let width = img.width;
           let height = img.height;
+
+          if (!width || !height) {
+            resolve({
+              base64: originalBase64,
+              filename: file.name,
+            });
+            return;
+          }
 
           if (width > maxDim || height > maxDim) {
             if (width > height) {
@@ -73,30 +104,36 @@ export const ImageUploadField: React.FC<ImageUploadFieldProps> = ({
           canvas.width = width;
           canvas.height = height;
           const ctx = canvas.getContext('2d');
-          if (ctx) {
-            ctx.drawImage(img, 0, 0, width, height);
-            const optimizedBase64 = canvas.toDataURL('image/jpeg', 0.85);
+
+          if (!ctx) {
             resolve({
-              base64: optimizedBase64,
-              filename: file.name.replace(/\.[^/.]+$/, '') + '.jpg',
-            });
-          } else {
-            resolve({
-              base64: e.target?.result as string,
+              base64: originalBase64,
               filename: file.name,
             });
+            return;
           }
-        };
-        img.onerror = () => {
+
+          ctx.drawImage(img, 0, 0, width, height);
+          const optimizedBase64 = canvas.toDataURL('image/jpeg', 0.85);
           resolve({
-            base64: e.target?.result as string,
+            base64: optimizedBase64,
+            filename: file.name.replace(/\.[^/.]+$/, '') + '.jpg',
+          });
+        } catch (error) {
+          console.warn('Không thể tối ưu hóa ảnh, dùng ảnh gốc thay thế:', error);
+          resolve({
+            base64: originalBase64,
             filename: file.name,
           });
-        };
-        img.src = e.target?.result as string;
+        }
       };
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
+      img.onerror = () => {
+        resolve({
+          base64: originalBase64,
+          filename: file.name,
+        });
+      };
+      img.src = originalBase64;
     });
   };
 

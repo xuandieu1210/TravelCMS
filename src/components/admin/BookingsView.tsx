@@ -40,6 +40,7 @@ export const BookingsView: React.FC<BookingsViewProps> = ({
       b.customerName.toLowerCase().includes(term) ||
       (b.customerPhone && b.customerPhone.toLowerCase().includes(term)) ||
       b.customerEmail.toLowerCase().includes(term) ||
+      (b.pickupLocation && b.pickupLocation.toLowerCase().includes(term)) ||
       (b.notes && b.notes.toLowerCase().includes(term)) ||
       (b.specialRequests && b.specialRequests.toLowerCase().includes(term));
     const matchStatus = statusFilter === 'ALL' || b.status === statusFilter;
@@ -53,8 +54,10 @@ export const BookingsView: React.FC<BookingsViewProps> = ({
       'Khách Hàng',
       'Số Điện Thoại',
       'Email',
+      'Điểm Đón',
       'Chương Trình',
       'Ngày Khởi Hành',
+      'Buổi Tham Gia',
       'Người Lớn',
       'Trẻ Em',
       'Ghi Chú Khách Đã Nhập',
@@ -70,8 +73,10 @@ export const BookingsView: React.FC<BookingsViewProps> = ({
         `"${b.customerName}"`,
         b.customerPhone,
         b.customerEmail,
+        `"${(b.pickupLocation || '').replace(/"/g, '""')}"`,
         `"${b.tourName || b.serviceName}"`,
         b.departureDate,
+        b.preferredTimeSlot === 'AFTERNOON' ? 'Buổi chiều' : b.preferredTimeSlot === 'MORNING' ? 'Buổi sáng' : '',
         b.numAdults,
         b.numChildren,
         `"${combinedNotes.replace(/"/g, '""')}"`,
@@ -144,7 +149,7 @@ export const BookingsView: React.FC<BookingsViewProps> = ({
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Tìm theo mã đơn, họ tên khách, số điện thoại, email..."
+              placeholder="Tìm theo mã đơn, họ tên khách, số điện thoại, email, địa chỉ đón..."
               className="w-full pl-9 pr-3 py-2 rounded-xl border border-stone-200 text-xs focus:outline-emerald-600"
             />
           </div>
@@ -176,6 +181,7 @@ export const BookingsView: React.FC<BookingsViewProps> = ({
               <tr>
                 <th className="py-3 px-4">Mã Đặt Chỗ</th>
                 <th className="py-3 px-4">Khách Hàng</th>
+                <th className="py-3 px-4 min-w-[220px]">Địa Chỉ / Điểm Đón</th>
                 <th className="py-3 px-4">Chương Trình</th>
                 <th className="py-3 px-4">Ngày Đi & Số Khách</th>
                 <th className="py-3 px-4 min-w-[220px]">Ghi Chú Của Khách</th>
@@ -201,6 +207,16 @@ export const BookingsView: React.FC<BookingsViewProps> = ({
                     <div className="text-[10px] text-stone-400">{bk.customerEmail}</div>
                   </td>
                   <td className="py-3 px-4 max-w-xs">
+                    {bk.pickupLocation ? (
+                      <div className="text-[11px] text-stone-700 leading-relaxed">{bk.pickupLocation}</div>
+                    ) : (
+                      <span className="text-stone-300 italic text-[11px] flex items-center gap-1">
+                        <span className="w-1.5 h-1.5 rounded-full bg-stone-200"></span>
+                        Chưa có địa chỉ đón
+                      </span>
+                    )}
+                  </td>
+                  <td className="py-3 px-4 max-w-xs">
                     <div className="font-semibold text-stone-800 line-clamp-1">
                       {bk.tourName || bk.serviceName}
                     </div>
@@ -210,6 +226,11 @@ export const BookingsView: React.FC<BookingsViewProps> = ({
                   </td>
                   <td className="py-3 px-4 whitespace-nowrap">
                     <div className="font-bold text-emerald-900">{bk.departureDate}</div>
+                    {bk.preferredTimeSlot && (
+                      <div className="text-[11px] font-semibold text-stone-600">
+                        {bk.preferredTimeSlot === 'AFTERNOON' ? 'Buổi chiều' : 'Buổi sáng'}
+                      </div>
+                    )}
                     <div className="text-[11px] text-stone-500">
                       {bk.numAdults} người lớn {bk.numChildren > 0 ? `, ${bk.numChildren} trẻ em` : ''}
                     </div>

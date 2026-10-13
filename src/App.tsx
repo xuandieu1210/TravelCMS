@@ -36,6 +36,8 @@ import { MediaView } from './components/admin/MediaView';
 import { MarketingView } from './components/admin/MarketingView';
 import { UsersView } from './components/admin/UsersView';
 import { AuditLogsView } from './components/admin/AuditLogsView';
+import { PublicTourDetailPage } from './components/public/PublicTourDetailPage';
+import { PublicPostDetailPage } from './components/public/PublicPostDetailPage.tsx';
 
 const EMPTY_SITE_CONFIG: SiteConfig = {
   whatsapp: '',
@@ -51,7 +53,17 @@ const EMPTY_SITE_CONFIG: SiteConfig = {
 };
 
 export default function App() {
-  const isAdminRoute = window.location.pathname === '/admin' || window.location.pathname.startsWith('/admin/');
+  const currentPath = window.location.pathname;
+  const searchParams = new URLSearchParams(window.location.search);
+  const isAdminRoute = currentPath === '/admin' || currentPath.startsWith('/admin/');
+  const isWorkshopDetailRoute = currentPath.startsWith('/workshops/');
+  const isPostDetailRoute = currentPath.startsWith('/news/');
+  const requestedWorkshopSlug = isWorkshopDetailRoute
+    ? decodeURIComponent(currentPath.replace('/workshops/', '').split('/')[0] || '')
+    : '';
+  const requestedPostSlug = isPostDetailRoute
+    ? decodeURIComponent(currentPath.replace('/news/', '').split('/')[0] || '')
+    : '';
   const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
   const [isCheckingAdminSession, setIsCheckingAdminSession] = useState(isAdminRoute);
 
@@ -157,6 +169,13 @@ export default function App() {
 
   // Compute Pending Bookings Count for badge notification
   const pendingBookingsCount = bookings.filter((b) => b.status === 'NEW').length;
+  const publicWorkshopDetail = isWorkshopDetailRoute
+    ? tours.find((tour) => tour.status === 'PUBLISHED' && tour.slug === requestedWorkshopSlug) || null
+    : null;
+  const publicPostDetail = isPostDetailRoute
+    ? posts.find((post) => post.status === 'PUBLISHED' && post.slug === requestedPostSlug) || null
+    : null;
+  const publicLang = searchParams.get('lang') === 'vn' ? 'vn' : 'en';
 
   // Handle Workshop Booking Submission from Botanica Portal
   const handleWorkshopBooking = async (payload: {
@@ -165,25 +184,59 @@ export default function App() {
     customerName: string;
     customerPhone?: string;
     customerEmail?: string;
+    pickupLocation?: string;
+    paymentMethod: Booking['paymentMethod'];
     departureDate: string;
+    preferredTimeSlot: NonNullable<Booking['preferredTimeSlot']>;
     numAdults: number;
     numChildren: number;
     notes?: string;
+    website?: string;
+    startedAt?: string;
   }) => {
     const newBooking = await apiClient.createPublicBooking({
       tourId: payload.tourId,
       customerName: payload.customerName,
       customerPhone: payload.customerPhone || '',
-      customerEmail: payload.customerEmail || 'guest@botanicagarden.vn',
+      customerEmail: payload.customerEmail || '',
+      pickupLocation: payload.pickupLocation || '',
+      paymentMethod: payload.paymentMethod,
       departureDate: payload.departureDate,
+      preferredTimeSlot: payload.preferredTimeSlot,
       numAdults: payload.numAdults,
       numChildren: payload.numChildren,
       numInfants: 0,
       notes: payload.notes,
-      paymentMethod: 'BANK_TRANSFER',
+      website: payload.website,
+      startedAt: payload.startedAt,
     });
     await loadAllData(); // Refresh data immediately
     return newBooking;
+  };
+
+  const handleOpenWorkshopBookingFromDetail = (tour: Tour) => {
+    const params = new URLSearchParams();
+    params.set('bookTour', tour.slug);
+    params.set('lang', publicLang);
+    window.location.href = `/${params.toString() ? `?${params.toString()}` : ''}#workshops`;
+  };
+
+  const handleBackToWorkshopList = () => {
+    const params = new URLSearchParams();
+    params.set('lang', publicLang);
+    window.location.href = `/${params.toString() ? `?${params.toString()}` : ''}#workshops`;
+  };
+
+  const handleBackToStories = () => {
+    const params = new URLSearchParams();
+    params.set('lang', publicLang);
+    window.location.href = `/${params.toString() ? `?${params.toString()}` : ''}#stories`;
+  };
+
+  const handleOpenWorkshopsFromPost = () => {
+    const params = new URLSearchParams();
+    params.set('lang', publicLang);
+    window.location.href = `/${params.toString() ? `?${params.toString()}` : ''}#workshops`;
   };
 
   // ADMIN CRUD HANDLERS
@@ -484,6 +537,25 @@ export default function App() {
         ) : (
           <AdminLogin onAuthenticated={() => setIsAdminAuthenticated(true)} />
         )
+      ) : isWorkshopDetailRoute ? (
+        <PublicTourDetailPage
+          tour={publicWorkshopDetail}
+          categories={categories}
+          feedbacks={feedbacks.filter((f) => f.isApproved)}
+          lang={publicLang}
+          onBack={handleBackToWorkshopList}
+          onBook={handleOpenWorkshopBookingFromDetail}
+        />
+      ) : isPostDetailRoute ? (
+        <PublicPostDetailPage
+          post={publicPostDetail}
+          posts={posts}
+          postSlug={requestedPostSlug}
+          lang={publicLang}
+          onBack={handleBackToStories}
+          onBook={handleOpenWorkshopsFromPost}
+          onViewed={handlePostViewed}
+        />
       ) : (
         <BotanicaGardenPortal
           tours={tours}

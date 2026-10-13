@@ -2,7 +2,8 @@ import express, { NextFunction, Request, Response } from 'express';
 import { createServer as createViteServer } from 'vite';
 import 'dotenv/config';
 import { Pool } from 'pg';
-import { randomBytes, scryptSync, timingSafeEqual } from 'crypto';
+import { createHmac, randomBytes, scryptSync, timingSafeEqual } from 'crypto';
+import nodemailer, { type Transporter } from 'nodemailer';
 
 import path from 'path';
 import fs from 'fs';
@@ -10,7 +11,14 @@ import fs from 'fs';
 const PORT = Number(process.env.PORT || 3000);
 const app = express();
 
-app.use(express.json({ limit: '50mb' }));
+type RawBodyRequest = Request & { rawBody?: string };
+
+app.use(express.json({
+  limit: '50mb',
+  verify: (req, _res, buffer) => {
+    (req as RawBodyRequest).rawBody = buffer.toString('utf8');
+  },
+}));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 // Serve uploaded static files if any
@@ -93,8 +101,309 @@ let siteConfig: Record<string, string> = {
 };
 
 const adminSessions = new Map<string, { userId: string; expiresAt: number }>();
+const publicFeedbackAttempts = new Map<string, number[]>();
+const publicBookingAttempts = new Map<string, number[]>();
 const adminSessionCookie = 'emic_admin_session';
 const adminSessionMaxAgeSeconds = 60 * 60 * 8;
+
+const paymentConfig = {
+  bankId: String(process.env.PAYMENT_BANK_ID || '').trim(),
+  accountNumber: String(process.env.PAYMENT_ACCOUNT_NUMBER || '').trim(),
+  accountName: String(process.env.PAYMENT_ACCOUNT_NAME || '').trim(),
+  qrTemplate: String(process.env.PAYMENT_QR_TEMPLATE || 'compact2').trim(),
+  transferPrefix: String(process.env.PAYMENT_TRANSFER_PREFIX || '').trim(),
+  qrExpiresMinutes: Math.max(15, Number(process.env.PAYMENT_QR_EXPIRES_MINUTES || 120) || 120),
+};
+
+const cassoConfig = {
+  webhookSecret: String(process.env.CASSO_WEBHOOK_SECRET || '').trim(),
+};
+
+const mailConfig = {
+  host: String(process.env.SMTP_HOST || '').trim(),
+  port: Number(process.env.SMTP_PORT || 587),
+  secure: String(process.env.SMTP_SECURE || 'false').trim().toLowerCase() === 'true',
+  user: String(process.env.SMTP_USER || '').trim(),
+  pass: String(process.env.SMTP_PASS || '').trim(),
+  from: String(process.env.SMTP_FROM || '').trim(),
+};
+
+let cachedTransporter: Transporter | null | undefined;
+
+function normalizeSpamText(value: string): string {
+  return value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function buildTransferNote(bookingCode: string): string {
+  return [paymentConfig.transferPrefix, bookingCode].filter(Boolean).join(' ').trim() || bookingCode;
+}
+
+function generateUniqueBookingCode(): string {
+  const datePrefix = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+
+  for (let attempt = 0; attempt < 10; attempt += 1) {
+    const randomSuffix = Math.floor(Math.random() * 1_000_000).toString().padStart(6, '0');
+    const bookingCode = `BK-${datePrefix}-${randomSuffix}`;
+
+    if (!bookings.some((booking) => String(booking.bookingCode || '').toUpperCase() === bookingCode)) {
+      return bookingCode;
+    }
+  }
+
+  throw new Error('Unable to generate a unique booking code');
+}
+
+function buildPaymentQrUrl(amount: number, addInfo: string): string | undefined {
+  if (!paymentConfig.bankId || !paymentConfig.accountNumber) {
+    return undefined;
+  }
+
+  const params = new URLSearchParams({
+    amount: String(Math.max(0, Math.round(amount))),
+    addInfo,
+  });
+
+  if (paymentConfig.accountName) {
+    params.set('accountName', paymentConfig.accountName);
+  }
+
+  return `https://img.vietqr.io/image/${paymentConfig.bankId}-${paymentConfig.accountNumber}-${paymentConfig.qrTemplate}.jpg?${params.toString()}`;
+}
+
+function createBookingPaymentDetails(bookingCode: string, amount: number) {
+  const paymentTransferNote = buildTransferNote(bookingCode);
+  const paymentQrUrl = buildPaymentQrUrl(amount, paymentTransferNote);
+
+  return {
+    paymentQrUrl,
+    paymentTransferNote,
+    paymentAccountName: paymentConfig.accountName || undefined,
+    paymentAccountNumber: paymentConfig.accountNumber || undefined,
+    paymentBankId: paymentConfig.bankId || undefined,
+    paymentExpiresAt: paymentQrUrl
+      ? new Date(Date.now() + paymentConfig.qrExpiresMinutes * 60 * 1000).toISOString()
+      : undefined,
+  };
+}
+
+function sortObjectByKey(value: any): any {
+  if (Array.isArray(value)) {
+    return value.map(sortObjectByKey);
+  }
+
+  if (value && typeof value === 'object') {
+    return Object.keys(value)
+      .sort((left, right) => left.localeCompare(right))
+      .reduce<Record<string, any>>((accumulator, key) => {
+        accumulator[key] = sortObjectByKey(value[key]);
+        return accumulator;
+      }, {});
+  }
+
+  return value;
+}
+
+function parseCassoSignatureHeader(value: string | undefined): { timestamp: string; signature: string } | null {
+  if (!value) {
+    return null;
+  }
+
+  const parts = value.split(',').map((part) => part.trim());
+  const timestamp = parts.find((part) => part.startsWith('t='))?.slice(2) || '';
+  const signature = parts.find((part) => part.startsWith('v1='))?.slice(3) || '';
+
+  if (!timestamp || !signature) {
+    return null;
+  }
+
+  return { timestamp, signature };
+}
+
+function verifyCassoWebhookSignature(rawBody: string | undefined, signatureHeader: string | undefined): boolean {
+  if (!cassoConfig.webhookSecret) {
+    return true;
+  }
+
+  const parsedSignature = parseCassoSignatureHeader(signatureHeader);
+  if (!rawBody || !parsedSignature) {
+    return false;
+  }
+
+  try {
+    const payload = JSON.parse(rawBody);
+    const sortedData = sortObjectByKey(payload?.data ?? {});
+    const canonicalPayload = `${parsedSignature.timestamp}.${JSON.stringify(sortedData)}`;
+    const computedSignature = createHmac('sha512', cassoConfig.webhookSecret)
+      .update(canonicalPayload)
+      .digest('hex');
+
+    const expectedBuffer = Buffer.from(parsedSignature.signature, 'hex');
+    const actualBuffer = Buffer.from(computedSignature, 'hex');
+    return expectedBuffer.length === actualBuffer.length && timingSafeEqual(expectedBuffer, actualBuffer);
+  } catch {
+    return false;
+  }
+}
+
+function extractCassoTransactions(payload: any): any[] {
+  if (Array.isArray(payload?.data)) {
+    return payload.data;
+  }
+
+  if (payload?.data && typeof payload.data === 'object') {
+    return [payload.data];
+  }
+
+  return [];
+}
+
+function findBookingCodeInDescription(description: string): string | null {
+  const matched = description.match(/\bBK-\d{8}-\d{6}\b/i);
+  return matched ? matched[0].toUpperCase() : null;
+}
+
+function getMailTransporter(): Transporter | null {
+  if (!mailConfig.host || !mailConfig.user || !mailConfig.pass || !mailConfig.from) {
+    return null;
+  }
+
+  if (!cachedTransporter) {
+    cachedTransporter = nodemailer.createTransport({
+      host: mailConfig.host,
+      port: mailConfig.port,
+      secure: mailConfig.secure,
+      auth: {
+        user: mailConfig.user,
+        pass: mailConfig.pass,
+      },
+    });
+  }
+
+  return cachedTransporter;
+}
+
+async function sendBookingConfirmationEmail(booking: any, reason: 'paid' | 'manual' = 'manual') {
+  const transporter = getMailTransporter();
+  if (!transporter) {
+    return { success: false, message: 'SMTP chưa được cấu hình nên chưa thể gửi email tự động.' };
+  }
+
+  const isPaid = booking.paymentStatus === 'PAID' || reason === 'paid';
+  const subject = isPaid
+    ? `[${booking.bookingCode}] Xác nhận thanh toán thành công`
+    : `[${booking.bookingCode}] Xác nhận yêu cầu đặt lớp`;
+  const title = isPaid ? 'Thanh toán đã được xác nhận' : 'Yêu cầu đặt lớp đã được ghi nhận';
+  const intro = isPaid
+    ? 'Chung toi da nhan duoc thanh toan cho don dat lop cua ban thong qua chuyen khoan ngan hang.'
+    : 'Chung toi da ghi nhan yeu cau dat lop cua ban va se lien he som nhat de hoan tat xac nhan.';
+
+  const html = `
+    <div style="font-family:Segoe UI,Arial,sans-serif;max-width:640px;margin:0 auto;color:#1f2937;line-height:1.6">
+      <h2 style="margin-bottom:8px;color:#14532d">${title}</h2>
+      <p>${intro}</p>
+      <div style="border:1px solid #d1d5db;border-radius:16px;padding:20px;background:#f9fafb">
+        <p><strong>Ma don:</strong> ${booking.bookingCode}</p>
+        <p><strong>Lop / chuong trinh:</strong> ${booking.tourName || booking.serviceName || ''}</p>
+        <p><strong>Ngay tham gia:</strong> ${booking.departureDate}</p>
+        ${booking.preferredTimeSlot ? `<p><strong>Buoi tham gia:</strong> ${booking.preferredTimeSlot === 'AFTERNOON' ? 'Buoi chieu (13:00 - 17:00)' : 'Buoi sang (08:00 - 12:00)'}</p>` : ''}
+        <p><strong>Khach dat:</strong> ${booking.customerName}</p>
+        ${booking.pickupLocation ? `<p><strong>Diem don:</strong> ${booking.pickupLocation}</p>` : ''}
+        <p><strong>So luong:</strong> ${booking.numAdults} nguoi lon${booking.numChildren > 0 ? `, ${booking.numChildren} tre em` : ''}</p>
+        <p><strong>Tong tien:</strong> ${Number(booking.finalAmount || 0).toLocaleString('vi-VN')} đ</p>
+        <p><strong>Trang thai thanh toan:</strong> ${booking.paymentStatus}</p>
+      </div>
+      <p style="margin-top:18px">Cam on ban da dat dich vu tai Botanica Garden Hoi An.</p>
+    </div>
+  `;
+
+  await transporter.sendMail({
+    from: mailConfig.from,
+    to: booking.customerEmail,
+    subject,
+    html,
+    text: `${title}\nMa don: ${booking.bookingCode}\nChuong trinh: ${booking.tourName || booking.serviceName || ''}\nNgay tham gia: ${booking.departureDate}${booking.preferredTimeSlot ? `\nBuoi tham gia: ${booking.preferredTimeSlot === 'AFTERNOON' ? 'Buoi chieu (13:00 - 17:00)' : 'Buoi sang (08:00 - 12:00)'}` : ''}${booking.pickupLocation ? `\nDiem don: ${booking.pickupLocation}` : ''}\nTong tien: ${Number(booking.finalAmount || 0).toLocaleString('vi-VN')} đ\nTrang thai thanh toan: ${booking.paymentStatus}`,
+  });
+
+  return { success: true, message: `Email đã được gửi tới ${booking.customerEmail}` };
+}
+
+async function applyCassoTransaction(transaction: any): Promise<'ignored' | 'partial' | 'paid'> {
+  const amount = Number(transaction?.amount || 0);
+  const description = String(transaction?.description || '').trim();
+  const bookingCode = findBookingCodeInDescription(description);
+
+  if (!bookingCode || amount <= 0) {
+    return 'ignored';
+  }
+
+  const booking = bookings.find((candidate) => candidate.bookingCode?.toUpperCase() === bookingCode);
+  if (!booking) {
+    return 'ignored';
+  }
+
+  const transactionId = String(transaction?.id || transaction?.reference || transaction?.tid || '').trim();
+  if (transactionId && booking.cassoTransactionId === transactionId) {
+    return 'ignored';
+  }
+
+  booking.paymentReference = String(transaction?.reference || transaction?.tid || '').trim() || booking.paymentReference;
+  booking.cassoTransactionId = transactionId || booking.cassoTransactionId;
+  booking.paymentReceivedAt = String(transaction?.transactionDateTime || transaction?.when || new Date().toISOString());
+  booking.updatedAt = new Date().toISOString();
+
+  let result: 'ignored' | 'partial' | 'paid' = 'ignored';
+  if (amount >= Number(booking.finalAmount || 0)) {
+    booking.paymentStatus = 'PAID';
+    booking.status = 'PAID';
+    booking.confirmedAt = booking.confirmedAt || new Date().toISOString();
+    booking.confirmedBy = booking.confirmedBy || 'Casso Webhook';
+    result = 'paid';
+  } else if (amount > 0) {
+    booking.paymentStatus = 'PARTIALLY_PAID';
+    if (booking.status === 'NEW') {
+      booking.status = 'CONFIRMED';
+    }
+    result = 'partial';
+  }
+
+  await saveToFirestore('bookings', booking.id, booking);
+
+  auditLogs.unshift({
+    id: 'log-' + Date.now() + '-' + Math.floor(Math.random() * 1000),
+    userName: 'Casso Webhook',
+    userRole: 'SYSTEM',
+    action: 'STATUS_CHANGE',
+    entityName: 'Booking',
+    entityId: booking.bookingCode,
+    description: result === 'paid'
+      ? `Da ghi nhan thanh toan thanh cong cho don ${booking.bookingCode}`
+      : `Da ghi nhan thanh toan mot phan cho don ${booking.bookingCode}`,
+    timestamp: new Date().toISOString(),
+  });
+
+  if (result === 'paid') {
+    const emailResult = await sendBookingConfirmationEmail(booking, 'paid');
+    auditLogs.unshift({
+      id: 'log-' + Date.now() + '-' + Math.floor(Math.random() * 1000),
+      userName: 'Casso Webhook',
+      userRole: 'SYSTEM',
+      action: 'EMAIL',
+      entityName: 'Booking',
+      entityId: booking.bookingCode,
+      description: emailResult.success
+        ? `Da gui email xac nhan thanh toan cho ${booking.customerEmail}`
+        : `Khong gui duoc email xac nhan thanh toan: ${emailResult.message}`,
+      timestamp: new Date().toISOString(),
+    });
+  }
+
+  return result;
+}
 
 function hashPassword(password: string): string {
   const salt = randomBytes(16).toString('hex');
@@ -304,8 +613,63 @@ app.get('/api/public/media/latest', (_req: Request, res: Response) => {
 
 // POST /api/public/bookings
 app.post('/api/public/bookings', (req: Request, res: Response) => {
-  const payload = req.body;
-  const bookingCode = `BK-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}-${Math.floor(100 + Math.random() * 900)}`;
+  const payload = req.body || {};
+  const requesterIp = req.ip || req.socket.remoteAddress || 'unknown';
+  const now = Date.now();
+  const recentAttempts = (publicBookingAttempts.get(requesterIp) || []).filter((timestamp) => now - timestamp < 60 * 60 * 1000);
+  const startedAtMs = payload.startedAt ? Date.parse(String(payload.startedAt)) : NaN;
+  const normalizedPhone = String(payload.customerPhone || '').replace(/\s+/g, '');
+  const normalizedEmail = String(payload.customerEmail || '').trim().toLowerCase();
+  const pickupLocation = String(payload.pickupLocation || '').trim();
+  const preferredTimeSlot = String(payload.preferredTimeSlot || '').trim();
+  const normalizedDate = String(payload.departureDate || '').trim();
+
+  if (!payload.customerName || !normalizedPhone || !normalizedEmail || !payload.departureDate) {
+    return res.status(400).json({ success: false, message: 'Thiếu thông tin bắt buộc. Email là bắt buộc để gửi mã đặt lớp và xác nhận thanh toán.' });
+  }
+
+  if (!['MORNING', 'AFTERNOON'].includes(preferredTimeSlot)) {
+    return res.status(400).json({ success: false, message: 'Vui lòng chọn buổi tham gia hợp lệ.' });
+  }
+
+  if (payload.website) {
+    return res.status(400).json({ success: false, message: 'Yêu cầu không hợp lệ' });
+  }
+
+  if (!/^\S+@\S+\.\S+$/.test(normalizedEmail)) {
+    return res.status(400).json({ success: false, message: 'Email không hợp lệ' });
+  }
+
+  if (normalizedPhone.replace(/[^\d+]/g, '').length < 8) {
+    return res.status(400).json({ success: false, message: 'Số điện thoại không hợp lệ' });
+  }
+
+  if (!Number.isNaN(startedAtMs) && now - startedAtMs < 4000) {
+    return res.status(429).json({ success: false, message: 'Bạn gửi quá nhanh. Vui lòng thử lại sau vài giây.' });
+  }
+
+  if (recentAttempts.length >= 4) {
+    publicBookingAttempts.set(requesterIp, recentAttempts);
+    return res.status(429).json({ success: false, message: 'Bạn đã gửi quá nhiều yêu cầu trong thời gian ngắn. Vui lòng thử lại sau.' });
+  }
+
+  const hasRecentDuplicate = bookings.some((booking) => {
+    const createdAtMs = Date.parse(String(booking.createdAt || ''));
+    if (Number.isNaN(createdAtMs) || now - createdAtMs > 30 * 60 * 1000) {
+      return false;
+    }
+
+    return String(booking.tourId || '') === String(payload.tourId || '')
+      && String(booking.departureDate || '').trim() === normalizedDate
+      && String(booking.customerPhone || '').replace(/\s+/g, '') === normalizedPhone
+      && String(booking.customerEmail || '').trim().toLowerCase() === normalizedEmail;
+  });
+
+  if (hasRecentDuplicate) {
+    return res.status(409).json({ success: false, message: 'Yêu cầu đặt tour này vừa được gửi gần đây. Vui lòng chờ xác nhận hoặc chỉnh sửa thông tin trước khi gửi lại.' });
+  }
+
+  const bookingCode = generateUniqueBookingCode();
 
   let tourName = '';
   let adultPrice = 0;
@@ -323,14 +687,20 @@ app.post('/api/public/bookings', (req: Request, res: Response) => {
 
   const totalAmount = payload.numAdults * adultPrice + (payload.numChildren || 0) * childPrice;
   const finalAmount = totalAmount;
+  const paymentDetails = (payload.paymentMethod || 'BANK_TRANSFER') === 'BANK_TRANSFER'
+    ? createBookingPaymentDetails(bookingCode, finalAmount)
+    : {};
 
-  let customer = customers.find((c) => (payload.customerPhone && c.phone === payload.customerPhone) || c.email === payload.customerEmail);
+  recentAttempts.push(now);
+  publicBookingAttempts.set(requesterIp, recentAttempts);
+
+  let customer = customers.find((c) => (normalizedPhone && String(c.phone || '').replace(/\s+/g, '') === normalizedPhone) || String(c.email || '').trim().toLowerCase() === normalizedEmail);
   if (!customer) {
     customer = {
       id: 'cust-' + Date.now(),
       fullName: payload.customerName,
-      phone: payload.customerPhone,
-      email: payload.customerEmail,
+      phone: normalizedPhone,
+      email: normalizedEmail,
       address: 'Hội An / Du khách',
       nationality: 'Việt Nam',
       totalSpent: finalAmount,
@@ -345,6 +715,8 @@ app.post('/api/public/bookings', (req: Request, res: Response) => {
     customer.totalSpent += finalAmount;
     customer.bookingCount += 1;
     customer.lastBookingDate = new Date().toISOString();
+    customer.phone = normalizedPhone;
+    customer.email = normalizedEmail;
   }
 
   const newBooking = {
@@ -355,9 +727,11 @@ app.post('/api/public/bookings', (req: Request, res: Response) => {
     serviceId: payload.serviceId,
     customerId: customer.id,
     customerName: payload.customerName,
-    customerPhone: payload.customerPhone,
-    customerEmail: payload.customerEmail,
+    customerPhone: normalizedPhone,
+    customerEmail: normalizedEmail,
+    pickupLocation: pickupLocation || undefined,
     departureDate: payload.departureDate,
+    preferredTimeSlot,
     numAdults: payload.numAdults,
     numChildren: payload.numChildren || 0,
     numInfants: payload.numInfants || 0,
@@ -367,6 +741,7 @@ app.post('/api/public/bookings', (req: Request, res: Response) => {
     paymentMethod: payload.paymentMethod || 'BANK_TRANSFER',
     paymentStatus: 'UNPAID' as const,
     status: 'NEW' as const,
+    ...paymentDetails,
     notes: payload.notes,
     specialRequests: payload.specialRequests,
     createdAt: new Date().toISOString(),
@@ -395,6 +770,107 @@ app.post('/api/public/bookings', (req: Request, res: Response) => {
   });
 
   res.status(201).json({ success: true, data: newBooking, message: 'Đặt tour thành công!' });
+});
+
+app.post('/api/payments/casso/webhook', async (req: Request, res: Response) => {
+  const signatureHeader = req.header('X-Casso-Signature') || undefined;
+  if (!verifyCassoWebhookSignature((req as RawBodyRequest).rawBody, signatureHeader)) {
+    return res.status(401).json({ success: false, message: 'Invalid Casso signature' });
+  }
+
+  const transactions = extractCassoTransactions(req.body);
+  if (transactions.length === 0) {
+    return res.status(200).json({ success: true, handled: 0, message: 'No transaction payload' });
+  }
+
+  let handled = 0;
+  for (const transaction of transactions) {
+    const result = await applyCassoTransaction(transaction);
+    if (result !== 'ignored') {
+      handled += 1;
+    }
+  }
+
+  return res.status(200).json({ success: true, handled });
+});
+
+app.post('/api/public/feedbacks', async (req: Request, res: Response) => {
+  const payload = req.body || {};
+  const requesterIp = req.ip || req.socket.remoteAddress || 'unknown';
+  const now = Date.now();
+  const recentAttempts = (publicFeedbackAttempts.get(requesterIp) || []).filter((timestamp) => now - timestamp < 60 * 60 * 1000);
+  const startedAtMs = payload.startedAt ? Date.parse(String(payload.startedAt)) : NaN;
+  const normalizedTourName = normalizeSpamText(String(payload.tourName || ''));
+  const normalizedComment = normalizeSpamText(String(payload.comment || ''));
+
+  if (!payload.customerName || !payload.comment || !payload.tourName) {
+    return res.status(400).json({ success: false, message: 'Thiếu thông tin đánh giá bắt buộc' });
+  }
+
+  if (payload.website) {
+    return res.status(400).json({ success: false, message: 'Yêu cầu không hợp lệ' });
+  }
+
+  if (!Number.isNaN(startedAtMs) && now - startedAtMs < 4000) {
+    return res.status(429).json({ success: false, message: 'Bạn gửi quá nhanh. Vui lòng thử lại sau vài giây.' });
+  }
+
+  if (recentAttempts.length >= 3) {
+    publicFeedbackAttempts.set(requesterIp, recentAttempts);
+    return res.status(429).json({ success: false, message: 'Bạn đã gửi quá nhiều đánh giá trong thời gian ngắn. Vui lòng thử lại sau.' });
+  }
+
+  const hasRecentDuplicate = feedbacks.some((feedback) => {
+    const createdAtMs = Date.parse(String(feedback.createdAt || ''));
+    if (Number.isNaN(createdAtMs) || now - createdAtMs > 30 * 60 * 1000) {
+      return false;
+    }
+
+    return normalizeSpamText(String(feedback.tourName || '')) === normalizedTourName
+      && normalizeSpamText(String(feedback.comment || '')) === normalizedComment;
+  });
+
+  if (hasRecentDuplicate) {
+    return res.status(409).json({ success: false, message: 'Nội dung đánh giá này vừa được gửi gần đây. Vui lòng chỉnh sửa thêm trước khi gửi lại.' });
+  }
+
+  const newFeedback = {
+    id: 'fb-' + Date.now(),
+    customerName: String(payload.customerName).trim(),
+    avatar: String(payload.avatar || 'https://ui-avatars.com/api/?name=Botanica&background=E7F6EF&color=14532D'),
+    location: String(payload.location || 'Botanica guest').trim(),
+    tourName: String(payload.tourName).trim(),
+    customerNameEn: payload.customerNameEn ? String(payload.customerNameEn).trim() : undefined,
+    rating: Math.max(1, Math.min(5, Number(payload.rating) || 5)),
+    comment: String(payload.comment).trim(),
+    commentEn: payload.commentEn ? String(payload.commentEn).trim() : undefined,
+    isApproved: false,
+    isFeatured: false,
+    createdAt: new Date().toISOString(),
+  };
+
+  recentAttempts.push(now);
+  publicFeedbackAttempts.set(requesterIp, recentAttempts);
+
+  feedbacks.unshift(newFeedback);
+  await saveToFirestore('feedbacks', newFeedback.id, newFeedback);
+
+  auditLogs.unshift({
+    id: 'log-' + Date.now(),
+    userName: newFeedback.customerName,
+    userRole: 'PUBLIC',
+    action: 'CREATE',
+    entityName: 'Feedback',
+    entityId: newFeedback.id,
+    description: `Khách ${newFeedback.customerName} gửi đánh giá chờ duyệt cho ${newFeedback.tourName}`,
+    timestamp: new Date().toISOString(),
+  });
+
+  res.status(201).json({
+    success: true,
+    data: newFeedback,
+    message: 'Đánh giá đã được ghi nhận và đang chờ duyệt',
+  });
 });
 
 // ================= ADMIN APIS =================
@@ -586,6 +1062,9 @@ app.patch('/api/admin/bookings/:id/status', (req: Request, res: Response) => {
   const idx = bookings.findIndex((b) => b.id === id);
   if (idx === -1) return res.status(404).json({ success: false, message: 'Not found' });
   bookings[idx].status = req.body.status;
+  if (req.body.status === 'PAID') {
+    bookings[idx].paymentStatus = 'PAID';
+  }
   bookings[idx].updatedAt = new Date().toISOString();
   if (req.body.status === 'CONFIRMED' || req.body.status === 'PAID') {
     bookings[idx].confirmedAt = new Date().toISOString();
@@ -604,10 +1083,30 @@ app.put('/api/admin/bookings/:id', (req: Request, res: Response) => {
   res.json({ success: true, data: bookings[idx] });
 });
 
-app.post('/api/admin/bookings/:id/send-email', (req: Request, res: Response) => {
+app.post('/api/admin/bookings/:id/send-email', async (req: Request, res: Response) => {
   const booking = bookings.find((b) => b.id === req.params.id);
   if (!booking) return res.status(404).json({ success: false, message: 'Not found' });
-  res.json({ success: true, message: `Email đã gửi thành công tới ${booking.customerEmail}` });
+  try {
+    const result = await sendBookingConfirmationEmail(booking, 'manual');
+    if (!result.success) {
+      return res.status(503).json(result);
+    }
+
+    auditLogs.unshift({
+      id: 'log-' + Date.now() + '-' + Math.floor(Math.random() * 1000),
+      userName: 'Admin',
+      userRole: 'ADMIN',
+      action: 'EMAIL',
+      entityName: 'Booking',
+      entityId: booking.bookingCode,
+      description: `Da gui email thu cong cho ${booking.customerEmail}`,
+      timestamp: new Date().toISOString(),
+    });
+
+    return res.json(result);
+  } catch (error: any) {
+    return res.status(500).json({ success: false, message: error?.message || 'Gửi email thất bại' });
+  }
 });
 
 // Customers

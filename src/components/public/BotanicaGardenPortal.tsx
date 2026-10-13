@@ -1,7 +1,17 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Tour, CustomerFeedback, Banner, SiteConfig, Booking, Category, Post } from '../../types';
-import { publicContentTranslations, translationsData } from '../../data/translations';
+import { translationsData } from '../../data/translations';
 import { apiClient } from '../../services/apiClient';
+import { getPlainTextPostContent } from '../../utils/postContent';
+
+type TourReviewSnippet = {
+  id: string;
+  name: string;
+  location: string;
+  comment: string;
+  rating: number;
+  avatar: string;
+};
 
 interface BotanicaGardenPortalProps {
   tours: Tour[];
@@ -17,7 +27,10 @@ interface BotanicaGardenPortalProps {
     customerName: string;
     customerPhone?: string;
     customerEmail?: string;
+    pickupLocation?: string;
+    paymentMethod: Booking['paymentMethod'];
     departureDate: string;
+    preferredTimeSlot: NonNullable<Booking['preferredTimeSlot']>;
     numAdults: number;
     numChildren: number;
     notes?: string;
@@ -25,6 +38,14 @@ interface BotanicaGardenPortalProps {
 }
 
 type LangType = 'en' | 'vn';
+
+const isVideoMediaUrl = (value?: string | null) => {
+  if (!value) {
+    return false;
+  }
+
+  return /^(data:video\/)|\.(mp4|webm|ogg|mov)(\?|#|$)/i.test(value);
+};
 
 export const BotanicaGardenPortal: React.FC<BotanicaGardenPortalProps> = ({
   tours,
@@ -40,40 +61,33 @@ export const BotanicaGardenPortal: React.FC<BotanicaGardenPortalProps> = ({
   const [activeCategory, setActiveCategory] = useState<string>('all');
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [selectedWorkshopIndex, setSelectedWorkshopIndex] = useState<number>(0);
-  const [copiedMessage, setCopiedMessage] = useState<boolean>(false);
+  const [activeHeroIndex, setActiveHeroIndex] = useState<number>(0);
+  const [activeStoryIndex, setActiveStoryIndex] = useState<number>(0);
+  const [activeTourImageIndex, setActiveTourImageIndex] = useState<number>(0);
   const [isSubmitted, setIsSubmitted] = useState<boolean>(false);
-  const [generatedMsg, setGeneratedMsg] = useState<string>('');
+  const [confirmedBooking, setConfirmedBooking] = useState<Booking | null>(null);
 
-  // Post reading modal states
-  const [selectedPost, setSelectedPost] = useState<Post | null>(null);
-  const [isPostReaderOpen, setIsPostReaderOpen] = useState<boolean>(false);
-
-  const handleOpenPostReader = async (post: Post) => {
-    const latestPost = await apiClient.getPublicNewsBySlug(post.slug).catch(() => null);
-    const nextPost = latestPost || post;
-    setSelectedPost(nextPost);
-    if (latestPost && onPostViewed) {
-      onPostViewed(latestPost);
-    }
-    setIsPostReaderOpen(true);
-    document.body.style.overflow = 'hidden';
+  const navigateToPostDetail = (post: Post) => {
+    const params = new URLSearchParams();
+    params.set('lang', lang);
+    window.location.href = `/news/${encodeURIComponent(post.slug)}?${params.toString()}`;
   };
 
-  const handleClosePostReader = () => {
-    setIsPostReaderOpen(false);
-    setSelectedPost(null);
-    document.body.style.overflow = '';
-  };
-
-  // Form states
   const [formDate, setFormDate] = useState<string>('');
+  const [formTimeSlot, setFormTimeSlot] = useState<Booking['preferredTimeSlot'] | ''>('');
   const [formAdults, setFormAdults] = useState<number>(2);
   const [formKids, setFormKids] = useState<number>(0);
   const [formName, setFormName] = useState<string>('');
+  const [formPhone, setFormPhone] = useState<string>('');
+  const [formEmail, setFormEmail] = useState<string>('');
+  const [formPickupLocation, setFormPickupLocation] = useState<string>('');
+  const [formPaymentMethod, setFormPaymentMethod] = useState<Booking['paymentMethod']>('BANK_TRANSFER');
   const [formNote, setFormNote] = useState<string>('');
+  const [bookingWebsite, setBookingWebsite] = useState<string>('');
+  const [bookingStartedAt, setBookingStartedAt] = useState<number>(() => Date.now());
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [bookingError, setBookingError] = useState<string>('');
 
-  // Latest media file from Media Management
   const [latestMediaUrl, setLatestMediaUrl] = useState<string | null>(null);
   const displayAddress = lang === 'vn'
     ? (siteConfig.address || siteConfig.addressEn || '')
@@ -91,55 +105,32 @@ export const BotanicaGardenPortal: React.FC<BotanicaGardenPortalProps> = ({
     fetchLatestMedia();
   }, []);
 
+  useEffect(() => {
+    const requestedLang = new URLSearchParams(window.location.search).get('lang');
+    if (requestedLang === 'vn' || requestedLang === 'en') {
+      setLang(requestedLang);
+    }
+  }, []);
+
   const T = translationsData as Record<LangType, Record<string, string>>;
   const t = T[lang] || T.en;
 
-  // Active categories directly loaded from Database (Hiển thị tất cả danh mục ở frontend)
   const workshopCategories = useMemo(() => {
     const list = (categories || []).filter((c) => c.isActive);
     return [...list].sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0));
   }, [categories]);
 
-  // Filter workshops (only PUBLISHED)
   const publishedTours = useMemo(() => {
     return tours.filter((tour) => tour.status === 'PUBLISHED');
   }, [tours]);
 
-  // Filter published posts (Hiển thị dữ liệu bài viết chuẩn)
   const publishedPosts = useMemo(() => {
     return (posts || []).filter((post) => post.status === 'PUBLISHED');
   }, [posts]);
 
-  // Find the escape section post (ID: 'post-botanica-04') from posts
-  const escapePost = useMemo(() => {
-    const found = (posts || []).find((p) => p.id === 'post-botanica-04');
-    if (found) return found;
-    return (posts || []).find((p) => p.slug === 'the-other-hoi-an' || p.title.toLowerCase().includes('the other hoi an')) || null;
-  }, [posts]);
-
-  // Parse description / summary into paragraphs
-  const escapeParagraphs = useMemo(() => {
-    const summary = lang === 'vn'
-      ? (escapePost?.summary || escapePost?.summaryEn || '')
-      : (escapePost?.summaryEn || escapePost?.summary || '');
-    if (!summary) return [];
-    return summary.split(/\n+/).map((paragraph) => paragraph.trim()).filter(Boolean);
-  }, [escapePost, lang]);
-
-  // Parse review quote & author/citation from guestReview
-  const escapeReviewParsed = useMemo(() => {
-    const review = lang === 'vn'
-      ? (escapePost?.guestReview || escapePost?.guestReviewEn || '')
-      : (escapePost?.guestReviewEn || escapePost?.guestReview || '');
-    if (!review) return null;
-    const parts = review.split(/—|-/);
-    if (parts.length > 1) {
-      const cite = parts[parts.length - 1].trim();
-      const quote = parts.slice(0, parts.length - 1).join('—').trim();
-      return { quote, cite: `— ${cite}` };
-    }
-    return { quote: review, cite: lang === 'vn' ? '— Cảm nhận của khách' : '— Guest review' };
-  }, [escapePost, lang]);
+  const storyCarouselPosts = useMemo(() => {
+    return publishedPosts;
+  }, [publishedPosts]);
 
   // Filtered by active tab from DB
   const filteredTours = useMemo(() => {
@@ -208,10 +199,21 @@ export const BotanicaGardenPortal: React.FC<BotanicaGardenPortalProps> = ({
     });
   }, [publishedTours, activeCategory, workshopCategories]);
 
-  // Active banner from database or default
-  const activeHeroBanner = useMemo(() => {
-    return banners.find((b) => b.position === 'HOME_HERO' && b.isActive) || banners[0];
+  const heroBanners = useMemo(() => {
+    const activeHomeBanners = banners
+      .filter((banner) => banner.position === 'HOME_HERO' && banner.isActive)
+      .sort((left, right) => (left.order || 0) - (right.order || 0));
+
+    if (activeHomeBanners.length > 0) {
+      return activeHomeBanners;
+    }
+
+    return [...banners].sort((left, right) => (left.order || 0) - (right.order || 0));
   }, [banners]);
+
+  const activeHeroBanner = heroBanners[activeHeroIndex] || heroBanners[0];
+  const activeHeroIsVideo = isVideoMediaUrl(activeHeroBanner?.imageUrl);
+  const activeStoryPost = storyCarouselPosts[activeStoryIndex] || storyCarouselPosts[0] || null;
 
   const sortedFeaturedFeedbacks = useMemo(() => {
     return feedbacks
@@ -235,6 +237,15 @@ export const BotanicaGardenPortal: React.FC<BotanicaGardenPortalProps> = ({
 
   const featuredReview = sortedFeaturedFeedbacks[0] || null;
   const reviewCards = sortedRegularFeedbacks.slice(0, 4);
+  const selectedTour = publishedTours[selectedWorkshopIndex] || publishedTours[0] || null;
+  const selectedTourImages = useMemo(() => {
+    if (!selectedTour) {
+      return [];
+    }
+
+    const mergedImages = [selectedTour.thumbnail, ...(selectedTour.album || [])].filter(Boolean);
+    return [...new Set(mergedImages)];
+  }, [selectedTour]);
 
   // Format price display
   const renderPrice = (w: Tour) => {
@@ -257,7 +268,7 @@ export const BotanicaGardenPortal: React.FC<BotanicaGardenPortalProps> = ({
   // Get localized tour name & description
   const getTourTitle = (w: Tour) => {
     if (lang === 'vn') return w.name || w.nameEn || '';
-    return w.nameEn || publicContentTranslations.en.tourNames[w.id] || w.name || '';
+    return w.nameEn || w.name || '';
   };
 
   const getBannerEyebrow = (banner: Banner | undefined) => {
@@ -285,12 +296,18 @@ export const BotanicaGardenPortal: React.FC<BotanicaGardenPortalProps> = ({
   };
 
   const getTourCategoryLabel = (w: Tour) => {
+    const workshopCategorySlug = {
+      family: 'family-crafts',
+      culture: 'culture-and-food',
+      wellness: 'coffee-and-wellness',
+    }[w.workshopCat || ''];
     const matchedCategory = workshopCategories.find((category) => {
       const tourCategory = (w.category || '').toLowerCase();
       return (
         tourCategory === category.name.toLowerCase() ||
         tourCategory === (category.nameEn || '').toLowerCase() ||
         tourCategory === category.slug.toLowerCase() ||
+        category.slug === workshopCategorySlug ||
         w.category === category.id ||
         w.category === category.code
       );
@@ -335,14 +352,83 @@ export const BotanicaGardenPortal: React.FC<BotanicaGardenPortalProps> = ({
     return post.imageLabelEn || post.imageLabel || '';
   };
 
+  const getPostLeadParagraphs = (post: Post | null) => {
+    if (!post) return [];
+
+    const content = getPlainTextPostContent(getPostContent(post));
+    const summary = getPostSummary(post);
+    const paragraphs = (content || summary)
+      .split(/\n+/)
+      .map((paragraph) => paragraph.trim())
+      .filter(Boolean);
+
+    if (paragraphs.length > 0) {
+      return paragraphs.slice(0, 2);
+    }
+
+    return summary ? [summary] : [];
+  };
+
   const getFeedbackComment = (feedback: CustomerFeedback) => {
-    if (lang === 'vn') return publicContentTranslations.vn.feedbackComments[feedback.id] || feedback.comment;
-    return feedback.commentEn || publicContentTranslations.en.feedbackComments[feedback.id] || feedback.comment;
+    if (lang === 'vn') return feedback.comment || feedback.commentEn || '';
+    return feedback.commentEn || feedback.comment || '';
   };
 
   const getFeedbackCustomerName = (feedback: CustomerFeedback) => {
-    if (lang === 'vn') return publicContentTranslations.vn.feedbackCustomerNames[feedback.id] || feedback.customerName;
-    return feedback.customerNameEn || publicContentTranslations.en.feedbackCustomerNames[feedback.id] || feedback.customerName;
+    if (lang === 'vn') return feedback.customerName || feedback.customerNameEn || '';
+    return feedback.customerNameEn || feedback.customerName || '';
+  };
+
+  const normalizeText = (value: string) => {
+    return value
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase();
+  };
+
+  const getTourReviewSnippets = (tour: Tour | null): TourReviewSnippet[] => {
+    const rankedFeedbacks = feedbacks
+      .map((feedback) => {
+        if (!tour) {
+          return { feedback, score: feedback.isFeatured ? 2 : 1 };
+        }
+
+        const titleTokens = [
+          getTourTitle(tour),
+          tour.name,
+          tour.nameEn || '',
+          tour.category || '',
+          tour.workshopCat || '',
+        ]
+          .map(normalizeText)
+          .filter(Boolean);
+
+        const feedbackTour = normalizeText(feedback.tourName || '');
+        let score = feedback.isFeatured ? 2 : 0;
+
+        if (titleTokens.some((token) => token && (feedbackTour.includes(token) || token.includes(feedbackTour)))) {
+          score += 5;
+        }
+
+        if (tour.workshopCat && feedbackTour.includes(normalizeText(tour.workshopCat))) {
+          score += 2;
+        }
+
+        return { feedback, score };
+      })
+      .filter((item) => item.score > 0)
+      .sort((left, right) => right.score - left.score || right.feedback.rating - left.feedback.rating)
+      .slice(0, 3)
+      .map(({ feedback }) => ({
+        id: feedback.id,
+        name: getFeedbackCustomerName(feedback),
+        location: feedback.location,
+        comment: getFeedbackComment(feedback),
+        rating: feedback.rating,
+        avatar: feedback.avatar,
+      }));
+
+    return rankedFeedbacks;
   };
 
   const getTourDesc = (w: Tour) => {
@@ -358,7 +444,10 @@ export const BotanicaGardenPortal: React.FC<BotanicaGardenPortalProps> = ({
       setSelectedWorkshopIndex(0);
     }
     setIsSubmitted(false);
-    setCopiedMessage(false);
+    setConfirmedBooking(null);
+    setFormPaymentMethod('BANK_TRANSFER');
+    setFormDate('');
+    setFormTimeSlot('');
     setIsModalOpen(true);
     document.body.style.overflow = 'hidden';
   };
@@ -368,58 +457,85 @@ export const BotanicaGardenPortal: React.FC<BotanicaGardenPortalProps> = ({
     document.body.style.overflow = '';
   };
 
-  // Build message string
-  const constructMessage = () => {
-    const selectedTour = publishedTours[selectedWorkshopIndex] || publishedTours[0];
-    const wsTitle = selectedTour ? getTourTitle(selectedTour) : 'Workshop';
-    const dateStr = formDate.trim() || t.msg_anyday;
-    let m = `${t.msg_hi}\n\n${t.msg_ws}: ${wsTitle}\n${t.msg_date}: ${dateStr}\n${t.msg_adults}: ${formAdults} / ${t.msg_kids}: ${formKids}`;
-    if (formName.trim()) m += `\n${t.msg_name}: ${formName.trim()}`;
-    if (formNote.trim()) m += `\n${t.msg_note}: ${formNote.trim()}`;
-    m += `\n\n${t.msg_from}`;
-    return m;
+  const navigateToTourDetail = (tour: Tour) => {
+    const params = new URLSearchParams();
+    params.set('lang', lang);
+    window.location.href = `/workshops/${encodeURIComponent(tour.slug)}?${params.toString()}`;
+  };
+
+  const handleTourImageChange = (nextIndex: number) => {
+    if (selectedTourImages.length === 0) {
+      return;
+    }
+
+    const normalizedIndex = (nextIndex + selectedTourImages.length) % selectedTourImages.length;
+    setActiveTourImageIndex(normalizedIndex);
   };
 
   // Submit booking form
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setBookingError('');
+
+    if (bookingWebsite.trim()) {
+      setBookingError(lang === 'vn' ? 'Yêu cầu không hợp lệ.' : 'Invalid request.');
+      return;
+    }
+
+    if (Date.now() - bookingStartedAt < 4000) {
+      setBookingError(lang === 'vn' ? 'Bạn thao tác quá nhanh. Vui lòng kiểm tra lại thông tin và thử lại sau vài giây.' : 'That was submitted too quickly. Please review your details and try again in a few seconds.');
+      return;
+    }
+
+      if (!formEmail.trim()) {
+        setBookingError(lang === 'vn' ? 'Vui lòng nhập email để nhận mã đặt lớp và xác nhận thanh toán.' : 'Please enter your email to receive the booking code and payment confirmation.');
+        return;
+      }
+
+      if (!formDate || !formTimeSlot) {
+        setBookingError(lang === 'vn' ? 'Vui lòng chọn ngày và buổi tham gia.' : 'Please select a date and time slot.');
+        return;
+      }
+
+    const bookingThrottleKey = `botanica-booking-${selectedTour?.slug || 'general'}`;
+    const lastSubmittedAt = Number(window.localStorage.getItem(bookingThrottleKey) || 0);
+    if (lastSubmittedAt && Date.now() - lastSubmittedAt < 5 * 60 * 1000) {
+      setBookingError(lang === 'vn' ? 'Bạn vừa gửi yêu cầu gần đây. Vui lòng thử lại sau ít phút.' : 'You submitted a request recently. Please wait a few minutes before trying again.');
+      return;
+    }
+
     setIsSubmitting(true);
-    const selectedTour = publishedTours[selectedWorkshopIndex] || publishedTours[0];
-    const msg = constructMessage();
-    setGeneratedMsg(msg);
 
     try {
       // 1. Save booking directly into database
-      await onSubmitBooking({
+      const createdBooking = await onSubmitBooking({
         tourId: selectedTour?.id,
         tourName: selectedTour ? `${selectedTour.name} (${selectedTour.nameEn || ''})` : 'Botanica Workshop',
         customerName: formName.trim() || 'Botanica Guest',
-        departureDate: formDate.trim() || new Date().toISOString().slice(0, 10),
+        customerPhone: formPhone.trim(),
+        customerEmail: formEmail.trim(),
+        pickupLocation: formPickupLocation.trim(),
+        paymentMethod: formPaymentMethod,
+        departureDate: formDate,
+        preferredTimeSlot: formTimeSlot,
         numAdults: formAdults || 1,
         numChildren: formKids || 0,
         notes: formNote.trim(),
+        website: bookingWebsite.trim(),
+        startedAt: new Date(bookingStartedAt).toISOString(),
       });
 
-      // 2. Pre-copy to clipboard
-      if (navigator.clipboard) {
-        navigator.clipboard.writeText(msg).catch(() => {});
-      }
+      setConfirmedBooking(createdBooking);
+
+      window.localStorage.setItem(bookingThrottleKey, String(Date.now()));
 
       setIsSubmitted(true);
     } catch (err) {
       console.error('Error submitting booking', err);
-      setIsSubmitted(true);
+      setBookingError(err instanceof Error ? err.message : (lang === 'vn' ? 'Không thể gửi yêu cầu đặt lớp lúc này.' : 'Could not submit your booking request right now.'));
     } finally {
       setIsSubmitting(false);
     }
-  };
-
-  const copyToClipboard = () => {
-    if (navigator.clipboard) {
-      navigator.clipboard.writeText(generatedMsg);
-    }
-    setCopiedMessage(true);
-    setTimeout(() => setCopiedMessage(false), 3000);
   };
 
   // Scroll reveal effect
@@ -439,6 +555,99 @@ export const BotanicaGardenPortal: React.FC<BotanicaGardenPortalProps> = ({
     reveals.forEach((el) => observer.observe(el));
     return () => observer.disconnect();
   }, [filteredTours, feedbacks, lang]);
+
+  useEffect(() => {
+    if (heroBanners.length === 0) {
+      setActiveHeroIndex(0);
+      return;
+    }
+
+    setActiveHeroIndex((currentIndex) => Math.min(currentIndex, heroBanners.length - 1));
+  }, [heroBanners]);
+
+  useEffect(() => {
+    if (heroBanners.length <= 1) {
+      return;
+    }
+
+    const intervalId = window.setInterval(() => {
+      setActiveHeroIndex((currentIndex) => (currentIndex + 1) % heroBanners.length);
+    }, 6000);
+
+    return () => window.clearInterval(intervalId);
+  }, [heroBanners]);
+
+  useEffect(() => {
+    if (storyCarouselPosts.length === 0) {
+      setActiveStoryIndex(0);
+      return;
+    }
+
+    setActiveStoryIndex((currentIndex) => Math.min(currentIndex, storyCarouselPosts.length - 1));
+  }, [storyCarouselPosts]);
+
+  useEffect(() => {
+    if (storyCarouselPosts.length <= 1) {
+      return;
+    }
+
+    const intervalId = window.setInterval(() => {
+      setActiveStoryIndex((currentIndex) => (currentIndex + 1) % storyCarouselPosts.length);
+    }, 6500);
+
+    return () => window.clearInterval(intervalId);
+  }, [storyCarouselPosts]);
+
+  useEffect(() => {
+    setActiveTourImageIndex(0);
+  }, [selectedWorkshopIndex, isModalOpen]);
+
+  useEffect(() => {
+    if (!isModalOpen) {
+      return;
+    }
+
+    setBookingStartedAt(Date.now());
+    setBookingWebsite('');
+    setBookingError('');
+  }, [isModalOpen, selectedWorkshopIndex]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const requestedSlug = params.get('bookTour');
+    if (!requestedSlug || publishedTours.length === 0) {
+      return;
+    }
+
+    const nextIndex = publishedTours.findIndex((tour) => tour.slug === requestedSlug);
+    if (nextIndex >= 0) {
+      handleOpenModal(nextIndex);
+    }
+
+    params.delete('bookTour');
+    const nextSearch = params.toString();
+    const nextHash = window.location.hash || '#workshops';
+    const nextUrl = `${window.location.pathname}${nextSearch ? `?${nextSearch}` : ''}${nextHash}`;
+    window.history.replaceState({}, '', nextUrl);
+  }, [publishedTours]);
+
+  const handleHeroSlideChange = (nextIndex: number) => {
+    if (heroBanners.length === 0) {
+      return;
+    }
+
+    const normalizedIndex = (nextIndex + heroBanners.length) % heroBanners.length;
+    setActiveHeroIndex(normalizedIndex);
+  };
+
+  const handleStorySlideChange = (nextIndex: number) => {
+    if (storyCarouselPosts.length === 0) {
+      return;
+    }
+
+    const normalizedIndex = (nextIndex + storyCarouselPosts.length) % storyCarouselPosts.length;
+    setActiveStoryIndex(normalizedIndex);
+  };
 
   return (
     <div className="botanica-page-wrap">
@@ -495,9 +704,60 @@ export const BotanicaGardenPortal: React.FC<BotanicaGardenPortalProps> = ({
         className="hero"
         id="top"
         style={{
-          backgroundImage: activeHeroBanner?.imageUrl ? `url('${activeHeroBanner.imageUrl}')` : 'none',
+          backgroundImage: activeHeroBanner?.imageUrl && !activeHeroIsVideo ? `url('${activeHeroBanner.imageUrl}')` : 'none',
         }}
       >
+        {activeHeroIsVideo && activeHeroBanner?.imageUrl && (
+          <div className="hero-media" aria-hidden="true">
+            <video
+              key={`${activeHeroBanner.id}-${activeHeroBanner.imageUrl}`}
+              className="hero-media-video"
+              autoPlay
+              muted
+              loop
+              playsInline
+              preload="auto"
+            >
+              <source src={activeHeroBanner.imageUrl} />
+            </video>
+          </div>
+        )}
+
+        {heroBanners.length > 1 && (
+          <>
+            <div className="hero-nav">
+              <button
+                type="button"
+                className="hero-nav-btn"
+                aria-label={lang === 'vn' ? 'Ảnh trước' : 'Previous image'}
+                onClick={() => handleHeroSlideChange(activeHeroIndex - 1)}
+              >
+                &#8249;
+              </button>
+              <button
+                type="button"
+                className="hero-nav-btn"
+                aria-label={lang === 'vn' ? 'Ảnh tiếp theo' : 'Next image'}
+                onClick={() => handleHeroSlideChange(activeHeroIndex + 1)}
+              >
+                &#8250;
+              </button>
+            </div>
+
+            <div className="hero-dots" aria-label={lang === 'vn' ? 'Chọn ảnh bìa' : 'Select cover image'}>
+              {heroBanners.map((banner, index) => (
+                <button
+                  key={banner.id}
+                  type="button"
+                  className={index === activeHeroIndex ? 'active' : ''}
+                  aria-label={`${lang === 'vn' ? 'Ảnh bìa' : 'Cover image'} ${index + 1}`}
+                  onClick={() => handleHeroSlideChange(index)}
+                />
+              ))}
+            </div>
+          </>
+        )}
+
         <div className="hero-inner">
           {getBannerEyebrow(activeHeroBanner) && <span className="eyebrow">{getBannerEyebrow(activeHeroBanner)}</span>}
           {getBannerTitle(activeHeroBanner) && <h1>{getBannerTitle(activeHeroBanner)}</h1>}
@@ -531,44 +791,105 @@ export const BotanicaGardenPortal: React.FC<BotanicaGardenPortalProps> = ({
         </div>
       </section>
 
-      {/* ESCAPE */}
-      <section className="escape">
-        <div className="wrap escape-grid">
-          <div className="reveal">
-            <span className="eyebrow">{getPostEyebrow(escapePost) || t.escape_eyebrow}</span>
-            <h2>{getPostTitle(escapePost) || t.escape_title}</h2>
-            {escapeParagraphs.length > 0 ? (
-              escapeParagraphs.map((para, idx) => (
-                <p key={idx}>{para}</p>
-              ))
-            ) : (
-              <>
-                <p>{t.escape_p1}</p>
-                <p>{t.escape_p2}</p>
-              </>
-            )}
-            {escapeReviewParsed ? (
-              <div className="pull">
-                <q>{escapeReviewParsed.quote}</q>
-                <cite>{escapeReviewParsed.cite}</cite>
+      {storyCarouselPosts.length > 0 && (
+        <section id="stories" className="stories">
+          <div className="wrap">
+            <div className="story-slider reveal">
+              <div className="story-slider-copy">
+                <span className="eyebrow">{getPostEyebrow(activeStoryPost) || activeStoryPost?.category}</span>
+                <h2>
+                  <button
+                    type="button"
+                    className="story-slider-title"
+                    onClick={() => activeStoryPost && navigateToPostDetail(activeStoryPost)}
+                  >
+                    {getPostTitle(activeStoryPost)}
+                  </button>
+                </h2>
+
+                {getPostLeadParagraphs(activeStoryPost).map((paragraph, idx) => (
+                  <p key={`${activeStoryPost?.id || 'story'}-${idx}`}>{paragraph}</p>
+                ))}
+
+                <div className="story-slider-actions">
+                  <button
+                    type="button"
+                    className="btn btn-primary"
+                    onClick={() => activeStoryPost && navigateToPostDetail(activeStoryPost)}
+                  >
+                    {t.read_more}
+                  </button>
+
+                  {storyCarouselPosts.length > 1 && (
+                    <div className="story-slider-dots" aria-label={lang === 'vn' ? 'Chọn bài viết' : 'Select article'}>
+                      {storyCarouselPosts.map((post, index) => (
+                        <button
+                          key={post.id}
+                          type="button"
+                          className={index === activeStoryIndex ? 'active' : ''}
+                          aria-label={`${lang === 'vn' ? 'Bài viết' : 'Article'} ${index + 1}`}
+                          onClick={() => handleStorySlideChange(index)}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
-            ) : (
-              <div className="pull">
-                <q>{t.escape_quote}</q>
-                <cite>{t.escape_cite}</cite>
+
+              <div
+                className={`story-slider-media ${activeStoryPost ? 'clickable-panel' : ''}`}
+                onClick={activeStoryPost ? () => navigateToPostDetail(activeStoryPost) : undefined}
+                onKeyDown={activeStoryPost ? (e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    navigateToPostDetail(activeStoryPost);
+                  }
+                } : undefined}
+                role={activeStoryPost ? 'button' : undefined}
+                tabIndex={activeStoryPost ? 0 : undefined}
+                aria-label={activeStoryPost ? (lang === 'vn' ? 'Xem chi tiết bài viết' : 'View article details') : undefined}
+              >
+                {storyCarouselPosts.length > 1 && (
+                  <div className="story-slider-nav">
+                    <button
+                      type="button"
+                      className="story-slider-nav-btn"
+                      aria-label={lang === 'vn' ? 'Bài trước' : 'Previous article'}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleStorySlideChange(activeStoryIndex - 1);
+                      }}
+                    >
+                      &#8249;
+                    </button>
+                    <button
+                      type="button"
+                      className="story-slider-nav-btn"
+                      aria-label={lang === 'vn' ? 'Bài tiếp theo' : 'Next article'}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleStorySlideChange(activeStoryIndex + 1);
+                      }}
+                    >
+                      &#8250;
+                    </button>
+                  </div>
+                )}
+
+                <img
+                  src={activeStoryPost?.thumbnail || '/images/img_1.jpeg'}
+                  alt={getPostTitle(activeStoryPost)}
+                  loading="lazy"
+                />
+
+                {getPostImageLabel(activeStoryPost) && (
+                  <div className="story-slider-tag">{getPostImageLabel(activeStoryPost)}</div>
+                )}
               </div>
-            )}
+            </div>
           </div>
-          <div className="escape-img reveal">
-            <img
-              src={escapePost?.thumbnail || "/images/img_1.jpeg"}
-              alt={getPostImageLabel(escapePost) || "Herbs hand-picked from the Botanica garden"}
-              loading="lazy"
-            />
-            <div className="tag">{getPostImageLabel(escapePost) || t.escape_tag}</div>
-          </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* INCLUDES */}
       <section className="includes">
@@ -678,7 +999,19 @@ export const BotanicaGardenPortal: React.FC<BotanicaGardenPortalProps> = ({
 
               return (
                 <div key={w.id} className="card">
-                  <div className={`card-media ${!hasImg ? 'motif' : ''}`}>
+                  <div
+                    className={`card-media ${!hasImg ? 'motif' : ''} ${hasImg ? 'clickable-panel' : ''}`}
+                    onClick={() => navigateToTourDetail(w)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        navigateToTourDetail(w);
+                      }
+                    }}
+                    role="button"
+                    tabIndex={0}
+                    aria-label={`${lang === 'vn' ? 'Xem chi tiết lớp' : 'View workshop details'} ${title}`}
+                  >
                     {hasImg ? (
                       <img src={w.thumbnail} alt={title} loading="lazy" />
                     ) : (
@@ -697,17 +1030,34 @@ export const BotanicaGardenPortal: React.FC<BotanicaGardenPortalProps> = ({
                   </div>
 
                   <div className="card-body">
-                    <h3>{title}</h3>
+                    <h3>
+                      <button
+                        type="button"
+                        className="card-link"
+                        onClick={() => navigateToTourDetail(w)}
+                      >
+                        {title}
+                      </button>
+                    </h3>
                     <p>{desc}</p>
                     <div className="card-foot">
                       {renderPrice(w)}
-                      <button
-                        type="button"
-                        className="req"
-                        onClick={() => handleOpenModal(fullIdx >= 0 ? fullIdx : 0)}
-                      >
-                        {t.req}
-                      </button>
+                      <div className="card-actions">
+                        <button
+                          type="button"
+                          className="detail-link"
+                          onClick={() => navigateToTourDetail(w)}
+                        >
+                          {lang === 'vn' ? 'Xem chi tiết' : 'View details'}
+                        </button>
+                        <button
+                          type="button"
+                          className="req"
+                          onClick={() => handleOpenModal(fullIdx >= 0 ? fullIdx : 0)}
+                        >
+                          {t.req}
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -950,6 +1300,56 @@ export const BotanicaGardenPortal: React.FC<BotanicaGardenPortalProps> = ({
             &times;
           </button>
 
+          {selectedTour && selectedTourImages.length > 0 && (
+            <div className="modal-gallery">
+              <div className="modal-gallery-main">
+                <img
+                  src={selectedTourImages[activeTourImageIndex]}
+                  alt={getTourTitle(selectedTour)}
+                />
+                {selectedTourImages.length > 1 && (
+                  <>
+                    <button
+                      type="button"
+                      className="modal-gallery-nav prev"
+                      aria-label={lang === 'vn' ? 'Ảnh trước' : 'Previous image'}
+                      onClick={() => handleTourImageChange(activeTourImageIndex - 1)}
+                    >
+                      &#8249;
+                    </button>
+                    <button
+                      type="button"
+                      className="modal-gallery-nav next"
+                      aria-label={lang === 'vn' ? 'Ảnh tiếp theo' : 'Next image'}
+                      onClick={() => handleTourImageChange(activeTourImageIndex + 1)}
+                    >
+                      &#8250;
+                    </button>
+                    <div className="modal-gallery-count">
+                      {activeTourImageIndex + 1}/{selectedTourImages.length}
+                    </div>
+                  </>
+                )}
+              </div>
+
+              {selectedTourImages.length > 1 && (
+                <div className="modal-gallery-strip">
+                  {selectedTourImages.map((imageUrl, index) => (
+                    <button
+                      key={`${selectedTour.id}-${index}`}
+                      type="button"
+                      className={index === activeTourImageIndex ? 'active' : ''}
+                      aria-label={`${lang === 'vn' ? 'Xem ảnh tour' : 'View tour image'} ${index + 1}`}
+                      onClick={() => handleTourImageChange(index)}
+                    >
+                      <img src={imageUrl} alt={`${getTourTitle(selectedTour)} ${index + 1}`} />
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
           <div className="modal-head">
             <h3>{t.m_title}</h3>
             <p>{t.m_sub}</p>
@@ -975,13 +1375,40 @@ export const BotanicaGardenPortal: React.FC<BotanicaGardenPortalProps> = ({
               <div className="field">
                 <label>{t.m_date}</label>
                 <input
-                  type="text"
+                  type="date"
                   id="f_date"
-                  placeholder={lang === 'vn' ? 'Ví dụ: Sáng thứ 7, 31/05' : 'e.g. Sat 31 May, morning'}
+                  required
+                  min={new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 10)}
                   value={formDate}
                   onChange={(e) => setFormDate(e.target.value)}
                 />
               </div>
+
+              <fieldset className="field">
+                <legend className="mb-1 text-xs font-semibold text-stone-700">{lang === 'vn' ? 'Buổi tham gia' : 'Preferred session'}</legend>
+                <div className="grid grid-cols-2 gap-2">
+                  {([
+                    ['MORNING', lang === 'vn' ? 'Buổi sáng' : 'Morning', '08:00 - 12:00'],
+                    ['AFTERNOON', lang === 'vn' ? 'Buổi chiều' : 'Afternoon', '13:00 - 17:00'],
+                  ] as const).map(([slot, label, hours]) => (
+                    <label key={slot} className={`flex cursor-pointer items-center gap-3 rounded-xl border px-3 py-2.5 transition ${formTimeSlot === slot ? 'border-emerald-600 bg-emerald-50' : 'border-stone-200 bg-white hover:border-emerald-300'}`}>
+                      <input
+                        type="radio"
+                        name="preferredTimeSlot"
+                        value={slot}
+                        required
+                        checked={formTimeSlot === slot}
+                        onChange={() => setFormTimeSlot(slot)}
+                        className="!h-4 !w-4 !shrink-0 !p-0 accent-emerald-700"
+                      />
+                      <span>
+                        <strong className="block text-xs text-stone-900">{label}</strong>
+                        <small className="text-[11px] text-stone-500">{hours}</small>
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              </fieldset>
 
               <div className="field row">
                 <div className="field">
@@ -1018,6 +1445,89 @@ export const BotanicaGardenPortal: React.FC<BotanicaGardenPortalProps> = ({
                 />
               </div>
 
+              <div className="field row">
+                <div className="field">
+                  <label>{t.m_phone}</label>
+                  <input
+                    type="tel"
+                    id="f_phone"
+                    required
+                    placeholder={lang === 'vn' ? 'Ví dụ: 0905 123 456' : 'e.g. +84 905 123 456'}
+                    value={formPhone}
+                    onChange={(e) => setFormPhone(e.target.value)}
+                  />
+                </div>
+                <div className="field">
+                  <label>{t.m_email} *</label>
+                  <input
+                    type="email"
+                    id="f_email"
+                    required
+                    placeholder={lang === 'vn' ? 'tenban@email.com' : 'your@email.com'}
+                    value={formEmail}
+                    onChange={(e) => setFormEmail(e.target.value)}
+                  />
+                  <small>{lang === 'vn' ? 'Bắt buộc để hệ thống gửi mã đặt lớp và email xác nhận.' : 'Required so the system can send your booking code and confirmation email.'}</small>
+                </div>
+              </div>
+
+                <div className="field">
+                  <label>{lang === 'vn' ? 'Địa điểm đón khách' : 'Pickup location'}</label>
+                  <input
+                    type="text"
+                    id="f_pickup_location"
+                    placeholder={lang === 'vn' ? 'Ví dụ: Khách sạn, homestay hoặc địa chỉ đón' : 'e.g. hotel, homestay, or pickup address'}
+                    value={formPickupLocation}
+                    onChange={(e) => setFormPickupLocation(e.target.value)}
+                  />
+                </div>
+
+              <div className="field">
+                <label>{lang === 'vn' ? 'Phương thức thanh toán' : 'Payment method'}</label>
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                  <label className={`flex cursor-pointer items-start gap-3 rounded-xl border p-3 transition ${formPaymentMethod === 'BANK_TRANSFER' ? 'border-emerald-600 bg-emerald-50' : 'border-stone-200 bg-white hover:border-emerald-300'}`}>
+                    <input
+                      type="radio"
+                      name="bookingPaymentMethod"
+                      value="BANK_TRANSFER"
+                      checked={formPaymentMethod === 'BANK_TRANSFER'}
+                      onChange={() => setFormPaymentMethod('BANK_TRANSFER')}
+                      className="mt-1 !h-4 !w-4 !shrink-0 !p-0 accent-emerald-700"
+                    />
+                    <span>
+                      <strong className="block text-xs text-stone-900">{lang === 'vn' ? 'Thanh toán ngay bằng QR' : 'Pay now by QR'}</strong>
+                      <small className="mt-1 block text-[11px] leading-5 text-stone-600">{lang === 'vn' ? 'Quét mã QR chuyển khoản sau khi đặt.' : 'Scan a transfer QR after booking.'}</small>
+                    </span>
+                  </label>
+                  <label className={`flex cursor-pointer items-start gap-3 rounded-xl border p-3 transition ${formPaymentMethod === 'CASH' ? 'border-emerald-600 bg-emerald-50' : 'border-stone-200 bg-white hover:border-emerald-300'}`}>
+                    <input
+                      type="radio"
+                      name="bookingPaymentMethod"
+                      value="CASH"
+                      checked={formPaymentMethod === 'CASH'}
+                      onChange={() => setFormPaymentMethod('CASH')}
+                      className="mt-1 !h-4 !w-4 !shrink-0 !p-0 accent-emerald-700"
+                    />
+                    <span>
+                      <strong className="block text-xs text-stone-900">{lang === 'vn' ? 'Thanh toán khi đến' : 'Pay on arrival'}</strong>
+                      <small className="mt-1 block text-[11px] leading-5 text-stone-600">{lang === 'vn' ? 'Thanh toán cho nhân viên tại Botanica Garden.' : 'Pay the staff at Botanica Garden.'}</small>
+                    </span>
+                  </label>
+                </div>
+              </div>
+
+              <div className="field" aria-hidden="true" style={{ display: 'none' }}>
+                <label htmlFor="f_website">Website</label>
+                <input
+                  type="text"
+                  id="f_website"
+                  tabIndex={-1}
+                  autoComplete="off"
+                  value={bookingWebsite}
+                  onChange={(e) => setBookingWebsite(e.target.value)}
+                />
+              </div>
+
               <div className="field">
                 <label>{t.m_note}</label>
                 <textarea
@@ -1028,6 +1538,12 @@ export const BotanicaGardenPortal: React.FC<BotanicaGardenPortalProps> = ({
                 />
               </div>
 
+              {bookingError && (
+                <div className="text-xs font-semibold text-red-700 bg-red-50 border border-red-200 rounded-xl px-3 py-2">
+                  {bookingError}
+                </div>
+              )}
+
               <button
                 type="submit"
                 disabled={isSubmitting}
@@ -1037,101 +1553,103 @@ export const BotanicaGardenPortal: React.FC<BotanicaGardenPortalProps> = ({
               </button>
             </form>
           ) : (
-            <div className="send-options show" id="sendOptions">
-              <div className="mb-3 p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-900 text-xs font-semibold">
+            <div className="send-options send-options--compact show" id="sendOptions">
+              <div className="booking-success-notice mb-3 p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-900 text-xs font-semibold">
                 ✓ {lang === 'vn' ? 'Yêu cầu đặt lớp đã được lưu tự động vào hệ thống!' : 'Your workshop request has been automatically registered in our database!'}
               </div>
 
-              <p className="send-intro">{t.m_send_intro}</p>
+              {confirmedBooking && (
+                <div className="booking-success-card mb-4 space-y-3 rounded-2xl border border-emerald-200 bg-white p-4 text-left shadow-sm">
+                  <div className="booking-success-card__header flex items-center justify-between gap-3 border-b border-emerald-100 pb-3">
+                    <div>
+                      <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-emerald-700">
+                        {lang === 'vn' ? 'Mã đơn hàng' : 'Booking code'}
+                      </p>
+                      <p className="font-mono text-sm font-black text-stone-900">{confirmedBooking.bookingCode}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-stone-500">
+                        {lang === 'vn' ? 'Tổng thanh toán' : 'Amount due'}
+                      </p>
+                      <p className="text-base font-black text-emerald-900">
+                        {confirmedBooking.finalAmount.toLocaleString(lang === 'vn' ? 'vi-VN' : 'en-US')}đ
+                      </p>
+                    </div>
+                  </div>
 
-              <div className="send-grid">
-                <button
-                  type="button"
-                  className="send-btn send-wa"
-                  onClick={() => {
-                    window.open(
-                      `https://wa.me/${siteConfig.whatsapp}?text=${encodeURIComponent(generatedMsg)}`,
-                      '_blank'
-                    );
-                  }}
-                >
-                  <svg viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M12 2a10 10 0 0 0-8.6 15l-1.3 4.7 4.8-1.3A10 10 0 1 0 12 2zm5.3 14.1c-.2.6-1.3 1.2-1.8 1.2-.5.1-1.1.1-1.7-.1-.4-.1-.9-.3-1.6-.6-2.8-1.2-4.6-4-4.7-4.2-.1-.2-1.1-1.5-1.1-2.8 0-1.3.7-2 .9-2.2.2-.2.5-.3.7-.3h.5c.2 0 .4 0 .6.5l.8 1.9c.1.1.1.3 0 .5l-.4.5c-.1.2-.3.3-.1.6.1.2.6 1 1.3 1.6.9.8 1.6 1 1.9 1.2.2.1.4.1.5-.1l.6-.7c.2-.2.3-.2.6-.1l1.8.9c.3.1.4.2.5.3.1.2.1.6-.1 1.1z" />
-                  </svg>
-                  WhatsApp
-                </button>
+                  <div className="text-xs text-stone-700">
+                    <span className="font-semibold text-stone-500">{lang === 'vn' ? 'Ngày và buổi tham gia: ' : 'Preferred date and session: '}</span>
+                    <span>{confirmedBooking.departureDate} · {confirmedBooking.preferredTimeSlot === 'AFTERNOON' ? (lang === 'vn' ? 'Buổi chiều' : 'Afternoon') : (lang === 'vn' ? 'Buổi sáng' : 'Morning')}</span>
+                  </div>
 
-                <button
-                  type="button"
-                  className="send-btn send-msg"
-                  onClick={() => {
-                    copyToClipboard();
-                    window.open(`https://m.me/${siteConfig.messenger}`, '_blank');
-                  }}
-                >
-                  <svg viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M12 2C6.3 2 2 6.2 2 11.7c0 3 1.4 5.6 3.7 7.4V23l3.4-1.9c.9.3 1.9.4 2.9.4 5.7 0 10-4.2 10-9.8C22 6.2 17.7 2 12 2zm1 13.2l-2.5-2.7-4.9 2.7L10.9 9l2.6 2.7L18.3 9 13 15.2z" />
-                  </svg>
-                  Messenger
-                </button>
-
-                <button
-                  type="button"
-                  className="send-btn send-ig"
-                  onClick={() => {
-                    copyToClipboard();
-                    window.open(`https://instagram.com/${siteConfig.instagram}`, '_blank');
-                  }}
-                >
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <rect x="3" y="3" width="18" height="18" rx="5" />
-                    <circle cx="12" cy="12" r="4" />
-                    <circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none" />
-                  </svg>
-                  Instagram
-                </button>
-
-                {siteConfig.email && (
-                  <button
-                    type="button"
-                    className="send-btn send-email"
-                    onClick={() => {
-                      const subj = encodeURIComponent('Workshop request — Botanica Garden');
-                      window.open(
-                        `mailto:${siteConfig.email}?subject=${subj}&body=${encodeURIComponent(generatedMsg)}`,
-                        '_blank'
-                      );
-                    }}
-                  >
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-                      <rect x="3" y="5" width="18" height="14" rx="2" />
-                      <path d="m3 7 9 6 9-6" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                    Email
-                  </button>
-                )}
-
-                <button
-                  type="button"
-                  className="send-btn send-copy"
-                  style={{ gridColumn: '1 / -1' }}
-                  onClick={copyToClipboard}
-                >
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-                    <rect x="9" y="9" width="11" height="11" rx="2" />
-                    <path d="M5 15V5a2 2 0 0 1 2-2h10" strokeLinecap="round" />
-                  </svg>
-                  <span>{t.m_copy}</span>
-                </button>
-              </div>
-
-              {copiedMessage && (
-                <div className="copied" style={{ display: 'block' }}>
-                  {t.m_copied}
+                  {confirmedBooking.paymentMethod === 'CASH' ? (
+                    <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-xs leading-6 text-emerald-900">
+                      <p className="font-bold">{lang === 'vn' ? 'Bạn đã chọn thanh toán khi đến.' : 'You chose to pay on arrival.'}</p>
+                      <p>{lang === 'vn'
+                        ? `Thông tin đặt lớp đã được lưu. Khi đến Botanica Garden, vui lòng cung cấp mã ${confirmedBooking.bookingCode} cho nhân viên; nhân viên sẽ cập nhật đơn đã thanh toán sau khi nhận tiền.`
+                        : `Your booking is saved. When you arrive at Botanica Garden, give booking code ${confirmedBooking.bookingCode} to the staff. They will mark it as paid after receiving payment.`}</p>
+                    </div>
+                  ) : confirmedBooking.paymentQrUrl ? (
+                    <div className="booking-success-qr grid gap-4 md:grid-cols-[180px_minmax(0,1fr)] md:items-center">
+                      <div className="booking-success-qr__image rounded-2xl border border-stone-200 bg-stone-50 p-3">
+                        <img
+                          src={confirmedBooking.paymentQrUrl}
+                          alt={lang === 'vn' ? 'Mã QR chuyển khoản' : 'Transfer QR code'}
+                          className="mx-auto w-full max-w-[180px] rounded-xl"
+                        />
+                      </div>
+                      <div className="booking-success-qr__details space-y-2 text-xs text-stone-700">
+                        <p className="font-bold text-stone-900">
+                          {lang === 'vn'
+                            ? 'Quét mã QR để chuyển khoản. Hệ thống sẽ tự động đối soát qua Casso và xác nhận thanh toán cho đơn này.'
+                            : 'Scan the QR to transfer payment. Casso will reconcile the transfer automatically and confirm this booking.'}
+                        </p>
+                        <div>
+                          <span className="font-semibold text-stone-500">{lang === 'vn' ? 'Ngân hàng / tài khoản: ' : 'Bank / account: '}</span>
+                          <span>{confirmedBooking.paymentBankId || '-'} · {confirmedBooking.paymentAccountNumber || '-'}</span>
+                        </div>
+                        {confirmedBooking.paymentAccountName && (
+                          <div>
+                            <span className="font-semibold text-stone-500">{lang === 'vn' ? 'Chủ tài khoản: ' : 'Account name: '}</span>
+                            <span>{confirmedBooking.paymentAccountName}</span>
+                          </div>
+                        )}
+                        {confirmedBooking.paymentTransferNote && (
+                          <div>
+                            <span className="font-semibold text-stone-500">{lang === 'vn' ? 'Nội dung chuyển khoản: ' : 'Transfer note: '}</span>
+                            <span className="font-mono font-bold text-emerald-800">{confirmedBooking.paymentTransferNote}</span>
+                          </div>
+                        )}
+                        {confirmedBooking.pickupLocation && (
+                          <div>
+                            <span className="font-semibold text-stone-500">{lang === 'vn' ? 'Điểm đón: ' : 'Pickup location: '}</span>
+                            <span>{confirmedBooking.pickupLocation}</span>
+                          </div>
+                        )}
+                        {confirmedBooking.paymentExpiresAt && (
+                          <div>
+                            <span className="font-semibold text-stone-500">{lang === 'vn' ? 'Hiệu lực QR đến: ' : 'QR expires at: '}</span>
+                            <span>{new Date(confirmedBooking.paymentExpiresAt).toLocaleString(lang === 'vn' ? 'vi-VN' : 'en-US')}</span>
+                          </div>
+                        )}
+                        <div className="booking-success-qr__email-note rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-amber-900">
+                          {lang === 'vn'
+                            ? `Sau khi Casso ghi nhận thanh toán thành công, hệ thống sẽ tự đổi trạng thái đơn và gửi email xác nhận tới ${confirmedBooking.customerEmail}.`
+                            : `Once Casso confirms the payment, the booking status will be updated automatically and a confirmation email will be sent to ${confirmedBooking.customerEmail}.`}
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+                      {lang === 'vn'
+                        ? 'Chưa cấu hình tài khoản nhận chuyển khoản để tạo mã QR. Vui lòng liên hệ Botanica Garden để nhận hướng dẫn thanh toán.'
+                        : 'The receiving bank account has not been configured for QR generation yet. Please contact Botanica Garden for payment instructions.'}
+                    </div>
+                  )}
                 </div>
               )}
 
-              <div className="mt-4 pt-3 border-t border-stone-200 text-center">
+              <div className="booking-success-actions mt-4 pt-3 border-t border-stone-200 text-center">
                 <button
                   type="button"
                   onClick={handleCloseModal}
@@ -1144,83 +1662,6 @@ export const BotanicaGardenPortal: React.FC<BotanicaGardenPortalProps> = ({
           )}
         </div>
       </div>
-
-      {/* ARTICLE READER MODAL (Xem chi tiết bài viết) */}
-      {isPostReaderOpen && selectedPost && (
-        <div className="modal open" style={{ zIndex: 110 }}>
-          <div className="modal-bg" onClick={handleClosePostReader} />
-          <div className="modal-card" style={{ maxWidth: '760px', maxHeight: '90vh', overflowY: 'auto', padding: '0', borderRadius: '24px' }}>
-            <div className="relative h-64 sm:h-72 w-full bg-stone-100">
-              <img
-                src={selectedPost.thumbnail}
-                alt={getPostTitle(selectedPost)}
-                className="w-full h-full object-cover"
-              />
-              <button
-                type="button"
-                onClick={handleClosePostReader}
-                className="absolute top-4 right-4 w-9 h-9 rounded-full bg-black/60 hover:bg-black/80 text-white flex items-center justify-center transition-colors cursor-pointer text-lg font-bold shadow-md"
-                title="Đóng bài viết"
-              >
-                ✕
-              </button>
-            </div>
-
-            {getPostImageLabel(selectedPost) && (
-              <p className="text-[10px] text-stone-400 font-medium italic text-right px-6 mt-1.5">
-                {getPostImageLabel(selectedPost)}
-              </p>
-            )}
-
-            <div className="p-6 sm:p-8">
-              <div className="flex flex-wrap items-center gap-2 text-xs text-stone-500 mb-3">
-                <span className="font-bold text-stone-800">{selectedPost.author}</span>
-                <span>•</span>
-                <span>{new Date(selectedPost.publishedAt).toLocaleDateString(lang === 'vn' ? 'vi-VN' : 'en-US', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
-                <span>•</span>
-                <span>{(selectedPost.viewCount || 0).toLocaleString()} lượt đọc</span>
-              </div>
-
-              <h2 className="text-2xl sm:text-3xl font-serif font-black text-stone-900 leading-snug mb-4">
-                {getPostTitle(selectedPost)}
-              </h2>
-
-              <div className="bg-amber-50/80 border-l-4 border-amber-600 p-4 rounded-r-xl text-xs sm:text-sm text-stone-700 italic leading-relaxed mb-6">
-                {getPostSummary(selectedPost)}
-              </div>
-
-              <div className="text-stone-700 text-sm leading-relaxed whitespace-pre-line space-y-4 mb-8">
-                {getPostContent(selectedPost)}
-              </div>
-
-              <div className="border-t border-stone-200 pt-5 flex flex-col sm:flex-row items-center justify-between gap-4">
-                <div className="text-xs text-stone-500 text-center sm:text-left">
-                  <span>Trải nghiệm thực tế tại Botanica Garden Hoi An</span>
-                </div>
-                <div className="flex items-center gap-3 w-full sm:w-auto">
-                  <button
-                    type="button"
-                    onClick={handleClosePostReader}
-                    className="flex-1 sm:flex-none px-4 py-2.5 rounded-xl border border-stone-300 text-xs font-bold text-stone-700 hover:bg-stone-100 transition-colors"
-                  >
-                    {lang === 'vn' ? 'Đóng lại' : 'Close'}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      handleClosePostReader();
-                      handleOpenModal();
-                    }}
-                    className="flex-1 sm:flex-none btn btn-primary py-2.5 text-xs font-bold"
-                  >
-                    {lang === 'vn' ? 'Đặt lớp trải nghiệm ngay' : 'Book a workshop'}
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

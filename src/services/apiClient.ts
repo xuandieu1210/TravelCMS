@@ -140,13 +140,17 @@ export const apiClient = {
     customerName: string;
     customerPhone: string;
     customerEmail: string;
+    pickupLocation?: string;
     departureDate: string;
+    preferredTimeSlot: NonNullable<Booking['preferredTimeSlot']>;
     numAdults: number;
     numChildren: number;
     numInfants: number;
     notes?: string;
     specialRequests?: string;
     paymentMethod?: Booking['paymentMethod'];
+    website?: string;
+    startedAt?: string;
   }) {
     try {
       const res = await fetch('/api/public/bookings', {
@@ -158,10 +162,31 @@ export const apiClient = {
         const json = await res.json();
         return json.data as Booking;
       }
+      const errorJson = await res.json().catch(() => null);
+      throw new Error(errorJson?.message || 'Could not submit your booking request.');
+    } catch (error) {
+      if (error instanceof Error) {
+        throw error;
+      }
+    }
+    return disabledLocalFallback.createPublicBooking(payload);
+  },
+
+  async createPublicFeedback(payload: Omit<CustomerFeedback, 'id' | 'createdAt' | 'isApproved' | 'isFeatured'> & { website?: string; startedAt?: string }) {
+    try {
+      const res = await fetch('/api/public/feedbacks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      if (res.ok) {
+        const json = await res.json();
+        return json.data as CustomerFeedback;
+      }
     } catch {
       // fallback
     }
-    return disabledLocalFallback.createPublicBooking(payload);
+    return disabledLocalFallback.createPublicFeedback(payload);
   },
 
   // Admin APIs
@@ -363,8 +388,12 @@ export const apiClient = {
         const json = await res.json();
         return json;
       }
-    } catch {
-      // fallback
+      const errorJson = await res.json().catch(() => null);
+      throw new Error(errorJson?.message || 'Không thể gửi email cho khách hàng.');
+    } catch (error) {
+      if (error instanceof Error) {
+        throw error;
+      }
     }
     return disabledLocalFallback.sendBookingEmail(id);
   },

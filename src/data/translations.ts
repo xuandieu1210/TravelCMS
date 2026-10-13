@@ -1,39 +1,3 @@
-export const publicContentTranslations = {
-  vn: {
-    feedbackComments: {
-      'fb-botanica-01': 'Trải nghiệm rất tuyệt. Người hướng dẫn ấm áp, thân thiện và giải thích mọi thứ rất dễ hiểu. Một nơi đẹp để trốn khỏi sự ồn ào.',
-      'fb-botanica-02': 'Nếu bạn yêu thiên nhiên, nơi này khiến bạn muốn chậm lại, hít thở và tận hưởng khoảnh khắc. Đội ngũ ở đây rất tâm huyết với điều họ làm.',
-      'fb-botanica-03': 'Một viên ngọc ẩn dành cho thủ công và văn hóa. Không chỉ là quán cà phê, mà còn là không gian để học hỏi và khám phá.',
-      'fb-botanica-04': 'Các cô hướng dẫn vô cùng tử tế, kiên nhẫn và hiếu khách. Không gian yên bình và ngập tràn cây xanh.',
-      'fb-botanica-05': 'Trong suốt năm tuần ở đây, chúng tôi đã quay lại hai lần mỗi tuần.',
-      'fb-03': 'Một dự án thực sự truyền cảm hứng. Việc tìm hiểu về kinh tế tuần hoàn ở Hội An và tự tay làm xà phòng thiên nhiên là trải nghiệm khó quên. Emic thể hiện rất rõ cam kết với các tiêu chuẩn Travelife.',
-    } as Record<string, string>,
-    feedbackCustomerNames: {
-      'fb-botanica-01': 'Khách lớp cà phê thảo mộc',
-      'fb-botanica-02': 'Khách tham quan vườn',
-      'fb-botanica-03': 'Khách lớp trải nghiệm',
-      'fb-botanica-04': 'Khách lớp Kokedama',
-      'fb-botanica-05': 'Khách quay lại',
-    } as Record<string, string>,
-  },
-  en: {
-    tourNames: {
-      'tour-01': 'My Son Sanctuary & Hoi An Countryside Jeep Tour',
-      'tour-02': 'Van Lang Fishing Village & Bay Mau Coconut Forest Basket Boat Eco Tour',
-      'tour-03': 'Sustainable Bio-Workshop: Organic Waste Recycling & Natural Soap Making',
-      'tour-04': 'Cam Kim Countryside & Kim Bong Traditional Carpentry Motorbike Tour',
-      'tour-05': 'Tra Que Vegetable Village Farmer Experience & Cooking Class Combo',
-    } as Record<string, string>,
-    feedbackComments: {
-      'fb-01': 'We had the best travel experience in Vietnam! The vintage Jeep was so cool, the driver was careful, and the guide explained Cham culture in such depth. Thank you, Emic Travel, for your thoughtful care!',
-      'fb-02': 'Our two kids loved catching crabs and learning to fold grasshoppers from coconut leaves. The highlight was the tour’s commitment to avoiding single-use plastic bottles and serving chilled water in reusable glass containers.',
-    } as Record<string, string>,
-    feedbackCustomerNames: {
-      'fb-02': "Lan Anh's family",
-    } as Record<string, string>,
-  },
-};
-
 export const translationsData = {
   en:{
     nav_workshops:"Workshops",nav_how:"How it works",nav_reviews:"Reviews",nav_stories:"Stories & Blog",nav_visit:"Visit",nav_book:"Book a workshop",
@@ -75,9 +39,9 @@ export const translationsData = {
     foot_tag:"A garden in Hoi An where travellers slow down, make something by hand, and take a little of Vietnam home.",
     foot_visit_t:"Visit",foot_dir:"Get directions",foot_hours:"Cafe open daily",foot_contact_t:"Get in touch",foot_book:"Book a workshop →",foot_made:"Made with care in the garden",
     m_title:"Request a workshop",m_sub:"Tell us what you'd like — no payment needed. We reply within a few hours.",
-    m_workshop:"Workshop",m_date:"Preferred date",m_adults:"Adults",m_kids:"Children",m_name:"Your name",m_note:"Anything else? (optional)",m_submit:"Continue",
+    m_workshop:"Workshop",m_date:"Preferred date",m_adults:"Adults",m_kids:"Children",m_name:"Your name",m_phone:"Phone number",m_email:"Email address",m_note:"Anything else? (optional)",m_submit:"Continue",
     m_send_intro:"Your request is ready. Send it to us by:",m_copy:"Copy my request",m_copied:"Copied! Paste it into Messenger or Instagram.",
-    msg_hi:"Hi Botanica Garden! I'd like to book a workshop.",msg_ws:"Workshop",msg_date:"Date",msg_adults:"Adults",msg_kids:"Children",msg_name:"Name",msg_note:"Note",msg_from:"(sent from your website)",msg_anyday:"Any day / flexible"
+    msg_hi:"Hi Botanica Garden! I'd like to book a workshop.",msg_ws:"Workshop",msg_date:"Date",msg_adults:"Adults",msg_kids:"Children",msg_name:"Name",msg_phone:"Phone",msg_email:"Email",msg_note:"Note",msg_from:"(sent from your website)",msg_anyday:"Any day / flexible"
   },
   vn:{
     nav_workshops:"Lớp trải nghiệm",nav_how:"Cách đặt lịch",nav_reviews:"Cảm nhận",nav_stories:"Bài viết",nav_visit:"Ghé thăm",nav_book:"Đặt lớp",
@@ -119,9 +83,9 @@ export const translationsData = {
     foot_tag:"Khu vườn ở Hội An, nơi du khách chậm lại, tự tay làm một món đồ và mang một chút Việt Nam về nhà.",
     foot_visit_t:"Ghé thăm",foot_dir:"Chỉ đường",foot_hours:"Quán mở cửa hằng ngày",foot_contact_t:"Liên hệ",foot_book:"Đặt lớp →",foot_made:"Được làm bằng tâm huyết trong vườn",
     m_title:"Đặt lớp trải nghiệm",m_sub:"Cho chúng tôi biết bạn muốn gì — không cần thanh toán. Chúng tôi phản hồi trong vài giờ.",
-    m_workshop:"Lớp học",m_date:"Ngày mong muốn",m_adults:"Người lớn",m_kids:"Trẻ em",m_name:"Tên của bạn",m_note:"Ghi chú thêm (tùy chọn)",m_submit:"Tiếp tục",
+    m_workshop:"Lớp học",m_date:"Ngày mong muốn",m_adults:"Người lớn",m_kids:"Trẻ em",m_name:"Tên của bạn",m_phone:"Số điện thoại",m_email:"Email",m_note:"Ghi chú thêm (tùy chọn)",m_submit:"Tiếp tục",
     m_send_intro:"Yêu cầu của bạn đã sẵn sàng. Gửi cho chúng tôi qua:",m_copy:"Sao chép yêu cầu",m_copied:"Đã sao chép! Dán vào Messenger hoặc Instagram.",
-    msg_hi:"Chào Botanica Garden! Tôi muốn đặt một lớp trải nghiệm.",msg_ws:"Lớp",msg_date:"Ngày",msg_adults:"Người lớn",msg_kids:"Trẻ em",msg_name:"Tên",msg_note:"Ghi chú",msg_from:"(gửi từ website của bạn)",msg_anyday:"Ngày bất kỳ / linh hoạt"
+    msg_hi:"Chào Botanica Garden! Tôi muốn đặt một lớp trải nghiệm.",msg_ws:"Lớp",msg_date:"Ngày",msg_adults:"Người lớn",msg_kids:"Trẻ em",msg_name:"Tên",msg_phone:"Điện thoại",msg_email:"Email",msg_note:"Ghi chú",msg_from:"(gửi từ website của bạn)",msg_anyday:"Ngày bất kỳ / linh hoạt"
   }
 };
 export default translationsData;

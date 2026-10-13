@@ -164,6 +164,11 @@ export const BookingDetailModal: React.FC<BookingDetailModalProps> = ({
             <div>
               <span className="text-stone-400 block font-medium">Ngày khởi hành</span>
               <span className="font-bold text-emerald-800">{booking.departureDate}</span>
+              {booking.preferredTimeSlot && (
+                <span className="block text-[11px] font-semibold text-stone-600">
+                  {booking.preferredTimeSlot === 'AFTERNOON' ? 'Buổi chiều (13:00 - 17:00)' : 'Buổi sáng (08:00 - 12:00)'}
+                </span>
+              )}
             </div>
             <div>
               <span className="text-stone-400 block font-medium">Số lượng khách</span>
@@ -249,6 +254,12 @@ export const BookingDetailModal: React.FC<BookingDetailModalProps> = ({
               <div>
                 <span className="text-stone-400 block">Email</span>
                 <span className="text-stone-800">{booking.customerEmail}</span>
+              </div>
+              <div className="sm:col-span-3">
+                <span className="text-stone-400 block">Địa điểm đón khách</span>
+                <span className="text-stone-800">
+                  {booking.pickupLocation || <span className="text-stone-400 italic">Khách chưa cung cấp điểm đón</span>}
+                </span>
               </div>
             </div>
           </div>

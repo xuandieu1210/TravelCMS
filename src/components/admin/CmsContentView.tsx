@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { lazy, Suspense, useState, useMemo, useEffect } from 'react';
 import { Banner, Post, CustomerFeedback, SiteConfig, Tour } from '../../types';
 import {
   FileText,
@@ -19,8 +19,11 @@ import {
   Search,
   BookOpen,
 } from 'lucide-react';
-import { publicContentTranslations } from '../../data/translations';
 import { ImageUploadField } from '../common/ImageUploadField';
+import { RichTextEditorBoundary } from './RichTextEditorBoundary';
+import { toSafePostHtml } from '../../utils/postContent';
+
+const RichTextEditor = lazy(() => import('./RichTextEditor').then((module) => ({ default: module.RichTextEditor })));
 
 interface CmsContentViewProps {
   banners: Banner[];
@@ -41,6 +44,14 @@ interface CmsContentViewProps {
   onUpdateBanner?: (id: string, banner: Partial<Banner>) => void;
   onDeleteBanner?: (id: string) => void;
 }
+
+const isVideoMediaUrl = (value?: string | null) => {
+  if (!value) {
+    return false;
+  }
+
+  return /^(data:video\/)|\.(mp4|webm|ogg|mov)(\?|#|$)/i.test(value);
+};
 
 export const CmsContentView: React.FC<CmsContentViewProps> = ({
   banners,
@@ -384,7 +395,7 @@ export const CmsContentView: React.FC<CmsContentViewProps> = ({
       tourName: fb.tourName,
       rating: fb.rating,
       comment: fb.comment,
-      commentEn: fb.commentEn || publicContentTranslations.en.feedbackComments[fb.id] || '',
+      commentEn: fb.commentEn || '',
       isApproved: fb.isApproved,
       isFeatured: fb.isFeatured,
     });
@@ -560,7 +571,11 @@ export const CmsContentView: React.FC<CmsContentViewProps> = ({
                 className="bg-white rounded-2xl border border-stone-200 overflow-hidden shadow-2xs hover:shadow-md transition-shadow flex flex-col justify-between"
               >
                 <div className="relative h-48 bg-stone-100">
-                  <img src={b.imageUrl} alt={b.title} className="w-full h-full object-cover" />
+                  {isVideoMediaUrl(b.imageUrl) ? (
+                    <video src={b.imageUrl} className="w-full h-full object-cover" muted loop playsInline autoPlay />
+                  ) : (
+                    <img src={b.imageUrl} alt={b.title} className="w-full h-full object-cover" />
+                  )}
                   <span
                     className={`absolute top-3 right-3 text-[10px] font-bold px-2.5 py-1 rounded-full ${
                       b.isActive ? 'bg-emerald-600 text-white' : 'bg-stone-800/80 text-stone-300'
@@ -843,7 +858,7 @@ export const CmsContentView: React.FC<CmsContentViewProps> = ({
                     <strong>VI:</strong> {fb.comment}
                   </p>
                   <p className="text-xs text-stone-700 italic leading-relaxed mb-4 bg-stone-50/50 p-3 rounded-xl border border-stone-100">
-                    <strong>EN:</strong> {fb.commentEn || publicContentTranslations.en.feedbackComments[fb.id] || 'Chưa có bản dịch tiếng Anh'}
+                    <strong>EN:</strong> {fb.commentEn || 'Chưa có bản dịch tiếng Anh'}
                   </p>
 
                   <div className="text-[11px] text-stone-600 bg-emerald-50/60 border border-emerald-100/80 p-2.5 rounded-xl mb-4 flex items-center gap-1.5">
@@ -1183,24 +1198,39 @@ export const CmsContentView: React.FC<CmsContentViewProps> = ({
 
               <div>
                 <label className="block font-bold text-stone-700 mb-1">Nội Dung Chi Tiết (Tiếng Việt)</label>
-                <textarea
-                  rows={5}
+                <RichTextEditorBoundary
+                  label="Nội Dung Chi Tiết (Tiếng Việt)"
+                  language="vi"
                   value={postFormData.content}
-                  onChange={(e) => setPostFormData({ ...postFormData, content: e.target.value })}
-                  placeholder="Nội dung bài viết..."
-                  className="w-full p-2.5 rounded-xl border border-stone-200 text-xs resize-none focus:border-emerald-600 outline-none"
-                />
+                  onChange={(content) => setPostFormData((current) => ({ ...current, content }))}
+                >
+                  <Suspense fallback={<div className="h-48 animate-pulse rounded-xl border border-stone-200 bg-stone-50" />}>
+                    <RichTextEditor
+                      label="Nội Dung Chi Tiết (Tiếng Việt)"
+                      language="vi"
+                      value={postFormData.content}
+                      onChange={(content) => setPostFormData((current) => ({ ...current, content }))}
+                    />
+                  </Suspense>
+                </RichTextEditorBoundary>
               </div>
 
               <div>
-                <label className="block font-bold text-stone-700 mb-1">Content (English)</label>
-                <textarea
-                  rows={5}
+                <RichTextEditorBoundary
+                  label="Content (English)"
+                  language="en"
                   value={postFormData.contentEn}
-                  onChange={(e) => setPostFormData({ ...postFormData, contentEn: e.target.value })}
-                  placeholder="English article content..."
-                  className="w-full p-2.5 rounded-xl border border-stone-200 text-xs resize-none focus:border-emerald-600 outline-none"
-                />
+                  onChange={(contentEn) => setPostFormData((current) => ({ ...current, contentEn }))}
+                >
+                  <Suspense fallback={<div className="h-48 animate-pulse rounded-xl border border-stone-200 bg-stone-50" />}>
+                    <RichTextEditor
+                      label="Content (English)"
+                      language="en"
+                      value={postFormData.contentEn}
+                      onChange={(contentEn) => setPostFormData((current) => ({ ...current, contentEn }))}
+                    />
+                  </Suspense>
+                </RichTextEditorBoundary>
               </div>
 
               <div>
@@ -1538,8 +1568,10 @@ export const CmsContentView: React.FC<CmsContentViewProps> = ({
                     {previewingPost.summary || previewingPost.summaryEn || 'Chưa có tóm tắt'}
                   </div>
 
-                  <div className="text-stone-700 text-xs sm:text-sm leading-relaxed whitespace-pre-line space-y-3 pt-1">
-                    {previewingPost.content || previewingPost.contentEn || 'Chưa có nội dung'}
+                  <div className="space-y-3 pt-1 text-stone-700 text-xs sm:text-sm leading-relaxed">
+                    {previewingPost.content || previewingPost.contentEn
+                      ? <div dangerouslySetInnerHTML={{ __html: toSafePostHtml(previewingPost.content || previewingPost.contentEn || '') }} />
+                      : 'Chưa có nội dung'}
                   </div>
 
                   {(previewingPost.guestReview || previewingPost.guestReviewEn) && (
@@ -1577,8 +1609,10 @@ export const CmsContentView: React.FC<CmsContentViewProps> = ({
                     {previewingPost.summaryEn || previewingPost.summary || 'No summary yet'}
                   </div>
 
-                  <div className="text-stone-700 text-xs sm:text-sm leading-relaxed whitespace-pre-line space-y-3 pt-1">
-                    {previewingPost.contentEn || previewingPost.content || 'No content yet'}
+                  <div className="space-y-3 pt-1 text-stone-700 text-xs sm:text-sm leading-relaxed">
+                    {previewingPost.contentEn || previewingPost.content
+                      ? <div dangerouslySetInnerHTML={{ __html: toSafePostHtml(previewingPost.contentEn || previewingPost.content || '') }} />
+                      : 'No content yet'}
                   </div>
 
                   {(previewingPost.guestReviewEn || previewingPost.guestReview) && (
@@ -1782,11 +1816,16 @@ export const CmsContentView: React.FC<CmsContentViewProps> = ({
                 </div>
 
                 <ImageUploadField
-                  label="Ảnh Nền Banner / Background Image"
+                  label="Banner Media URL / Anh nen hoac video"
                   value={bannerFormData.imageUrl}
                   onChange={(url) => setBannerFormData({ ...bannerFormData, imageUrl: url })}
-                  folder="OTHER"
+                  folder="BANNERS"
+                  recommendedSize="1600x700px tro len, hoac URL mp4/webm/ogg/gif"
+                  aspectRatio="banner"
                 />
+                <p className="-mt-1 text-[11px] leading-5 text-stone-500">
+                  Dung upload cho anh tinh/GIF. Neu muon banner video, hay bat o Nhap URL va dan link truc tiep toi file mp4, webm, ogg hoac mov.
+                </p>
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
@@ -1845,11 +1884,26 @@ export const CmsContentView: React.FC<CmsContentViewProps> = ({
                 <div
                   className="relative rounded-2xl overflow-hidden aspect-[4/3] bg-stone-900 text-white p-6 flex flex-col justify-end bg-cover bg-center border border-stone-200 shadow-sm"
                   style={{
-                    backgroundImage: `linear-gradient(to top, rgba(0, 0, 0, 0.85), rgba(0, 0, 0, 0.2)), url('${
-                      bannerFormData.imageUrl || '/images/img_0.jpeg'
-                    }')`,
+                    backgroundImage: isVideoMediaUrl(bannerFormData.imageUrl)
+                      ? 'none'
+                      : `linear-gradient(to top, rgba(0, 0, 0, 0.85), rgba(0, 0, 0, 0.2)), url('${
+                          bannerFormData.imageUrl || '/images/img_0.jpeg'
+                        }')`,
                   }}
                 >
+                  {isVideoMediaUrl(bannerFormData.imageUrl) && (
+                    <>
+                      <video
+                        src={bannerFormData.imageUrl}
+                        className="absolute inset-0 h-full w-full object-cover"
+                        muted
+                        loop
+                        playsInline
+                        autoPlay
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/35 to-black/10" />
+                    </>
+                  )}
                   <div className="space-y-2">
                       <div className="space-y-1 pb-2 border-b border-white/10">
                         <div className="text-[10px] font-bold uppercase tracking-wider text-stone-300">Vietnamese</div>
