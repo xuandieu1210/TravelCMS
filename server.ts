@@ -4,6 +4,7 @@ import 'dotenv/config';
 import { Pool } from 'pg';
 import { createHmac, randomBytes, scryptSync, timingSafeEqual } from 'crypto';
 import nodemailer, { type Transporter } from 'nodemailer';
+import { PayOS } from '@payos/node';
 
 import path from 'path';
 import fs from 'fs';
@@ -119,6 +120,15 @@ const cassoConfig = {
   webhookSecret: String(process.env.CASSO_WEBHOOK_SECRET || '').trim(),
 };
 
+const payosConfig = {
+  clientId: String(process.env.PAYOS_CLIENT_ID || '').trim(),
+  apiKey: String(process.env.PAYOS_API_KEY || '').trim(),
+  checksumKey: String(process.env.PAYOS_CHECKSUM_KEY || '').trim(),
+  appUrl: String(process.env.APP_URL || '').trim(),
+};
+
+let cachedPayOSClient: PayOS | null | undefined;
+
 const mailConfig = {
   host: String(process.env.SMTP_HOST || '').trim(),
   port: Number(process.env.SMTP_PORT || 587),
@@ -175,18 +185,92 @@ function buildPaymentQrUrl(amount: number, addInfo: string): string | undefined 
   return `https://img.vietqr.io/image/${paymentConfig.bankId}-${paymentConfig.accountNumber}-${paymentConfig.qrTemplate}.jpg?${params.toString()}`;
 }
 
-function createBookingPaymentDetails(bookingCode: string, amount: number) {
-  const paymentTransferNote = buildTransferNote(bookingCode);
-  const paymentQrUrl = buildPaymentQrUrl(amount, paymentTransferNote);
+function getPayOSClient(): PayOS | null {
+  if (cachedPayOSClient !== undefined) {
+    return cachedPayOSClient;
+  }
+
+  if (!payosConfig.clientId || !payosConfig.apiKey || !payosConfig.checksumKey) {
+    cachedPayOSClient = null;
+    return cachedPayOSClient;
+  }
+
+  cachedPayOSClient = new PayOS({
+    clientId: payosConfig.clientId,
+    apiKey: payosConfig.apiKey,
+    checksumKey: payosConfig.checksumKey,
+  });
+  return cachedPayOSClient;
+}
+
+function getPayOSReturnUrl(result: 'success' | 'cancelled', orderCode: number): string {
+  let baseUrl: URL;
+  try {
+    baseUrl = new URL(payosConfig.appUrl);
+  } catch {
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('APP_URL phải là URL HTTPS hợp lệ để sử dụng payOS.');
+    }
+    baseUrl = new URL(`http://localhost:${PORT}`);
+  }
+
+  baseUrl.pathname = '/';
+  baseUrl.searchParams.set('payos', result);
+  baseUrl.searchParams.set('orderCode', String(orderCode));
+  return baseUrl.toString();
+}
+
+function generateUniquePayOSOrderCode(): number {
+  let orderCode = Date.now();
+  const existingCodes = new Set(bookings.map((booking) => Number(booking.payosOrderCode)).filter(Number.isSafeInteger));
+  while (existingCodes.has(orderCode)) {
+    orderCode += 1;
+  }
+  return orderCode;
+}
+
+async function createPayOSPaymentDetails(input: {
+  orderCode: number;
+  bookingCode: string;
+  amount: number;
+  tourName: string;
+  customerName: string;
+  customerEmail: string;
+  customerPhone: string;
+}) {
+  const payos = getPayOSClient();
+  if (!payos) {
+    throw new Error('Chưa cấu hình PAYOS_CLIENT_ID, PAYOS_API_KEY và PAYOS_CHECKSUM_KEY.');
+  }
+
+  if (!Number.isSafeInteger(input.amount) || input.amount <= 0) {
+    throw new Error('Số tiền cần thanh toán qua payOS phải lớn hơn 0.');
+  }
+
+  const description = `BG${String(input.orderCode).slice(-7)}`;
+  const result = await payos.paymentRequests.create({
+    orderCode: input.orderCode,
+    amount: input.amount,
+    description,
+    buyerName: input.customerName,
+    buyerEmail: input.customerEmail,
+    buyerPhone: input.customerPhone,
+    cancelUrl: getPayOSReturnUrl('cancelled', input.orderCode),
+    returnUrl: getPayOSReturnUrl('success', input.orderCode),
+    expiredAt: Math.floor(Date.now() / 1000) + paymentConfig.qrExpiresMinutes * 60,
+  });
 
   return {
-    paymentQrUrl,
-    paymentTransferNote,
-    paymentAccountName: paymentConfig.accountName || undefined,
-    paymentAccountNumber: paymentConfig.accountNumber || undefined,
-    paymentBankId: paymentConfig.bankId || undefined,
-    paymentExpiresAt: paymentQrUrl
-      ? new Date(Date.now() + paymentConfig.qrExpiresMinutes * 60 * 1000).toISOString()
+    payosOrderCode: result.orderCode,
+    payosPaymentLinkId: result.paymentLinkId,
+    paymentQrCode: result.qrCode,
+    paymentCheckoutUrl: result.checkoutUrl,
+    paymentTransferNote: result.description,
+    paymentAccountName: result.accountName,
+    paymentAccountNumber: result.accountNumber,
+    paymentBankId: result.bin,
+    paymentExpiresAt: result.expiredAt
+      ? new Date(result.expiredAt * 1000).toISOString()
       : undefined,
   };
 }
@@ -612,7 +696,7 @@ app.get('/api/public/media/latest', (_req: Request, res: Response) => {
 });
 
 // POST /api/public/bookings
-app.post('/api/public/bookings', (req: Request, res: Response) => {
+app.post('/api/public/bookings', async (req: Request, res: Response) => {
   const payload = req.body || {};
   const requesterIp = req.ip || req.socket.remoteAddress || 'unknown';
   const now = Date.now();
@@ -674,22 +758,48 @@ app.post('/api/public/bookings', (req: Request, res: Response) => {
   let tourName = '';
   let adultPrice = 0;
   let childPrice = 0;
+  let selectedTour: any;
 
   if (payload.tourId) {
     const tour = tours.find((t) => t.id === payload.tourId);
     if (tour) {
+      selectedTour = tour;
       tourName = tour.name;
       adultPrice = tour.pricing.adultPrice;
       childPrice = tour.pricing.childPrice;
-      tour.bookingCount += 1;
     }
   }
 
   const totalAmount = payload.numAdults * adultPrice + (payload.numChildren || 0) * childPrice;
   const finalAmount = totalAmount;
-  const paymentDetails = (payload.paymentMethod || 'BANK_TRANSFER') === 'BANK_TRANSFER'
-    ? createBookingPaymentDetails(bookingCode, finalAmount)
-    : {};
+  const paymentMethod = payload.paymentMethod || 'BANK_TRANSFER';
+  let payosOrderCode: number | undefined;
+  let paymentDetails: Record<string, unknown> = {};
+
+  if (paymentMethod === 'BANK_TRANSFER' && finalAmount > 0) {
+    payosOrderCode = generateUniquePayOSOrderCode();
+    try {
+      paymentDetails = await createPayOSPaymentDetails({
+        orderCode: payosOrderCode,
+        bookingCode,
+        amount: finalAmount,
+        tourName: tourName || 'Botanica Workshop',
+        customerName: String(payload.customerName),
+        customerEmail: normalizedEmail,
+        customerPhone: normalizedPhone,
+      });
+    } catch (error) {
+      console.error('Failed to create PayOS payment link:', error);
+      return res.status(502).json({
+        success: false,
+        message: error instanceof Error ? error.message : 'Không thể tạo link thanh toán payOS. Vui lòng thử lại.',
+      });
+    }
+  }
+
+  if (selectedTour) {
+    selectedTour.bookingCount += 1;
+  }
 
   recentAttempts.push(now);
   publicBookingAttempts.set(requesterIp, recentAttempts);
@@ -738,9 +848,10 @@ app.post('/api/public/bookings', (req: Request, res: Response) => {
     totalAmount,
     discountAmount: 0,
     finalAmount,
-    paymentMethod: payload.paymentMethod || 'BANK_TRANSFER',
+    paymentMethod,
     paymentStatus: 'UNPAID' as const,
     status: 'NEW' as const,
+    payosOrderCode,
     ...paymentDetails,
     notes: payload.notes,
     specialRequests: payload.specialRequests,
@@ -770,6 +881,89 @@ app.post('/api/public/bookings', (req: Request, res: Response) => {
   });
 
   res.status(201).json({ success: true, data: newBooking, message: 'Đặt tour thành công!' });
+});
+
+app.post('/api/payos/webhook', async (req: Request, res: Response) => {
+  const payos = getPayOSClient();
+  if (!payos) {
+    return res.status(503).json({ code: 'PAYOS_NOT_CONFIGURED', desc: 'PayOS credentials are missing', success: false });
+  }
+
+  let transaction;
+  try {
+    transaction = await payos.webhooks.verify(req.body);
+  } catch (error) {
+    console.warn('Rejected invalid PayOS webhook signature:', error instanceof Error ? error.message : 'Invalid signature');
+    return res.status(401).json({ code: 'INVALID_SIGNATURE', desc: 'Invalid PayOS signature', success: false });
+  }
+
+  if (req.body?.success !== true || String(transaction.code) !== '00') {
+    return res.status(200).json({ code: '00', desc: 'Webhook received', success: true });
+  }
+
+  const booking = bookings.find((candidate) => Number(candidate.payosOrderCode) === Number(transaction.orderCode));
+  if (!booking) {
+    return res.status(200).json({ code: '00', desc: 'No matching booking', success: true });
+  }
+
+  const reference = String(transaction.reference || '').trim();
+  if (reference && booking.paymentReference === reference && booking.paymentStatus === 'PAID') {
+    return res.status(200).json({ code: '00', desc: 'Payment already processed', success: true });
+  }
+
+  const receivedAmount = Number(transaction.amount || 0);
+  if (receivedAmount <= 0) {
+    return res.status(200).json({ code: '00', desc: 'No payment amount', success: true });
+  }
+
+  booking.paymentReference = reference || booking.paymentReference;
+  booking.payosPaymentLinkId = String(transaction.paymentLinkId || booking.payosPaymentLinkId || '');
+  booking.paymentReceivedAt = transaction.transactionDateTime || new Date().toISOString();
+  booking.updatedAt = new Date().toISOString();
+
+  if (receivedAmount >= Number(booking.finalAmount || 0)) {
+    booking.paymentStatus = 'PAID';
+    booking.status = 'PAID';
+    booking.confirmedAt = booking.confirmedAt || new Date().toISOString();
+    booking.confirmedBy = booking.confirmedBy || 'PayOS Webhook';
+  } else {
+    booking.paymentStatus = 'PARTIALLY_PAID';
+    if (booking.status === 'NEW') {
+      booking.status = 'CONFIRMED';
+    }
+  }
+
+  await saveToFirestore('bookings', booking.id, booking);
+  auditLogs.unshift({
+    id: `log-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+    userName: 'PayOS Webhook',
+    userRole: 'SYSTEM',
+    action: 'STATUS_CHANGE',
+    entityName: 'Booking',
+    entityId: booking.bookingCode,
+    description: booking.paymentStatus === 'PAID'
+      ? `Da ghi nhan thanh toan payOS cho don ${booking.bookingCode}`
+      : `Da ghi nhan thanh toan mot phan qua payOS cho don ${booking.bookingCode}`,
+    timestamp: new Date().toISOString(),
+  });
+
+  if (booking.paymentStatus === 'PAID') {
+    const emailResult = await sendBookingConfirmationEmail(booking, 'paid');
+    auditLogs.unshift({
+      id: `log-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+      userName: 'PayOS Webhook',
+      userRole: 'SYSTEM',
+      action: 'EMAIL',
+      entityName: 'Booking',
+      entityId: booking.bookingCode,
+      description: emailResult.success
+        ? `Da gui email xac nhan thanh toan cho ${booking.customerEmail}`
+        : `Khong gui duoc email xac nhan thanh toan: ${emailResult.message}`,
+      timestamp: new Date().toISOString(),
+    });
+  }
+
+  return res.status(200).json({ code: '00', desc: 'success', success: true });
 });
 
 app.post('/api/payments/casso/webhook', async (req: Request, res: Response) => {

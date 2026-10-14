@@ -183,6 +183,10 @@ export interface Booking {
   paymentAccountName?: string;
   paymentAccountNumber?: string;
   paymentBankId?: string;
+  paymentQrCode?: string;
+  paymentCheckoutUrl?: string;
+  payosOrderCode?: number;
+  payosPaymentLinkId?: string;
   paymentExpiresAt?: string;
   paymentReceivedAt?: string;
   paymentReference?: string;

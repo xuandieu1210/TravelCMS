@@ -3,6 +3,7 @@ import { Tour, CustomerFeedback, Banner, SiteConfig, Booking, Category, Post } f
 import { translationsData } from '../../data/translations';
 import { apiClient } from '../../services/apiClient';
 import { getPlainTextPostContent } from '../../utils/postContent';
+import { QRCodeSVG } from 'qrcode.react';
 
 type TourReviewSnippet = {
   id: string;
@@ -1586,21 +1587,42 @@ export const BotanicaGardenPortal: React.FC<BotanicaGardenPortalProps> = ({
                         ? `Thông tin đặt lớp đã được lưu. Khi đến Botanica Garden, vui lòng cung cấp mã ${confirmedBooking.bookingCode} cho nhân viên; nhân viên sẽ cập nhật đơn đã thanh toán sau khi nhận tiền.`
                         : `Your booking is saved. When you arrive at Botanica Garden, give booking code ${confirmedBooking.bookingCode} to the staff. They will mark it as paid after receiving payment.`}</p>
                     </div>
-                  ) : confirmedBooking.paymentQrUrl ? (
+                  ) : confirmedBooking.paymentQrCode || confirmedBooking.paymentQrUrl ? (
                     <div className="booking-success-qr grid gap-4 md:grid-cols-[180px_minmax(0,1fr)] md:items-center">
                       <div className="booking-success-qr__image rounded-2xl border border-stone-200 bg-stone-50 p-3">
-                        <img
-                          src={confirmedBooking.paymentQrUrl}
-                          alt={lang === 'vn' ? 'Mã QR chuyển khoản' : 'Transfer QR code'}
-                          className="mx-auto w-full max-w-[180px] rounded-xl"
-                        />
+                        {confirmedBooking.paymentQrCode ? (
+                          <QRCodeSVG
+                            value={confirmedBooking.paymentQrCode}
+                            size={180}
+                            level="M"
+                            includeMargin
+                            className="mx-auto h-auto max-w-full rounded-xl"
+                            aria-label={lang === 'vn' ? 'Mã QR thanh toán payOS' : 'PayOS payment QR code'}
+                          />
+                        ) : (
+                          <img
+                            src={confirmedBooking.paymentQrUrl}
+                            alt={lang === 'vn' ? 'Mã QR chuyển khoản' : 'Transfer QR code'}
+                            className="mx-auto w-full max-w-[180px] rounded-xl"
+                          />
+                        )}
                       </div>
                       <div className="booking-success-qr__details space-y-2 text-xs text-stone-700">
                         <p className="font-bold text-stone-900">
                           {lang === 'vn'
-                            ? 'Quét mã QR để chuyển khoản. Hệ thống sẽ tự động đối soát qua Casso và xác nhận thanh toán cho đơn này.'
-                            : 'Scan the QR to transfer payment. Casso will reconcile the transfer automatically and confirm this booking.'}
+                            ? 'Quét mã QR payOS hoặc mở trang thanh toán. payOS sẽ tự đối soát và cập nhật trạng thái đơn.'
+                            : 'Scan the payOS QR or open the checkout page. payOS will reconcile the payment and update this booking.'}
                         </p>
+                        {confirmedBooking.paymentCheckoutUrl && (
+                          <a
+                            href={confirmedBooking.paymentCheckoutUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="inline-flex items-center justify-center rounded-lg bg-emerald-700 px-3 py-2 font-bold text-white transition hover:bg-emerald-800"
+                          >
+                            {lang === 'vn' ? 'Mở trang thanh toán payOS' : 'Open payOS checkout'}
+                          </a>
+                        )}
                         <div>
                           <span className="font-semibold text-stone-500">{lang === 'vn' ? 'Ngân hàng / tài khoản: ' : 'Bank / account: '}</span>
                           <span>{confirmedBooking.paymentBankId || '-'} · {confirmedBooking.paymentAccountNumber || '-'}</span>
@@ -1631,16 +1653,16 @@ export const BotanicaGardenPortal: React.FC<BotanicaGardenPortalProps> = ({
                         )}
                         <div className="booking-success-qr__email-note rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-amber-900">
                           {lang === 'vn'
-                            ? `Sau khi Casso ghi nhận thanh toán thành công, hệ thống sẽ tự đổi trạng thái đơn và gửi email xác nhận tới ${confirmedBooking.customerEmail}.`
-                            : `Once Casso confirms the payment, the booking status will be updated automatically and a confirmation email will be sent to ${confirmedBooking.customerEmail}.`}
+                            ? `Sau khi payOS xác nhận thanh toán, hệ thống sẽ tự đổi trạng thái đơn và gửi email tới ${confirmedBooking.customerEmail}.`
+                            : `Once payOS confirms payment, the booking status will update automatically and an email will be sent to ${confirmedBooking.customerEmail}.`}
                         </div>
                       </div>
                     </div>
                   ) : (
                     <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
                       {lang === 'vn'
-                        ? 'Chưa cấu hình tài khoản nhận chuyển khoản để tạo mã QR. Vui lòng liên hệ Botanica Garden để nhận hướng dẫn thanh toán.'
-                        : 'The receiving bank account has not been configured for QR generation yet. Please contact Botanica Garden for payment instructions.'}
+                        ? 'Chưa có dữ liệu QR payOS cho đơn này. Vui lòng liên hệ Botanica Garden để được hỗ trợ thanh toán.'
+                        : 'No payOS QR data is available for this booking. Please contact Botanica Garden for payment support.'}
                     </div>
                   )}
                 </div>
