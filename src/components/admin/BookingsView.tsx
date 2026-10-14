@@ -12,6 +12,8 @@ import {
   Printer,
   XCircle,
   MessageSquare,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 import { BookingDetailModal } from './BookingDetailModal';
 
@@ -30,7 +32,22 @@ export const BookingsView: React.FC<BookingsViewProps> = ({
 }) => {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
+  const [dateField, setDateField] = useState<'departureDate' | 'createdAt'>('departureDate');
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
+  const [currentPage, setCurrentPage] = useState(0);
+  const [pageSize, setPageSize] = useState(10);
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
+
+  const getBookingDate = (booking: Booking) => {
+    if (dateField === 'departureDate') {
+      return String(booking.departureDate || '').slice(0, 10);
+    }
+
+    const createdAt = new Date(booking.createdAt);
+    if (Number.isNaN(createdAt.getTime())) return '';
+    return [createdAt.getFullYear(), String(createdAt.getMonth() + 1).padStart(2, '0'), String(createdAt.getDate()).padStart(2, '0')].join('-');
+  };
 
   // Filter bookings (including customer notes & special requests)
   const filteredBookings = bookings.filter((b) => {
@@ -44,8 +61,15 @@ export const BookingsView: React.FC<BookingsViewProps> = ({
       (b.notes && b.notes.toLowerCase().includes(term)) ||
       (b.specialRequests && b.specialRequests.toLowerCase().includes(term));
     const matchStatus = statusFilter === 'ALL' || b.status === statusFilter;
-    return matchSearch && matchStatus;
-  });
+    const bookingDate = getBookingDate(b);
+    const matchDateFrom = !dateFrom || (bookingDate && bookingDate >= dateFrom);
+    const matchDateTo = !dateTo || (bookingDate && bookingDate <= dateTo);
+    return matchSearch && matchStatus && matchDateFrom && matchDateTo;
+  }).sort((left, right) => Date.parse(right.createdAt) - Date.parse(left.createdAt));
+
+  const pageCount = Math.max(1, Math.ceil(filteredBookings.length / pageSize));
+  const safeCurrentPage = Math.min(currentPage, pageCount - 1);
+  const pageBookings = filteredBookings.slice(safeCurrentPage * pageSize, (safeCurrentPage + 1) * pageSize);
 
   // Export to CSV
   const handleExportCSV = () => {
@@ -142,16 +166,70 @@ export const BookingsView: React.FC<BookingsViewProps> = ({
 
       {/* Filter and Search Bar */}
       <div className="bg-white p-4 rounded-2xl border border-stone-200 shadow-2xs flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-2 flex-1 min-w-[260px]">
-          <div className="relative flex-1">
+        <div className="flex flex-1 flex-wrap items-center gap-3">
+          <div className="relative min-w-[240px] flex-1">
             <Search className="w-4 h-4 text-stone-400 absolute left-3 top-2.5" />
             <input
               type="text"
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setCurrentPage(0);
+              }}
               placeholder="Tìm theo mã đơn, họ tên khách, số điện thoại, email, địa chỉ đón..."
               className="w-full pl-9 pr-3 py-2 rounded-xl border border-stone-200 text-xs focus:outline-emerald-600"
             />
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <label className="text-[11px] font-semibold text-stone-500" htmlFor="booking-date-field">Lọc ngày</label>
+            <select
+              id="booking-date-field"
+              value={dateField}
+              onChange={(e) => {
+                setDateField(e.target.value as 'departureDate' | 'createdAt');
+                setCurrentPage(0);
+              }}
+              className="rounded-lg border border-stone-200 bg-white px-2.5 py-2 text-xs font-semibold text-stone-800"
+            >
+              <option value="departureDate">Ngày khởi hành</option>
+              <option value="createdAt">Ngày đặt</option>
+            </select>
+            <input
+              type="date"
+              aria-label="Từ ngày"
+              title="Từ ngày"
+              value={dateFrom}
+              onChange={(e) => {
+                setDateFrom(e.target.value);
+                setCurrentPage(0);
+              }}
+              className="rounded-lg border border-stone-200 bg-white px-2 py-2 text-xs text-stone-700"
+            />
+            <span className="text-[11px] text-stone-400">đến</span>
+            <input
+              type="date"
+              aria-label="Đến ngày"
+              title="Đến ngày"
+              value={dateTo}
+              onChange={(e) => {
+                setDateTo(e.target.value);
+                setCurrentPage(0);
+              }}
+              className="rounded-lg border border-stone-200 bg-white px-2 py-2 text-xs text-stone-700"
+            />
+            {(dateFrom || dateTo) && (
+              <button
+                type="button"
+                onClick={() => {
+                  setDateFrom('');
+                  setDateTo('');
+                  setCurrentPage(0);
+                }}
+                className="text-xs font-semibold text-emerald-700 hover:text-emerald-900"
+              >
+                Xóa ngày lọc
+              </button>
+            )}
           </div>
         </div>
 
@@ -160,7 +238,10 @@ export const BookingsView: React.FC<BookingsViewProps> = ({
           <span>Lọc trạng thái:</span>
           <select
             value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
+            onChange={(e) => {
+              setStatusFilter(e.target.value);
+              setCurrentPage(0);
+            }}
             className="border border-stone-200 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-stone-800 bg-white"
           >
             <option value="ALL">Tất cả ({bookings.length})</option>
@@ -191,7 +272,7 @@ export const BookingsView: React.FC<BookingsViewProps> = ({
               </tr>
             </thead>
             <tbody className="divide-y divide-stone-100 font-medium">
-              {filteredBookings.map((bk) => (
+              {pageBookings.map((bk) => (
                 <tr key={bk.id} className="hover:bg-stone-50/80 transition-colors">
                   <td className="py-3 px-4">
                     <span className="font-mono font-bold text-emerald-950 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
@@ -297,6 +378,52 @@ export const BookingsView: React.FC<BookingsViewProps> = ({
         {filteredBookings.length === 0 && (
           <div className="p-12 text-center text-stone-400 text-xs">
             Không tìm thấy booking nào phù hợp với bộ lọc tìm kiếm.
+          </div>
+        )}
+
+        {filteredBookings.length > 0 && (
+          <div className="flex flex-col gap-3 border-t border-stone-200 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+            <span className="text-xs text-stone-500">
+              Hiển thị {safeCurrentPage * pageSize + 1}-{Math.min((safeCurrentPage + 1) * pageSize, filteredBookings.length)} trên {filteredBookings.length} đơn
+            </span>
+            <div className="flex items-center justify-end gap-2">
+                <label htmlFor="booking-page-size" className="text-xs text-stone-500">Dòng/trang</label>
+                <select
+                  id="booking-page-size"
+                  value={pageSize}
+                  onChange={(e) => {
+                    setPageSize(Number(e.target.value));
+                    setCurrentPage(0);
+                  }}
+                  className="rounded-lg border border-stone-200 bg-white px-2 py-1.5 text-xs font-semibold text-stone-700"
+                >
+                  <option value={10}>10</option>
+                  <option value={25}>25</option>
+                  <option value={50}>50</option>
+                  <option value={100}>100</option>
+                </select>
+              <button
+                type="button"
+                disabled={safeCurrentPage === 0}
+                onClick={() => setCurrentPage((page) => Math.max(0, page - 1))}
+                className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-stone-200 text-stone-700 transition hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-40"
+                aria-label="Trang trước"
+                title="Trang trước"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </button>
+              <span className="min-w-20 text-center text-xs font-semibold text-stone-700">Trang {safeCurrentPage + 1} / {pageCount}</span>
+              <button
+                type="button"
+                disabled={safeCurrentPage >= pageCount - 1}
+                onClick={() => setCurrentPage((page) => Math.min(pageCount - 1, page + 1))}
+                className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-stone-200 text-stone-700 transition hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-40"
+                aria-label="Trang sau"
+                title="Trang sau"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </button>
+            </div>
           </div>
         )}
       </div>
